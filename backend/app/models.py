@@ -125,6 +125,7 @@ class Vote(Model):
     choice: str
     confidence: float
     reason: str | None = None
+    said_lean: str = "undecided"  # latest public turn lean at ballot time
 
 
 class FirstSurfaced(Model):
@@ -158,7 +159,9 @@ class Metrics(Model):
     unspoken_decisive: list[str] = []
     holders: dict[str, list[str]] = {}
     mentions: MentionCounts = MentionCounts()
-    vote_rounds: list[int] = []  # round index per entry of the *_by_round arrays; -1 = pre-discussion
+    vote_rounds: list[
+        int
+    ] = []  # round index per entry of the *_by_round arrays; -1 = pre-discussion
     agreement_by_round: list[float] = []
     accuracy_by_round: list[float] = []
     tokens_total: TokenTotals = TokenTotals()

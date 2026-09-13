@@ -193,7 +193,14 @@ export function Table({ scenario, config, derived, status, round }: Props) {
                 {agent.role}
               </text>
               {vote && (
-                <g className="lean-badge">
+                <g
+                  className={`lean-badge ${vote.saidLean !== 'undecided' && vote.saidLean !== vote.choice ? 'lean-diverge' : ''}`}
+                >
+                  {vote.saidLean !== 'undecided' && vote.saidLean !== vote.choice && (
+                    <title>
+                      said {candidateName(scenario, vote.saidLean)}, voted {candidateName(scenario, vote.choice)}
+                    </title>
+                  )}
                   <rect x={s.x + 12} y={s.y - 34} width={34} height={16} rx={8} fill={candidateColor(scenario, vote.choice)} />
                   <text x={s.x + 29} y={s.y - 22} textAnchor="middle">
                     {vote.choice === 'undecided' ? '?' : candidateName(scenario, vote.choice)}

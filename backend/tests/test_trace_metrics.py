@@ -96,7 +96,9 @@ def test_pre_discussion_ballot_and_tie() -> None:
     agents = [a.id for a in s.agents]
     # pre-discussion ballot stored as round -1: exact tie between the two candidates
     for i, a in enumerate(agents):
-        store.insert_vote(run.id, Vote(round=-1, agent_id=a, choice=correct if i % 2 else wrong, confidence=0.5))
+        store.insert_vote(
+            run.id, Vote(round=-1, agent_id=a, choice=correct if i % 2 else wrong, confidence=0.5)
+        )
     for a in agents:
         store.insert_vote(run.id, Vote(round=0, agent_id=a, choice=wrong, confidence=0.9))
     m = orchestrator.compute_metrics(store.get_run(run.id) or run)
