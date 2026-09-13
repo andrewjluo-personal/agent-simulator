@@ -21,9 +21,7 @@ def _fact_lines(scenario: Scenario, hand_fact_ids: list[str]) -> str:
         fact = scenario.fact(fact_id)
         name = scenario.fact(fact_id).candidate_id
         display = next((c.name for c in scenario.candidates if c.id == name), name)
-        lines.append(
-            f"[{fact.id}] (about {display}, {fact.valence}, weight {fact.weight}) {fact.text}"
-        )
+        lines.append(f"[{fact.id}] (about {display}) {fact.text}")
     return "\n".join(lines)
 
 
@@ -71,6 +69,7 @@ def turn_message(
     round_idx: int,
     heard_turns: list[Turn],
     paradigm: ParadigmSpec,
+    total: int,
 ) -> str:
     if heard_turns:
         transcript = "\n".join(
@@ -87,7 +86,7 @@ def turn_message(
                 mentioned.append(fact_id)
     instruction = paradigm.round_instruction(round_idx, cfg)
     instruction_block = f"\n{instruction}" if instruction else ""
-    return f"""Round {round_idx + 1} of {cfg.rounds}. You speak now.
+    return f"""Round {round_idx + 1} of {total}. You speak now.
 
 TRANSCRIPT SO FAR (what the panel has actually heard):
 {transcript}
@@ -97,8 +96,15 @@ FACTS ALREADY MENTIONED BY ANYONE: {", ".join(mentioned) if mentioned else "none
 Your turn. JSON only."""
 
 
-def vote_message(round_idx: int, cfg: RunConfig, final: bool) -> str:
+def vote_message(round_idx: int, cfg: RunConfig, final: bool, total: int) -> str:
     reason = "\nGive one sentence of reasoning." if final else ""
-    return f"""Round {round_idx + 1} is over. This is a PRIVATE ballot — no other panelist will see it.
+    return f"""Round {round_idx + 1} of {total} is over. This is a PRIVATE ballot — no other panelist will see it.
 Based on everything you hold plus everything you have heard, which candidate do you recommend?{reason}
 JSON only: {{"vote": candidate id or "undecided", "confidence": 0..1, "reason": string}}"""
+
+
+def alone_vote_message(scenario: Scenario) -> str:
+    options = "|".join(c.id for c in scenario.candidates)
+    return f"""You have not spoken to any other panelist. Based only on the evidence you
+personally hold, which candidate do you recommend? You must pick one.
+JSON only: {{"vote": "{options}", "confidence": 0..1, "reason": string}}"""

@@ -16,6 +16,7 @@ class Model(BaseModel):
 Valence = Literal["pro", "con"]
 Paradigm = Literal["free_discussion", "share_first"]
 TurnOrder = Literal["clockwise", "random"]
+TieBreak = Literal["none", "runoff", "chair"]
 RunStatus = Literal["queued", "running", "done", "error"]
 LlmProvider = Literal["anthropic", "fake"]
 
@@ -41,6 +42,14 @@ class AgentPersona(Model):
     style: str
 
 
+class ValidationResult(Model):
+    alone_wrong_rate: dict[str, float]  # agentId -> rate picking the wrong (shared-only) candidate
+    pooled_right_rate: float
+    trials: int
+    date: str  # ISO date
+    passed: bool
+
+
 class Scenario(Model):
     id: str
     title: str
@@ -50,6 +59,7 @@ class Scenario(Model):
     facts: list[Fact]
     agents: list[AgentPersona]
     distribution: dict[str, list[str]]
+    validation: dict[str, ValidationResult] | None = None  # keyed by model
 
     @model_validator(mode="after")
     def _check(self) -> Scenario:
@@ -85,6 +95,7 @@ class RunConfig(Model):
     rounds: int = Field(default=3, ge=1, le=10)
     sentences_per_turn: int = Field(default=2, ge=1, le=5)
     turn_order: TurnOrder = "clockwise"
+    tie_break: TieBreak = "runoff"
     model: str = "claude-haiku-4-5"
     seed: int = 0
 
