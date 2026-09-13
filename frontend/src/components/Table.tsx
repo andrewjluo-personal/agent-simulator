@@ -1,0 +1,300 @@
+import { useMemo, useState, type CSSProperties } from 'react'
+import type { Derived } from '../hooks/usePlayback'
+import { candidateName, decisiveFactIds, favoredCandidate, factsById, sharedFactIds, tally } from '../truth'
+import type { Fact, RunConfig, Scenario, Turn } from '../types'
+
+export const W = 820
+export const H = 600
+const CX = W / 2
+const CY = H / 2 + 6
+const R = 225
+const CHIP_W = 27
+const CHIP_H = 16
+const CHIP_GAP = 3
+const HAND_COLS = 6
+const CENTER_W = 250
+const CENTER_COLS = 8
+
+export const CANDIDATE_COLORS = ['#3b82f6', '#f59e0b', '#10b981', '#a855f7', '#ef4444']
+
+export function candidateColor(scenario: Scenario, candidateId: string | null): string {
+  const idx = scenario.candidates.findIndex((c) => c.id === candidateId)
+  return idx < 0 ? '#9ca3af' : CANDIDATE_COLORS[idx % CANDIDATE_COLORS.length]
+}
+
+type Seat = { agentId: string; x: number; y: number; angle: number }
+
+function seats(scenario: Scenario): Seat[] {
+  const n = scenario.agents.length
+  return scenario.agents.map((a, i) => {
+    const angle = -Math.PI / 2 + (i * 2 * Math.PI) / n
+    return { agentId: a.id, x: CX + R * Math.cos(angle), y: CY + R * Math.sin(angle), angle }
+  })
+}
+
+function handOrigin(seat: Seat, count: number): { x: number; y: number } {
+  const rows = Math.ceil(count / HAND_COLS)
+  const gridW = HAND_COLS * (CHIP_W + CHIP_GAP)
+  const gridH = rows * (CHIP_H + CHIP_GAP)
+  const dx = Math.cos(seat.angle)
+  const dy = Math.sin(seat.angle)
+  const cx = seat.x + dx * (36 + gridW / 2) * Math.abs(dx) + dx * 10
+  const cy = seat.y + dy * (40 + gridH / 2)
+  const gx = Math.min(Math.max(cx - gridW / 2, 4), W - gridW - 4)
+  const gy = Math.min(Math.max(cy - gridH / 2, 4), H - gridH - 4)
+  return { x: gx, y: gy }
+}
+
+type ChipPos = { key: string; factId: string; agentId: string; x: number; y: number; inCenter: boolean; dim: boolean }
+
+type Props = {
+  scenario: Scenario
+  config: RunConfig | null
+  derived: Derived
+  status: 'idle' | 'playing' | 'paused' | 'finished'
+  round: number
+}
+
+export function Table({ scenario, config, derived, status, round }: Props) {
+  const [inspected, setInspected] = useState<string | null>(null)
+  const byId = useMemo(() => factsById(scenario), [scenario])
+  const shared = useMemo(() => sharedFactIds(scenario), [scenario])
+  const decisive = useMemo(() => decisiveFactIds(scenario), [scenario])
+  const seatList = useMemo(() => seats(scenario), [scenario])
+  const { commonGround, citedBy, currentTurn, latestVotes, finished } = derived
+
+  const centerOrder = useMemo(() => {
+    const order: string[] = []
+    for (const t of derived.revealedTurns) for (const id of t.cited) if (!order.includes(id)) order.push(id)
+    return order
+  }, [derived.revealedTurns])
+
+  const centerTop = CY + 28
+  const centerGridX = CX - (CENTER_COLS * (CHIP_W + CHIP_GAP)) / 2
+
+  const chips: ChipPos[] = useMemo(() => {
+    const out: ChipPos[] = []
+    for (const seat of seatList) {
+      const hand = scenario.distribution[seat.agentId] ?? []
+      const origin = handOrigin(seat, hand.length)
+      hand.forEach((factId, i) => {
+        const owner = citedBy.get(factId)
+        const inCenter = owner === seat.agentId
+        if (inCenter) {
+          const idx = centerOrder.indexOf(factId)
+          out.push({
+            key: `${seat.agentId}:${factId}`,
+            factId,
+            agentId: seat.agentId,
+            x: centerGridX + (idx % CENTER_COLS) * (CHIP_W + CHIP_GAP),
+            y: centerTop + Math.floor(idx / CENTER_COLS) * (CHIP_H + CHIP_GAP),
+            inCenter: true,
+            dim: false,
+          })
+        } else {
+          out.push({
+            key: `${seat.agentId}:${factId}`,
+            factId,
+            agentId: seat.agentId,
+            x: origin.x + (i % HAND_COLS) * (CHIP_W + CHIP_GAP),
+            y: origin.y + Math.floor(i / HAND_COLS) * (CHIP_H + CHIP_GAP),
+            inCenter: false,
+            dim: commonGround.has(factId),
+          })
+        }
+      })
+    }
+    return out
+  }, [seatList, scenario, citedBy, centerOrder, commonGround, centerGridX, centerTop])
+
+  const voteTally = tally([...latestVotes.values()].map((v) => v.choice), scenario)
+  const hasVotes = latestVotes.size > 0
+  const leader = hasVotes
+    ? scenario.candidates.reduce((best, c) => (voteTally[c.id] > (voteTally[best.id] ?? 0) ? c : best))
+    : null
+
+  const inspectedAgent = inspected ? scenario.agents.find((a) => a.id === inspected) : null
+
+  return (
+    <div className="table-wrap" style={{ width: W, height: H }} onMouseLeave={() => setInspected(null)}>
+      <svg className="table-svg" width={W} height={H}>
+        <circle cx={CX} cy={CY} r={R - 62} className="table-felt" />
+        {seatList.map((s) => {
+          const agent = scenario.agents.find((a) => a.id === s.agentId)!
+          const speaking = currentTurn?.agentId === s.agentId && status === 'playing'
+          const vote = latestVotes.get(s.agentId)
+          return (
+            <g
+              key={s.agentId}
+              className={`seat ${speaking ? 'speaking' : ''}`}
+              onMouseEnter={() => setInspected(s.agentId)}
+              onClick={() => setInspected((cur) => (cur === s.agentId ? null : s.agentId))}
+            >
+              <circle cx={s.x} cy={s.y} r={26} className="avatar" />
+              <text x={s.x} y={s.y + 5} textAnchor="middle" className="avatar-initial">
+                {agent.name[0]}
+              </text>
+              <text x={s.x} y={s.y + 44} textAnchor="middle" className="seat-name">
+                {agent.name}
+              </text>
+              <text x={s.x} y={s.y + 57} textAnchor="middle" className="seat-role">
+                {agent.role}
+              </text>
+              {vote && (
+                <g className="lean-badge">
+                  <rect x={s.x + 12} y={s.y - 34} width={34} height={16} rx={8} fill={candidateColor(scenario, vote.choice)} />
+                  <text x={s.x + 29} y={s.y - 22} textAnchor="middle">
+                    {vote.choice === 'undecided' ? '?' : candidateName(scenario, vote.choice)}
+                  </text>
+                </g>
+              )}
+            </g>
+          )
+        })}
+      </svg>
+
+      <div className="center-box" style={{ left: CX - CENTER_W / 2, top: CY - 72, width: CENTER_W }}>
+        <div className="center-round">
+          {config ? (status === 'idle' ? 'Ready' : `Round ${round} / ${config.rounds}`) : 'Ready'}
+          {hasVotes && <span className="center-sub"> · private votes after round {derived.completedRounds}</span>}
+        </div>
+        <div className="cand-row">
+          {scenario.candidates.map((c) => (
+            <div
+              key={c.id}
+              className={`cand-card ${leader?.id === c.id ? 'leading' : ''}`}
+              style={{ borderColor: candidateColor(scenario, c.id) }}
+            >
+              <div className="cand-name" style={{ color: candidateColor(scenario, c.id) }}>
+                {c.name}
+              </div>
+              <div className="cand-tally">{hasVotes ? voteTally[c.id] : '–'}</div>
+            </div>
+          ))}
+        </div>
+        <div className="center-label">common ground · {commonGround.size} facts</div>
+      </div>
+
+      <div className="chip-layer">
+        {chips.map((c) => {
+          const fact = byId.get(c.factId)
+          if (!fact) return null
+          const unspokenDecisive = finished && decisive.has(c.factId) && !commonGround.has(c.factId)
+          return (
+            <Chip
+              key={c.key}
+              fact={fact}
+              scenario={scenario}
+              shared={shared.has(fact.id)}
+              x={c.x}
+              y={c.y}
+              inCenter={c.inCenter}
+              dim={c.dim}
+              pulse={unspokenDecisive}
+              fresh={c.inCenter && currentTurn?.cited.includes(c.factId) === true}
+            />
+          )
+        })}
+      </div>
+
+      {currentTurn && status !== 'idle' && (
+        <SpeechBubble turn={currentTurn} seat={seatList.find((s) => s.agentId === currentTurn.agentId)!} scenario={scenario} />
+      )}
+
+      {inspectedAgent && (
+        <div className="hand-popover">
+          <div className="hand-popover-head">
+            <strong>{inspectedAgent.name}</strong> · {inspectedAgent.role}
+            <span className="muted"> — {scenario.distribution[inspectedAgent.id]?.length ?? 0} facts in hand</span>
+          </div>
+          <ul>
+            {(scenario.distribution[inspectedAgent.id] ?? [])
+              .map((id) => byId.get(id))
+              .filter((f): f is Fact => Boolean(f))
+              .sort((a, b) => Number(shared.has(a.id)) - Number(shared.has(b.id)))
+              .map((f) => (
+                <li key={f.id} className={shared.has(f.id) ? 'shared' : 'unique'}>
+                  <span className="fact-tag" style={{ background: candidateColor(scenario, favoredCandidate(f, scenario)) }}>
+                    {f.id}
+                  </span>
+                  <span className="fact-kind">{shared.has(f.id) ? 'shared' : 'unique'}</span>
+                  <span className="fact-weight">w{f.weight}</span>
+                  {commonGround.has(f.id) && <span className="fact-said">said</span>}
+                  <span className="fact-text">{f.text}</span>
+                </li>
+              ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+}
+
+type ChipProps = {
+  fact: Fact
+  scenario: Scenario
+  shared: boolean
+  x: number
+  y: number
+  inCenter: boolean
+  dim: boolean
+  pulse: boolean
+  fresh: boolean
+}
+
+function Chip({ fact, scenario, shared, x, y, inCenter, dim, pulse, fresh }: ChipProps) {
+  const color = candidateColor(scenario, favoredCandidate(fact, scenario))
+  const style: CSSProperties = {
+    transform: `translate(${x}px, ${y}px)`,
+    width: CHIP_W,
+    height: CHIP_H,
+    background: shared ? '#e5e7eb' : color,
+    color: shared ? '#374151' : '#fff',
+    boxShadow: shared ? `inset 3px 0 0 ${color}` : undefined,
+  }
+  const cls = ['chip', inCenter ? 'in-center' : '', dim ? 'dim' : '', pulse ? 'pulse' : '', fresh ? 'fresh' : ''].join(' ')
+  return (
+    <div className={cls} style={style} title={`${fact.id} (${shared ? 'shared' : 'unique'}, w${fact.weight}): ${fact.text}`}>
+      {fact.id}
+    </div>
+  )
+}
+
+function SpeechBubble({ turn, seat, scenario }: { turn: Turn; seat: Seat; scenario: Scenario }) {
+  const width = 250
+  const dx = Math.cos(seat.angle)
+  const dy = Math.sin(seat.angle)
+  let left: number
+  let top: number
+  if (Math.abs(dx) < 0.5) {
+    left = seat.x + (dx >= 0 ? 60 : -60 - width)
+    top = seat.y - 30
+  } else {
+    left = Math.min(Math.max(seat.x - width / 2, 4), W - width - 4)
+    top = dy < 0 ? seat.y + 70 : seat.y - 130
+  }
+  left = Math.min(Math.max(left, 4), W - width - 4)
+  const shared = sharedFactIds(scenario)
+  return (
+    <div className="bubble" style={{ left, top, width }} key={turn.seq}>
+      <div className="bubble-text">{turn.sentences.length ? turn.sentences.join(' ') : <em>(said nothing)</em>}</div>
+      <div className="bubble-meta">
+        {turn.cited.map((id) => (
+          <span key={id} className={`cite ${shared.has(id) ? 'shared' : 'unique'}`}>
+            {id}
+          </span>
+        ))}
+        {turn.hallucinated.map((id) => (
+          <span key={id} className="cite halluc" title="cited a fact the speaker does not hold">
+            {id}
+          </span>
+        ))}
+        {turn.lean !== 'undecided' && (
+          <span className="lean" style={{ color: candidateColor(scenario, turn.lean) }}>
+            → {candidateName(scenario, turn.lean)}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}

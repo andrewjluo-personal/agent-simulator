@@ -1,0 +1,183 @@
+"""Wire models. Every API payload serializes with model_dump(by_alias=True) so the
+JSON matches frontend/src/types.ts (camelCase) exactly."""
+
+from __future__ import annotations
+
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic.alias_generators import to_camel
+
+
+class Model(BaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+
+Valence = Literal["pro", "con"]
+Paradigm = Literal["free_discussion", "share_first"]
+TurnOrder = Literal["clockwise", "random"]
+RunStatus = Literal["queued", "running", "done", "error"]
+LlmProvider = Literal["anthropic", "fake"]
+
+
+class Candidate(Model):
+    id: str
+    name: str
+    blurb: str
+
+
+class Fact(Model):
+    id: str
+    candidate_id: str
+    valence: Valence
+    weight: int = Field(default=1, ge=1)
+    text: str
+
+
+class AgentPersona(Model):
+    id: str
+    name: str
+    role: str
+    style: str
+
+
+class Scenario(Model):
+    id: str
+    title: str
+    brief: str
+    candidates: list[Candidate]
+    facts: list[Fact]
+    agents: list[AgentPersona]
+    distribution: dict[str, list[str]]
+
+    @model_validator(mode="after")
+    def _check(self) -> Scenario:
+        candidate_ids = [c.id for c in self.candidates]
+        if len(set(candidate_ids)) != len(candidate_ids):
+            raise ValueError("candidate ids must be unique")
+        candidate_set = set(candidate_ids)
+        fact_ids = {f.id for f in self.facts}
+        if len(fact_ids) != len(self.facts):
+            raise ValueError("fact ids must be unique")
+        for fact in self.facts:
+            if fact.candidate_id not in candidate_set:
+                raise ValueError(f"fact {fact.id} references unknown candidate {fact.candidate_id}")
+        agent_ids = {a.id for a in self.agents}
+        if set(self.distribution) != agent_ids:
+            raise ValueError("every agent must appear in distribution and vice versa")
+        for agent_id, held in self.distribution.items():
+            unknown = set(held) - fact_ids
+            if unknown:
+                raise ValueError(f"agent {agent_id} holds unknown facts {sorted(unknown)}")
+        return self
+
+    def fact(self, fact_id: str) -> Fact:
+        for f in self.facts:
+            if f.id == fact_id:
+                return f
+        raise KeyError(fact_id)
+
+
+class RunConfig(Model):
+    scenario_id: str = "hiring-panel-v1"
+    paradigm: Paradigm = "free_discussion"
+    rounds: int = Field(default=3, ge=1, le=10)
+    sentences_per_turn: int = Field(default=2, ge=1, le=5)
+    turn_order: TurnOrder = "clockwise"
+    model: str = "claude-haiku-4-5"
+    seed: int = 0
+
+
+class TurnOut(Model):
+    """Raw model output for a discussion turn, pre-validation."""
+
+    sentences: list[str]
+    items_referenced: list[str]
+    current_lean: str
+    confidence: float
+
+
+class VoteOut(Model):
+    vote: str
+    confidence: float
+    reason: str = ""
+
+
+class Turn(Model):
+    seq: int
+    round: int
+    agent_id: str
+    sentences: list[str]
+    cited: list[str]
+    hallucinated: list[str]
+    lean: str
+    confidence: float
+    latency_ms: int | None = None
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+
+
+class Vote(Model):
+    round: int
+    agent_id: str
+    choice: str
+    confidence: float
+    reason: str | None = None
+
+
+class Metrics(Model):
+    correct: bool
+    correct_candidate_id: str
+    majority_candidate_id: str
+    final_tally: dict[str, int]
+    decisive_surfaced: float
+    decisive_total: int
+    decisive_surfaced_count: int
+    agreement: float
+    hallucination_count: int
+    vote_trajectory: list[dict[str, int]]
+
+
+class RunState(Model):
+    id: str
+    scenario_id: str
+    scenario: Scenario
+    config: RunConfig
+    status: RunStatus
+    current_round: int = 0
+    is_demo: bool = False
+    batch_id: str | None = None
+    llm_provider: LlmProvider
+    error: str | None = None
+    metrics: Metrics | None = None
+    turns: list[Turn] = []
+    votes: list[Vote] = []
+    created_at: str = ""
+
+
+class RunSummary(Model):
+    id: str
+    scenario_id: str
+    config: RunConfig
+    status: RunStatus
+    current_round: int
+    is_demo: bool
+    batch_id: str | None = None
+    llm_provider: LlmProvider
+    error: str | None = None
+    metrics: Metrics | None = None
+    created_at: str
+
+
+class BatchState(Model):
+    id: str
+    runs: list[RunSummary]
+
+
+class DemoSnapshot(Model):
+    scenario: Scenario
+    runs: list[RunState]
+
+
+def summary(run: RunState) -> RunSummary:
+    return RunSummary(**run.model_dump(exclude={"turns", "votes", "scenario"}))

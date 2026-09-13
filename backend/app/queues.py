@@ -24,6 +24,8 @@ OIDC_HEADER = "x-vercel-oidc-token"
 DEFAULT_REGION = "iad1"
 GREETINGS_TOPIC = "greetings"
 GREETINGS_CONSUMER = "greetings-worker"  # must match vercel.json
+SIMULATION_TOPIC = "simulation"
+SIMULATION_CONSUMER = "simulation-worker"  # must match vercel.json
 
 # Queue triggers invoke the Vercel Function at the path of its resolved entrypoint,
 # which for a FastAPI deployment is /fastapi rather than any route the app declares.
@@ -38,6 +40,21 @@ class QueueNotConfigured(RuntimeError):
 def _segment(value: str) -> str:
     """Topic names, ids and receipt handles are opaque; keep them one path segment."""
     return quote(value, safe="")
+
+
+def callback_topic(event: Any) -> tuple[str, str]:
+    """Extract (topic, consumer) from a queue trigger CloudEvent, rejecting foreign envelopes."""
+    if not isinstance(event, dict):
+        raise TypeError("callback body is not an object")
+    if event.get("type") != CALLBACK_EVENT_TYPE:
+        raise ValueError(f"unexpected CloudEvent type {event.get('type')!r}")
+    data = event["data"]
+    topic, consumer = data["queueName"], data["consumerGroup"]
+    if not isinstance(topic, str) or not isinstance(consumer, str):
+        raise TypeError("missing queueName/consumerGroup")
+    if event.get("source") != f"/topic/{topic}/consumer/{consumer}":
+        raise ValueError(f"unexpected CloudEvent source {event.get('source')!r}")
+    return topic, consumer
 
 
 def callback_message_id(event: Any, topic: str, consumer: str) -> str:

@@ -10,6 +10,11 @@
           "type": "queue/v1beta",
           "topic": "greetings",
           "consumer": "greetings-worker"
+        },
+        {
+          "type": "queue/v1beta",
+          "topic": "simulation",
+          "consumer": "simulation-worker"
         }
       ]
     }
