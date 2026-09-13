@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties, type MouseEvent } from 'react'
 import type { Derived } from '../hooks/usePlayback'
 import { candidateName, decisiveFactIds, favoredCandidate, factsById, sharedFactIds, tally } from '../truth'
 import type { Fact, RunConfig, Scenario, Turn } from '../types'
@@ -23,6 +23,9 @@ export function candidateColor(scenario: Scenario, candidateId: string | null): 
 }
 
 type Seat = { agentId: string; x: number; y: number; angle: number }
+type Popover =
+  | { kind: 'agent'; agentId: string }
+  | { kind: 'fact'; agentId: string; factId: string; x: number; y: number }
 
 function seats(scenario: Scenario): Seat[] {
   const n = scenario.agents.length
@@ -47,6 +50,15 @@ function handOrigin(seat: Seat, count: number): { x: number; y: number } {
 
 type ChipPos = { key: string; factId: string; agentId: string; x: number; y: number; inCenter: boolean; dim: boolean }
 
+function placeNear(anchorX: number, anchorY: number, w: number, h: number, preferRight: boolean): { left: number; top: number } {
+  const left = preferRight ? anchorX + 14 : anchorX - w - 14
+  const top = anchorY - 20
+  return {
+    left: Math.min(Math.max(left, 4), W - w - 4),
+    top: Math.min(Math.max(top, 4), H - h - 4),
+  }
+}
+
 type Props = {
   scenario: Scenario
   config: RunConfig | null
@@ -56,7 +68,7 @@ type Props = {
 }
 
 export function Table({ scenario, config, derived, status, round }: Props) {
-  const [inspected, setInspected] = useState<string | null>(null)
+  const [popover, setPopover] = useState<Popover | null>(null)
   const byId = useMemo(() => factsById(scenario), [scenario])
   const shared = useMemo(() => sharedFactIds(scenario), [scenario])
   const decisive = useMemo(() => decisiveFactIds(scenario), [scenario])
@@ -113,10 +125,47 @@ export function Table({ scenario, config, derived, status, round }: Props) {
     ? scenario.candidates.reduce((best, c) => (voteTally[c.id] > (voteTally[best.id] ?? 0) ? c : best))
     : null
 
-  const inspectedAgent = inspected ? scenario.agents.find((a) => a.id === inspected) : null
+  const inspectedAgent = popover?.kind === 'agent' ? scenario.agents.find((a) => a.id === popover.agentId) : null
+  const inspectedFact =
+    popover?.kind === 'fact'
+      ? {
+          fact: byId.get(popover.factId),
+          x: popover.x,
+          y: popover.y,
+        }
+      : null
+
+  useEffect(() => {
+    if (!popover) return
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.target instanceof Element && e.target.closest('[data-popover-root]')) return
+      setPopover(null)
+    }
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPopover(null)
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [popover])
+
+  useEffect(() => {
+    setPopover(null)
+  }, [scenario])
+
+  const openFactPopover = (agentId: string, factId: string, x: number, y: number) => {
+    setPopover((current) =>
+      current?.kind === 'fact' && current.agentId === agentId && current.factId === factId
+        ? null
+        : { kind: 'fact', agentId, factId, x, y },
+    )
+  }
 
   return (
-    <div className="table-wrap" style={{ width: W, height: H }} onMouseLeave={() => setInspected(null)}>
+    <div className="table-wrap" style={{ width: W, height: H }}>
       <svg className="table-svg" width={W} height={H}>
         <circle cx={CX} cy={CY} r={R - 62} className="table-felt" />
         {seatList.map((s) => {
@@ -127,8 +176,13 @@ export function Table({ scenario, config, derived, status, round }: Props) {
             <g
               key={s.agentId}
               className={`seat ${speaking ? 'speaking' : ''}`}
-              onMouseEnter={() => setInspected(s.agentId)}
-              onClick={() => setInspected((cur) => (cur === s.agentId ? null : s.agentId))}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation()
+                setPopover((current) =>
+                  current?.kind === 'agent' && current.agentId === s.agentId ? null : { kind: 'agent', agentId: s.agentId },
+                )
+              }}
             >
               <circle cx={s.x} cy={s.y} r={26} className="avatar" />
               <text x={s.x} y={s.y + 5} textAnchor="middle" className="avatar-initial">
@@ -192,6 +246,10 @@ export function Table({ scenario, config, derived, status, round }: Props) {
               dim={c.dim}
               pulse={unspokenDecisive}
               fresh={c.inCenter && currentTurn?.cited.includes(c.factId) === true}
+              onClick={(e) => {
+                e.stopPropagation()
+                openFactPopover(c.agentId, c.factId, c.x + CHIP_W / 2, c.y + CHIP_H / 2)
+              }}
             />
           )
         })}
@@ -201,31 +259,81 @@ export function Table({ scenario, config, derived, status, round }: Props) {
         <SpeechBubble turn={currentTurn} seat={seatList.find((s) => s.agentId === currentTurn.agentId)!} scenario={scenario} />
       )}
 
-      {inspectedAgent && (
-        <div className="hand-popover">
-          <div className="hand-popover-head">
-            <strong>{inspectedAgent.name}</strong> · {inspectedAgent.role}
-            <span className="muted"> — {scenario.distribution[inspectedAgent.id]?.length ?? 0} facts in hand</span>
+      {inspectedAgent && (() => {
+        const seat = seatList.find((s) => s.agentId === inspectedAgent.id)!
+        const position = placeNear(seat.x, seat.y, 340, 280, seat.x <= CX)
+        return (
+          <div
+            className="popover hand-popover"
+            data-popover-root
+            style={{ left: position.left, top: position.top, width: 340 }}
+          >
+            <div className="hand-popover-head">
+              <strong>{inspectedAgent.name}</strong> · {inspectedAgent.role}
+              <span className="muted"> — {scenario.distribution[inspectedAgent.id]?.length ?? 0} facts in hand</span>
+            </div>
+            <button className="popover-close" type="button" aria-label="Close popover" onClick={() => setPopover(null)}>
+              ×
+            </button>
+            <ul>
+              {(scenario.distribution[inspectedAgent.id] ?? [])
+                .map((id) => byId.get(id))
+                .filter((f): f is Fact => Boolean(f))
+                .sort((a, b) => Number(shared.has(a.id)) - Number(shared.has(b.id)))
+                .map((f) => (
+                  <li
+                    key={f.id}
+                    className={shared.has(f.id) ? 'shared' : 'unique'}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openFactPopover(inspectedAgent.id, f.id, seat.x, seat.y)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        openFactPopover(inspectedAgent.id, f.id, seat.x, seat.y)
+                      }
+                    }}
+                  >
+                    <span className="fact-tag" style={{ background: candidateColor(scenario, favoredCandidate(f, scenario)) }}>
+                      {f.id}
+                    </span>
+                    <span className="fact-kind">{shared.has(f.id) ? 'shared' : 'unique'}</span>
+                    <span className="fact-weight">w{f.weight}</span>
+                    {commonGround.has(f.id) && <span className="fact-said">said</span>}
+                    <span className="fact-text">{f.text}</span>
+                  </li>
+                ))}
+            </ul>
           </div>
-          <ul>
-            {(scenario.distribution[inspectedAgent.id] ?? [])
-              .map((id) => byId.get(id))
-              .filter((f): f is Fact => Boolean(f))
-              .sort((a, b) => Number(shared.has(a.id)) - Number(shared.has(b.id)))
-              .map((f) => (
-                <li key={f.id} className={shared.has(f.id) ? 'shared' : 'unique'}>
-                  <span className="fact-tag" style={{ background: candidateColor(scenario, favoredCandidate(f, scenario)) }}>
-                    {f.id}
-                  </span>
-                  <span className="fact-kind">{shared.has(f.id) ? 'shared' : 'unique'}</span>
-                  <span className="fact-weight">w{f.weight}</span>
-                  {commonGround.has(f.id) && <span className="fact-said">said</span>}
-                  <span className="fact-text">{f.text}</span>
-                </li>
-              ))}
-          </ul>
-        </div>
-      )}
+        )
+      })()}
+      {inspectedFact?.fact && (() => {
+        const fact = inspectedFact.fact
+        const position = placeNear(inspectedFact.x, inspectedFact.y, 280, 150, inspectedFact.x - CHIP_W / 2 <= CX)
+        const holders = scenario.agents.filter((agent) => (scenario.distribution[agent.id] ?? []).includes(fact.id))
+        return (
+          <div
+            className="popover fact-popover"
+            data-popover-root
+            style={{ left: position.left, top: position.top, width: 280 }}
+          >
+            <button className="popover-close" type="button" aria-label="Close popover" onClick={() => setPopover(null)}>
+              ×
+            </button>
+            <div className="fact-popover-head">
+              <span className="fact-tag" style={{ background: candidateColor(scenario, favoredCandidate(fact, scenario)) }}>
+                {fact.id}
+              </span>
+              <span className="fact-kind">{shared.has(fact.id) ? 'shared' : 'unique'}</span>
+              <span className="fact-weight">w{fact.weight}</span>
+              {commonGround.has(fact.id) && <span className="fact-said">said</span>}
+            </div>
+            <div className="fact-popover-text">{fact.text}</div>
+            <div className="fact-held-by muted">held by: {holders.map((agent) => agent.name).join(', ')}</div>
+            {decisive.has(fact.id) && <div className="fact-decisive muted">decisive</div>}
+          </div>
+        )
+      })()}
     </div>
   )
 }
@@ -240,9 +348,10 @@ type ChipProps = {
   dim: boolean
   pulse: boolean
   fresh: boolean
+  onClick: (e: MouseEvent<HTMLDivElement>) => void
 }
 
-function Chip({ fact, scenario, shared, x, y, inCenter, dim, pulse, fresh }: ChipProps) {
+function Chip({ fact, scenario, shared, x, y, inCenter, dim, pulse, fresh, onClick }: ChipProps) {
   const color = candidateColor(scenario, favoredCandidate(fact, scenario))
   const style: CSSProperties = {
     transform: `translate(${x}px, ${y}px)`,
@@ -254,7 +363,7 @@ function Chip({ fact, scenario, shared, x, y, inCenter, dim, pulse, fresh }: Chi
   }
   const cls = ['chip', inCenter ? 'in-center' : '', dim ? 'dim' : '', pulse ? 'pulse' : '', fresh ? 'fresh' : ''].join(' ')
   return (
-    <div className={cls} style={style} title={`${fact.id} (${shared ? 'shared' : 'unique'}, w${fact.weight}): ${fact.text}`}>
+    <div className={cls} style={style} onPointerDown={(e) => e.stopPropagation()} onClick={onClick}>
       {fact.id}
     </div>
   )

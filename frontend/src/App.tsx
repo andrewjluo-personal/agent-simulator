@@ -191,7 +191,7 @@ function App() {
             <div className="transcript">
               <h3>Transcript</h3>
               <p className="muted">
-                Press ▶ Play to replay a cached run, ⚡ Run live to start a new one, or hover an agent to see the facts it holds.
+                Press ▶ Play to replay a cached run, ⚡ Run live to start a new one, or click an agent or a fact chip to inspect it.
               </p>
             </div>
           )}
