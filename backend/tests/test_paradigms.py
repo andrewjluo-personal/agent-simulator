@@ -7,7 +7,7 @@ from pathlib import Path
 from app import orchestrator
 from app.llm import FakeClient
 from app.models import RunConfig, RunState, Turn
-from app.paradigms import MODERATOR_ID, get_paradigm
+from app.paradigms import MODERATOR_ID, ExchangeThenDecide, get_paradigm
 from app.prompts import system_prompt, turn_message, vote_message
 from app.samples import SAMPLE_SCENARIOS
 from app.store import MemoryStore
@@ -74,6 +74,7 @@ def test_exchange_and_moderator_prompt_addenda() -> None:
     )
     agent = scenario.agents[0]
     spec = get_paradigm(cfg.paradigm)
+    assert isinstance(spec, ExchangeThenDecide)
     first_addendum = spec.turn_addendum(run, agent.id, 0)
     first_prompt = turn_message(scenario, cfg, 0, [], spec, addendum=first_addendum)
     assert all(fact_id in first_prompt for fact_id in scenario.distribution[agent.id])
@@ -202,6 +203,7 @@ def test_board_context_and_validation() -> None:
         ],
     )
     context = get_paradigm("message_board").visible_context(run, agent.id, 0)
+    assert context is not None
     assert scenario.fact(fact_id).text in context
     assert "one." in context
     assert "two." not in context
