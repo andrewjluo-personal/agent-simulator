@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from . import db, llm, orchestrator, queues
+from .engine_version import ENGINE_VERSION
 from .models import BatchState, DemoSnapshot, RunConfig, RunSummary, summary
 from .paradigms import PARADIGMS
 from .samples import SAMPLES_BY_ID, ensure_samples
@@ -85,7 +86,12 @@ def health(request: Request) -> dict[str, Any]:
     except Exception as exc:  # noqa: BLE001 - health endpoint reports, never raises
         checks["database"] = f"error: {exc.__class__.__name__}"
     checks["queues"] = "ok" if queues.oidc_token(request) else "unconfigured"
-    return {"status": "ok", "checks": checks, "env": os.getenv("VERCEL_ENV", "development")}
+    return {
+        "status": "ok",
+        "checks": checks,
+        "env": os.getenv("VERCEL_ENV", "development"),
+        "engineVersion": ENGINE_VERSION,
+    }
 
 
 @app.get("/api/greetings")
@@ -260,7 +266,7 @@ def get_demo(scenario_id: str | None = Query(default=None, alias="scenarioId")) 
     if snap is None:
         raise HTTPException(status_code=404, detail="scenario not found")
     scenario, runs = snap
-    snapshot = DemoSnapshot(scenario=scenario, runs=runs)
+    snapshot = DemoSnapshot(scenario=scenario, runs=runs, engine_version=ENGINE_VERSION)
     return snapshot.model_dump(by_alias=True, mode="json")
 
 

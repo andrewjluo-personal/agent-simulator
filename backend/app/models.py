@@ -194,6 +194,7 @@ class RunState(Model):
     llm_provider: LlmProvider
     error: str | None = None
     metrics: Metrics | None = None
+    engine_version: str = ""
     turns: list[Turn] = []
     votes: list[Vote] = []
     created_at: str = ""
@@ -210,6 +211,7 @@ class RunSummary(Model):
     llm_provider: LlmProvider
     error: str | None = None
     metrics: Metrics | None = None
+    engine_version: str = ""
     created_at: str
 
 
@@ -221,6 +223,7 @@ class BatchState(Model):
 class DemoSnapshot(Model):
     scenario: Scenario
     runs: list[RunSummary]
+    engine_version: str
 
 
 def summary(run: RunState) -> RunSummary:

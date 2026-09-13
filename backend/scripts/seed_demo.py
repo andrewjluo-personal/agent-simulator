@@ -1,9 +1,11 @@
-"""Seed demo runs against the configured store.
+"""Seed demo runs against the configured store. Idempotent per engine version:
+tops up each paradigm to --per-paradigm done runs stamped with the current
+ENGINE_VERSION, and unless --keep-stale removes demo runs from older versions.
 
 Usage:
-  .venv/bin/python scripts/seed_demo.py --n 10 --provider fake \
+  .venv/bin/python scripts/seed_demo.py --per-paradigm 5 --provider fake \
       --paradigms free_discussion,share_first --rounds 3 --sentences 2 \
-      [--scenario hiring-panel-v1] [--reset-demo]
+      [--scenario hiring-panel-v1] [--reset-demo] [--keep-stale]
 """
 
 from __future__ import annotations
@@ -17,6 +19,7 @@ from typing import cast
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app import llm, orchestrator
+from app.engine_version import ENGINE_VERSION
 from app.models import Paradigm, RunConfig
 from app.paradigms import PARADIGMS
 from app.samples import ensure_samples
@@ -36,13 +39,14 @@ def get_store() -> Store:
 
 async def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--n", type=int, default=10)
+    parser.add_argument("--per-paradigm", "--n", dest="per_paradigm", type=int, default=5)
     parser.add_argument("--provider", choices=["fake", "anthropic"], default="fake")
     parser.add_argument("--paradigms", default="free_discussion,share_first")
     parser.add_argument("--rounds", type=int, default=3)
     parser.add_argument("--sentences", type=int, default=2)
     parser.add_argument("--scenario", default=DEFAULT_SCENARIO_ID)
     parser.add_argument("--reset-demo", action="store_true")
+    parser.add_argument("--keep-stale", action="store_true")
     args = parser.parse_args()
 
     client: llm.LLMClient
@@ -56,6 +60,11 @@ async def main() -> None:
         sys.exit(f"unknown scenario {args.scenario!r}")
     if args.reset_demo:
         print(f"deleted {store.delete_demo_runs()} demo runs")
+    elif not args.keep_stale:
+        print(
+            f"deleted {store.delete_stale_demo_runs(ENGINE_VERSION)} stale demo runs "
+            f"(engine != {ENGINE_VERSION})"
+        )
 
     sem = asyncio.Semaphore(4)
     paradigms = [p.strip() for p in args.paradigms.split(",") if p.strip()]
@@ -77,7 +86,18 @@ async def main() -> None:
             await orchestrator.run_to_completion(store, client, run.id)
 
     for paradigm in paradigms:
-        await asyncio.gather(*(one_run(paradigm, i) for i in range(args.n)))
+        existing = len(
+            [
+                s
+                for s in store.list_runs(is_demo=True, scenario_id=args.scenario)
+                if s.config.paradigm == paradigm
+                and s.status == "done"
+                and s.engine_version == ENGINE_VERSION
+            ]
+        )
+        create = max(0, args.per_paradigm - existing)
+        print(f"{paradigm}: had {existing}, creating {create}")
+        await asyncio.gather(*(one_run(paradigm, existing + i) for i in range(create)))
         runs = [
             store.get_run(s.id) for s in store.list_runs(is_demo=True, scenario_id=args.scenario)
         ]
