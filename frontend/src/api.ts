@@ -4,7 +4,7 @@ export type Greeting = {
   id: number
   message: string
   created_at: string
-  queueMessageId?: string | null
+  queued?: boolean
 }
 
 export type Health = {
