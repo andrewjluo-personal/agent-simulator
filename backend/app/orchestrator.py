@@ -257,7 +257,8 @@ def compute_metrics(run: RunState) -> Metrics:
         vote_trajectory.append(tally)
         decided = {c: k for c, k in tally.items() if c != truth.UNDECIDED}
         plurality = max(decided.values(), default=0)
-        agreement_by_round.append(plurality / n_agents if n_agents else 0.0)
+        n_decided = sum(decided.values())
+        agreement_by_round.append(plurality / n_decided if n_decided else 0.0)
         accuracy_by_round.append(tally.get(correct_candidate_id, 0) / n_agents if n_agents else 0.0)
 
     shared = truth.shared_fact_ids(scenario)

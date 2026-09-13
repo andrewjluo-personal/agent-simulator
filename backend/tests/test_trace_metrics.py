@@ -69,9 +69,9 @@ def test_agreement_and_accuracy_by_round() -> None:
     wrong = next(c.id for c in s.candidates if c.id != correct)
     agents = [a.id for a in s.agents]
     n = len(agents)
-    # round 0: everyone but one votes wrong, the last is undecided
+    # round 0: first agent votes correct, last is undecided, everyone else votes wrong
     for i, a in enumerate(agents):
-        choice = "undecided" if i == n - 1 else wrong
+        choice = correct if i == 0 else "undecided" if i == n - 1 else wrong
         store.insert_vote(run.id, Vote(round=0, agent_id=a, choice=choice, confidence=0.5))
     # round 1: unanimous correct
     for a in agents:
@@ -80,8 +80,9 @@ def test_agreement_and_accuracy_by_round() -> None:
 
     assert len(m.agreement_by_round) == run.config.rounds == len(m.vote_trajectory)
     assert len(m.accuracy_by_round) == run.config.rounds
-    assert abs(m.agreement_by_round[0] - (n - 1) / n) < 1e-9
-    assert m.accuracy_by_round[0] == 0.0
+    # agreement excludes the undecided voter from the denominator; accuracy does not
+    assert abs(m.agreement_by_round[0] - (n - 2) / (n - 1)) < 1e-9
+    assert abs(m.accuracy_by_round[0] - 1 / n) < 1e-9
     assert m.agreement_by_round[1] == 1.0
     assert m.accuracy_by_round[1] == 1.0
 
