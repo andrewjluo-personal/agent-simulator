@@ -62,21 +62,22 @@ def get_greetings() -> list[dict[str, Any]]:
 @app.post("/api/greetings", status_code=201)
 async def create_greeting(payload: GreetingIn, request: Request) -> dict[str, Any]:
     row = db.insert_greeting(payload.message)
-    message_id: str | None = None
+    queued = False
     try:
-        message_id = await queues.send(
+        await queues.send(
             queues.GREETINGS_TOPIC,
             {"greetingId": row["id"], "message": row["message"]},
             idempotency_key=f"greeting-{row['id']}",
             token=queues.oidc_token(request),
         )
+        queued = True
     except Exception as exc:  # noqa: BLE001 - a queue outage must not fail the write
         emit("warning", "queue.publish_failed", greetingId=row["id"], reason=str(exc))
     return {
         "id": row["id"],
         "message": row["message"],
         "created_at": row["created_at"].isoformat(),
-        "queueMessageId": message_id,
+        "queued": queued,
     }
 
 
@@ -89,7 +90,9 @@ async def consume_greeting(request: Request) -> dict[str, str]:
     """
     try:
         event = json.loads(await request.body())
-        message_id = event["data"]["messageId"]
+        message_id = queues.callback_message_id(
+            event, queues.GREETINGS_TOPIC, queues.GREETINGS_CONSUMER
+        )
     except (ValueError, KeyError, TypeError) as exc:
         raise HTTPException(status_code=400, detail="unrecognized queue callback") from exc
 

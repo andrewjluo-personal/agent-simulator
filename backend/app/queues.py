@@ -12,6 +12,7 @@ import base64
 import json
 import os
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 from fastapi import Request
@@ -27,10 +28,37 @@ GREETINGS_CONSUMER = "greetings-worker"  # must match vercel.json
 # Queue triggers invoke the Vercel Function at the path of its resolved entrypoint,
 # which for a FastAPI deployment is /fastapi rather than any route the app declares.
 TRIGGER_PATH = "/fastapi"
+CALLBACK_EVENT_TYPE = "com.vercel.queue.v1beta"
 
 
 class QueueNotConfigured(RuntimeError):
     pass
+
+
+def _segment(value: str) -> str:
+    """Topic names, ids and receipt handles are opaque; keep them one path segment."""
+    return quote(value, safe="")
+
+
+def callback_message_id(event: Any, topic: str, consumer: str) -> str:
+    """Extract the message id from a queue trigger CloudEvent, rejecting foreign envelopes.
+
+    Vercel exposes the trigger path publicly and signs nothing, so the envelope is the
+    only thing a handler can check; the claim itself still fails for unknown ids.
+    """
+    if not isinstance(event, dict):
+        raise TypeError("callback body is not an object")
+    if event.get("type") != CALLBACK_EVENT_TYPE:
+        raise ValueError(f"unexpected CloudEvent type {event.get('type')!r}")
+    if event.get("source") != f"/topic/{topic}/consumer/{consumer}":
+        raise ValueError(f"unexpected CloudEvent source {event.get('source')!r}")
+    data = event["data"]
+    if data["queueName"] != topic or data["consumerGroup"] != consumer:
+        raise ValueError("CloudEvent data does not match this consumer")
+    message_id = data["messageId"]
+    if not isinstance(message_id, str) or not message_id:
+        raise TypeError("missing messageId")
+    return message_id
 
 
 def _base_url() -> str:
@@ -70,7 +98,7 @@ async def send(
         headers["Vqs-Idempotency-Key"] = idempotency_key
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
-            f"{_base_url()}/topic/{topic}",
+            f"{_base_url()}/topic/{_segment(topic)}",
             content=json.dumps(payload),
             headers=headers,
         )
@@ -96,7 +124,8 @@ async def receive(
     }
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.post(
-            f"{_base_url()}/topic/{topic}/consumer/{consumer}", headers=headers
+            f"{_base_url()}/topic/{_segment(topic)}/consumer/{_segment(consumer)}",
+            headers=headers,
         )
     if response.status_code == 204:
         return []
@@ -111,7 +140,9 @@ async def receive_by_id(
     headers = _headers(token) | {"Accept": "application/x-ndjson"}
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.post(
-            f"{_base_url()}/topic/{topic}/consumer/{consumer}/id/{message_id}", headers=headers
+            f"{_base_url()}/topic/{_segment(topic)}/consumer/{_segment(consumer)}"
+            f"/id/{_segment(message_id)}",
+            headers=headers,
         )
     if response.status_code in (204, 404):
         return None
@@ -126,7 +157,8 @@ async def acknowledge(
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.request(
             "DELETE",
-            f"{_base_url()}/topic/{topic}/consumer/{consumer}/lease/{receipt_handle}",
+            f"{_base_url()}/topic/{_segment(topic)}/consumer/{_segment(consumer)}"
+            f"/lease/{_segment(receipt_handle)}",
             headers=_headers(token),
         )
     response.raise_for_status()
