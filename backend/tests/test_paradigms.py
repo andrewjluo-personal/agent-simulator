@@ -47,8 +47,8 @@ def test_existing_prompt_snapshots_are_unchanged() -> None:
         cfg = RunConfig(paradigm=paradigm_id)
         spec = get_paradigm(paradigm_id)
         assert system_prompt(scenario, cfg, agent, hand, spec) == fixture[paradigm_id]["system"]
-        assert turn_message(scenario, cfg, 0, [], spec) == fixture[paradigm_id]["turn_0"]
-        assert turn_message(scenario, cfg, 0, heard, spec) == fixture[paradigm_id]["turn_2"]
+        assert turn_message(scenario, cfg, 0, [], spec, cfg.rounds) == fixture[paradigm_id]["turn_0"]
+        assert turn_message(scenario, cfg, 0, heard, spec, cfg.rounds) == fixture[paradigm_id]["turn_2"]
         assert (
             vote_message(
                 scenario,
@@ -56,6 +56,7 @@ def test_existing_prompt_snapshots_are_unchanged() -> None:
                 0,
                 heard,
                 agent.id,
+                total=cfg.rounds,
                 final=False,
             )
             == fixture[paradigm_id]["vote"]
@@ -77,12 +78,12 @@ def test_exchange_and_moderator_prompt_addenda() -> None:
     spec = get_paradigm(cfg.paradigm)
     assert isinstance(spec, ExchangeThenDecide)
     first_addendum = spec.turn_addendum(run, agent.id, 0)
-    first_prompt = turn_message(scenario, cfg, 0, [], spec, addendum=first_addendum)
+    first_prompt = turn_message(scenario, cfg, 0, [], spec, cfg.rounds, addendum=first_addendum)
     assert all(fact_id in first_prompt for fact_id in scenario.distribution[agent.id])
     decide_round = spec.exchange_rounds(cfg)
     decide_addendum = spec.turn_addendum(run, agent.id, decide_round)
     decide_prompt = turn_message(
-        scenario, cfg, decide_round, [], spec, addendum=decide_addendum
+        scenario, cfg, decide_round, [], spec, cfg.rounds, addendum=decide_addendum
     )
     assert "Discussion phase begins" in decide_prompt
     moderator_turn = Turn(
@@ -98,7 +99,9 @@ def test_exchange_and_moderator_prompt_addenda() -> None:
     )
     run.turns = [moderator_turn]
     ask = orchestrator._moderator_ask(run.turns, agent.id, 0)
-    addressed_prompt = turn_message(scenario, cfg, 0, run.turns, spec, addendum=ask)
+    addressed_prompt = turn_message(
+        scenario, cfg, 0, run.turns, spec, cfg.rounds, addendum=ask
+    )
     assert "The moderator asked you" in addressed_prompt
 
 
@@ -109,9 +112,10 @@ def test_new_paradigms_run_to_completion() -> None:
             final = await orchestrator.run_to_completion(store, client, run.id)
             extras = len(get_paradigm(paradigm).extra_participants())
             n_agents = len(run.scenario.agents)
+            total_rounds = orchestrator.total_rounds(final)
             assert final.status == "done"
-            assert len(final.turns) == final.config.rounds * (n_agents + extras)
-            assert len(final.votes) == (final.config.rounds + 1) * n_agents
+            assert len(final.turns) == total_rounds * (n_agents + extras)
+            assert len(final.votes) == (total_rounds + 1) * n_agents
             assert all(v.agent_id in {a.id for a in run.scenario.agents} for v in final.votes)
             assert final.metrics is not None
 
@@ -123,9 +127,8 @@ def test_exchange_phases_and_opinion_gate() -> None:
         cfg = RunConfig(paradigm="exchange_then_decide", rounds=3)
         store, client, run = _run(cfg)
         await orchestrator.run_to_completion(store, client, run.id)
-        exchange_rounds = (cfg.rounds + 1) // 2
         for turn in run.turns:
-            expected = "exchange" if turn.round < exchange_rounds else "decide"
+            expected = get_paradigm(cfg.paradigm).phase_for(turn.round, cfg)
             assert turn.phase == expected
             if expected == "exchange":
                 assert turn.lean == UNDECIDED
@@ -148,10 +151,11 @@ def test_moderator_turns_and_metrics_exclude_moderator() -> None:
         store, client, run = _run(RunConfig(paradigm="elicitation_moderator"))
         final = await orchestrator.run_to_completion(store, client, run.id)
         n_agents = len(run.scenario.agents)
+        total_rounds = orchestrator.total_rounds(final)
         moderators = [turn for turn in final.turns if turn.agent_id == MODERATOR_ID]
-        assert len(moderators) == final.config.rounds
+        assert len(moderators) == total_rounds
         assert [turn.seq for turn in moderators] == [
-            round_idx * (n_agents + 1) for round_idx in range(final.config.rounds)
+            round_idx * (n_agents + 1) for round_idx in range(total_rounds)
         ]
         assert all(v.agent_id != MODERATOR_ID for v in final.votes)
         assert final.metrics is not None
