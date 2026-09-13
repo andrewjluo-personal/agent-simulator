@@ -107,7 +107,9 @@ async def run_round(store: Store, client: LLMClient, run_id: str, round_idx: int
             hand = list(scenario.distribution[agent_id])
             agent = next(a for a in scenario.agents if a.id == agent_id)
             system = prompts.system_prompt(scenario, cfg, agent, hand, spec)
-            user = prompts.turn_message(scenario, cfg, round_idx, heard_turns, spec)
+            user = prompts.turn_message(
+                scenario, cfg, round_idx, heard_turns, spec, total_rounds(run)
+            )
             meta = _meta(run, "turn", agent_id, round_idx, hand)
             try:
                 resp = await _call(client, run, system, user, meta)
@@ -167,8 +169,8 @@ async def run_round(store: Store, client: LLMClient, run_id: str, round_idx: int
         await collect_votes(store, client, run, round_idx)
         store.set_status(run_id, "running", current_round=round_idx + 1)
 
-        if round_idx + 1 >= cfg.rounds:
-            fresh = store.get_run(run_id) or run
+        fresh = store.get_run(run_id) or run
+        if round_idx + 1 >= total_rounds(fresh):
             store.finish_run(run_id, compute_metrics(fresh))
     except Exception as exc:
         store.set_status(run_id, "error", error=str(exc))
@@ -188,7 +190,9 @@ async def _vote_once(
     hand = list(scenario.distribution[agent_id])
     agent = next(a for a in scenario.agents if a.id == agent_id)
     system = prompts.system_prompt(scenario, cfg, agent, hand, spec)
-    user = prompts.vote_message(round_idx, cfg, final=round_idx == cfg.rounds - 1)
+    user = prompts.vote_message(
+        round_idx, cfg, final=round_idx == total_rounds(run) - 1, total=total_rounds(run)
+    )
     meta = _meta(run, "vote", agent_id, round_idx, hand)
     resp = await _call(client, run, system, user, meta)
     raw = validate.parse_json_object(resp.text)
@@ -222,6 +226,18 @@ async def collect_votes(store: Store, client: LLMClient, run: RunState, round_id
     await asyncio.gather(*(guarded(a.id) for a in run.scenario.agents))
 
 
+def total_rounds(run: RunState) -> int:
+    """cfg.rounds, plus a runoff round when tie_break == 'runoff' and the final
+    scheduled ballot tied. Only decidable once that round's votes exist."""
+    cfg = run.config
+    if cfg.tie_break != "runoff":
+        return cfg.rounds
+    final_choices = [v.choice for v in run.votes if v.round == cfg.rounds - 1]
+    if final_choices and truth._majority(final_choices) == truth.UNDECIDED:
+        return cfg.rounds + 1
+    return cfg.rounds
+
+
 def compute_metrics(run: RunState) -> Metrics:
     scenario = run.scenario
     correct_candidate_id = truth.pooled_verdict(scenario)
@@ -230,7 +246,13 @@ def compute_metrics(run: RunState) -> Metrics:
     final_tally: dict[str, int] = {}
     for v in final_votes:
         final_tally[v.choice] = final_tally.get(v.choice, 0) + 1
-    majority = truth._majority(v.choice for v in final_votes)
+    chair_id = scenario.agents[0].id if scenario.agents else None
+    chair_choice = (
+        next((v.choice for v in final_votes if v.agent_id == chair_id), None)
+        if run.config.tie_break == "chair"
+        else None
+    )
+    majority = truth.majority((v.choice for v in final_votes), chair_choice=chair_choice)
     decisive = truth.decisive_fact_ids(scenario)
     surfaced = decisive & {f for t in run.turns for f in t.cited}
     n_agents = len(scenario.agents)
@@ -260,6 +282,6 @@ async def run_to_completion(store: Store, client: LLMClient, run_id: str) -> Run
     run = store.get_run(run_id)
     if run is None:
         raise KeyError(f"unknown run {run_id}")
-    while run.status in ("queued", "running") and run.current_round < run.config.rounds:
+    while run.status in ("queued", "running") and run.current_round < total_rounds(run):
         run = await run_round(store, client, run_id, run.current_round)
     return run
