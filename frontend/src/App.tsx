@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import './App.css'
 import { createGreeting, getHealth, listGreetings, type Greeting, type Health } from './api'
+import { track } from './telemetry'
 
 function App() {
   const [health, setHealth] = useState<Health | null>(null)
@@ -16,7 +17,9 @@ function App() {
       setGreetings(nextGreetings)
       setError(null)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause))
+      const reason = cause instanceof Error ? cause.message : String(cause)
+      track('greetings.refresh_failed', { reason }, 'error')
+      setError(reason)
     }
   }, [])
 
@@ -28,10 +31,13 @@ function App() {
     event.preventDefault()
     setPending(true)
     try {
-      await createGreeting(message)
+      const created = await createGreeting(message)
+      track('greeting.created', { greetingId: created.id, queued: created.queued })
       await refresh()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause))
+      const reason = cause instanceof Error ? cause.message : String(cause)
+      track('greeting.create_failed', { reason }, 'error')
+      setError(reason)
     } finally {
       setPending(false)
     }
