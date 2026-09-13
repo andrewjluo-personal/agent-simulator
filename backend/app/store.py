@@ -6,13 +6,26 @@ from __future__ import annotations
 from typing import Protocol
 
 from .engine_version import ENGINE_VERSION
-from .models import Metrics, RunState, RunStatus, RunSummary, Scenario, Turn, Vote, summary
+from .models import (
+    Metrics,
+    RunState,
+    RunStatus,
+    RunSummary,
+    Scenario,
+    Turn,
+    ValidationJob,
+    Vote,
+    summary,
+)
 
 
 class Store(Protocol):
     def list_scenarios(self) -> list[Scenario]: ...
     def get_scenario(self, scenario_id: str) -> Scenario | None: ...
     def upsert_scenario(self, scenario: Scenario) -> None: ...
+    def upsert_validation_job(self, job: ValidationJob) -> None: ...
+    def get_validation_job(self, job_id: str) -> ValidationJob | None: ...
+    def latest_validation_job(self, scenario_id: str) -> ValidationJob | None: ...
     def create_run(self, run: RunState) -> None: ...
     def get_run(self, run_id: str) -> RunState | None: ...
     def get_run_since(self, run_id: str, since_seq: int) -> RunState | None: ...
@@ -42,6 +55,7 @@ class MemoryStore:
     def __init__(self) -> None:
         self._runs: dict[str, RunState] = {}
         self._scenarios: dict[str, Scenario] = {}
+        self._validation_jobs: dict[str, ValidationJob] = {}
         from .samples import SAMPLE_SCENARIOS
 
         for sample in SAMPLE_SCENARIOS:
@@ -55,6 +69,16 @@ class MemoryStore:
 
     def upsert_scenario(self, scenario: Scenario) -> None:
         self._scenarios[scenario.id] = scenario
+
+    def upsert_validation_job(self, job: ValidationJob) -> None:
+        self._validation_jobs[job.id] = job
+
+    def get_validation_job(self, job_id: str) -> ValidationJob | None:
+        return self._validation_jobs.get(job_id)
+
+    def latest_validation_job(self, scenario_id: str) -> ValidationJob | None:
+        jobs = [j for j in self._validation_jobs.values() if j.scenario_id == scenario_id]
+        return max(jobs, key=lambda j: j.updated_at) if jobs else None
 
     def create_run(self, run: RunState) -> None:
         self._runs[run.id] = run

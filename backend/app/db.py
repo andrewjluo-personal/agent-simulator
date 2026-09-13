@@ -16,7 +16,7 @@ from psycopg.types.json import Jsonb
 from psycopg_pool import ConnectionPool
 
 from .engine_version import ENGINE_VERSION
-from .models import Metrics, RunState, RunStatus, RunSummary, Scenario, Turn, Vote
+from .models import Metrics, RunState, RunStatus, RunSummary, Scenario, Turn, ValidationJob, Vote
 
 SCHEMA = """
 create table if not exists greetings (
@@ -44,6 +44,16 @@ create table if not exists runs (
 alter table runs add column if not exists engine_version text not null default '';
 create index if not exists runs_demo_idx on runs (is_demo, created_at desc);
 create index if not exists runs_batch_idx on runs (batch_id);
+
+create table if not exists validation_jobs (
+    id text primary key,
+    scenario_id text not null,
+    status text not null,
+    body jsonb not null,
+    updated_at timestamptz not null default now()
+);
+create index if not exists validation_jobs_scenario_idx
+    on validation_jobs (scenario_id, updated_at desc);
 
 create table if not exists scenarios (
     id text primary key,
@@ -271,6 +281,37 @@ class PgStore:
                     Jsonb(scenario.model_dump(by_alias=True)),
                 ),
             )
+
+    def upsert_validation_job(self, job: ValidationJob) -> None:
+        with connection() as conn:
+            conn.execute(
+                "insert into validation_jobs (id, scenario_id, status, body, updated_at) "
+                "values (%s, %s, %s, %s, now()) "
+                "on conflict (id) do update set scenario_id = excluded.scenario_id, "
+                "status = excluded.status, body = excluded.body, updated_at = now()",
+                (
+                    job.id,
+                    job.scenario_id,
+                    job.status,
+                    Jsonb(job.model_dump(by_alias=True)),
+                ),
+            )
+
+    def get_validation_job(self, job_id: str) -> ValidationJob | None:
+        with connection() as conn:
+            row = conn.execute(
+                "select body from validation_jobs where id = %s", (job_id,)
+            ).fetchone()
+        return ValidationJob.model_validate(row["body"]) if row else None
+
+    def latest_validation_job(self, scenario_id: str) -> ValidationJob | None:
+        with connection() as conn:
+            row = conn.execute(
+                "select body from validation_jobs where scenario_id = %s "
+                "order by updated_at desc limit 1",
+                (scenario_id,),
+            ).fetchone()
+        return ValidationJob.model_validate(row["body"]) if row else None
 
     def create_run(self, run: RunState) -> None:
         with connection() as conn:
