@@ -8,14 +8,15 @@ import os
 import uuid
 from typing import Any, Literal
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from . import db, llm, orchestrator, queues
 from .models import BatchState, DemoSnapshot, RunConfig, RunSummary, summary
 from .paradigms import PARADIGMS
-from .scenario import load_scenario
+from .samples import SAMPLES_BY_ID, ensure_samples
+from .scenario import DEFAULT_SCENARIO_ID, load_scenario
 from .store import MemoryStore, Store
 from .telemetry import emit, request_logger
 
@@ -43,6 +44,7 @@ def get_store() -> Store:
     global _store
     if _store is None:
         _store = db.PgStore() if os.getenv("DATABASE_URL") else MemoryStore()
+        ensure_samples(_store)
         emit("info", "store.selected", kind=_store.__class__.__name__)
     return _store
 
@@ -130,12 +132,36 @@ def ingest_client_log(event: ClientEvent, request: Request) -> dict[str, str]:
 
 @app.get("/api/scenario")
 def get_scenario() -> dict[str, Any]:
-    return load_scenario().model_dump(by_alias=True)
+    return load_scenario(get_store(), DEFAULT_SCENARIO_ID).model_dump(by_alias=True)
+
+
+@app.get("/api/scenarios")
+def list_scenarios() -> list[dict[str, Any]]:
+    return [s.model_dump(by_alias=True) for s in get_store().list_scenarios()]
+
+
+@app.get("/api/scenarios/{scenario_id}")
+def get_scenario_by_id(scenario_id: str) -> dict[str, Any]:
+    scenario = get_store().get_scenario(scenario_id)
+    if scenario is None:
+        raise HTTPException(status_code=404, detail="scenario not found")
+    return scenario.model_dump(by_alias=True)
+
+
+@app.post("/api/scenarios/{scenario_id}/reset")
+def reset_scenario(scenario_id: str) -> dict[str, Any]:
+    sample = SAMPLES_BY_ID.get(scenario_id)
+    if sample is None:
+        raise HTTPException(status_code=404, detail="not a sample scenario")
+    get_store().upsert_scenario(sample)
+    return sample.model_dump(by_alias=True)
 
 
 @app.get("/api/paradigms")
 def get_paradigms() -> list[dict[str, str]]:
-    return [{"id": p.id, "label": p.label, "description": p.description} for p in PARADIGMS.values()]
+    return [
+        {"id": p.id, "label": p.label, "description": p.description} for p in PARADIGMS.values()
+    ]
 
 
 async def start_run(run_id: str, request: Request) -> None:
@@ -170,9 +196,9 @@ async def start_run(run_id: str, request: Request) -> None:
 async def create_run(cfg: RunConfig, request: Request) -> dict[str, Any]:
     store = get_store()
     try:
-        run = orchestrator.new_run(cfg, provider=llm.get_client().provider)
+        run = orchestrator.new_run(store, cfg, provider=llm.get_client().provider)
     except KeyError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     store.create_run(run)
     await start_run(run.id, request)
     fresh = store.get_run(run.id) or run
@@ -186,7 +212,12 @@ async def create_batch(payload: BatchIn, request: Request) -> dict[str, Any]:
     summaries: list[RunSummary] = []
     for i in range(payload.n):
         cfg = payload.config.model_copy(update={"seed": payload.config.seed + i})
-        run = orchestrator.new_run(cfg, provider=llm.get_client().provider, batch_id=batch_id)
+        try:
+            run = orchestrator.new_run(
+                store, cfg, provider=llm.get_client().provider, batch_id=batch_id
+            )
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
         store.create_run(run)
         summaries.append(summary(run))
     for s in summaries:
@@ -219,11 +250,14 @@ def get_batch(batch_id: str) -> dict[str, Any]:
 
 
 @app.get("/api/demo")
-def get_demo() -> dict[str, Any]:
+def get_demo(scenario_id: str | None = Query(default=None, alias="scenarioId")) -> dict[str, Any]:
     store = get_store()
-    summaries = store.list_runs(is_demo=True)[:100]
+    scenario = store.get_scenario(scenario_id or DEFAULT_SCENARIO_ID)
+    if scenario is None:
+        raise HTTPException(status_code=404, detail="scenario not found")
+    summaries = store.list_runs(is_demo=True, scenario_id=scenario.id)[:100]
     runs = [r for rid in summaries if (r := store.get_run(rid.id)) is not None]
-    snapshot = DemoSnapshot(scenario=load_scenario(), runs=runs)
+    snapshot = DemoSnapshot(scenario=scenario, runs=runs)
     return snapshot.model_dump(by_alias=True, mode="json")
 
 

@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from app import truth
 from app.models import AgentPersona, Candidate, Fact, Scenario
-from app.scenario import load_scenario
+from app.samples import SAMPLES_BY_ID
+from app.scenario import DEFAULT_SCENARIO_ID
 
 
 def test_bundled_scenario_hidden_profile() -> None:
-    s = load_scenario()
+    s = SAMPLES_BY_ID[DEFAULT_SCENARIO_ID]
     assert truth.shared_only_verdict(s) == "john"
     assert truth.pooled_verdict(s) == "sally"
     assert truth.is_hidden_profile(s)

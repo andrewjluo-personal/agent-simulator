@@ -21,7 +21,9 @@ def _fact_lines(scenario: Scenario, hand_fact_ids: list[str]) -> str:
         fact = scenario.fact(fact_id)
         name = scenario.fact(fact_id).candidate_id
         display = next((c.name for c in scenario.candidates if c.id == name), name)
-        lines.append(f"[{fact.id}] (about {display}, {fact.valence}, weight {fact.weight}) {fact.text}")
+        lines.append(
+            f"[{fact.id}] (about {display}, {fact.valence}, weight {fact.weight}) {fact.text}"
+        )
     return "\n".join(lines)
 
 
@@ -90,7 +92,7 @@ def turn_message(
 TRANSCRIPT SO FAR (what the panel has actually heard):
 {transcript}
 
-FACTS ALREADY MENTIONED BY ANYONE: {', '.join(mentioned) if mentioned else 'none'}{instruction_block}
+FACTS ALREADY MENTIONED BY ANYONE: {", ".join(mentioned) if mentioned else "none"}{instruction_block}
 
 Your turn. JSON only."""
 

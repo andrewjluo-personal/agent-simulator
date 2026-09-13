@@ -13,7 +13,7 @@ def _run(
 ) -> tuple[MemoryStore, FakeClient, RunState]:
     store = store or MemoryStore()
     client = FakeClient()
-    run = orchestrator.new_run(cfg or RunConfig(), provider="fake")
+    run = orchestrator.new_run(store, cfg or RunConfig(), provider="fake")
     store.create_run(run)
     return store, client, run
 

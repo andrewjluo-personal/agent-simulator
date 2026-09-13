@@ -38,6 +38,14 @@ create table if not exists runs (
 create index if not exists runs_demo_idx on runs (is_demo, created_at desc);
 create index if not exists runs_batch_idx on runs (batch_id);
 
+create table if not exists scenarios (
+    id text primary key,
+    title text not null,
+    is_sample boolean not null default false,
+    body jsonb not null,
+    updated_at timestamptz not null default now()
+);
+
 create table if not exists turns (
     run_id uuid not null references runs(id) on delete cascade,
     seq int not null,
@@ -138,9 +146,7 @@ def _vote_from_row(row: dict[str, Any]) -> Vote:
     )
 
 
-def _run_from_row(
-    row: dict[str, Any], turns: list[Turn], votes: list[Vote]
-) -> RunState:
+def _run_from_row(row: dict[str, Any], turns: list[Turn], votes: list[Vote]) -> RunState:
     return RunState(
         id=str(row["id"]),
         scenario_id=row["scenario_id"],
@@ -176,6 +182,32 @@ def _summary_from_row(row: dict[str, Any]) -> RunSummary:
 
 
 class PgStore:
+    def list_scenarios(self) -> list[Scenario]:
+        with connection() as conn:
+            rows = conn.execute("select body from scenarios order by title").fetchall()
+        return [Scenario.model_validate(r["body"]) for r in rows]
+
+    def get_scenario(self, scenario_id: str) -> Scenario | None:
+        with connection() as conn:
+            row = conn.execute(
+                "select body from scenarios where id = %s", (scenario_id,)
+            ).fetchone()
+        return Scenario.model_validate(row["body"]) if row else None
+
+    def upsert_scenario(self, scenario: Scenario) -> None:
+        with connection() as conn:
+            conn.execute(
+                "insert into scenarios (id, title, is_sample, body) values (%s, %s, %s, %s) "
+                "on conflict (id) do update set title = excluded.title, "
+                "is_sample = excluded.is_sample, body = excluded.body, updated_at = now()",
+                (
+                    scenario.id,
+                    scenario.title,
+                    scenario.is_sample,
+                    Jsonb(scenario.model_dump(by_alias=True)),
+                ),
+            )
+
     def create_run(self, run: RunState) -> None:
         with connection() as conn:
             conn.execute(
@@ -209,36 +241,36 @@ class PgStore:
 
     def get_run(self, run_id: str) -> RunState | None:
         with connection() as conn:
-            row = conn.execute(
-                "select * from runs where id = %s", (run_id,)
-            ).fetchone()
+            row = conn.execute("select * from runs where id = %s", (run_id,)).fetchone()
             if row is None:
                 return None
             return _run_from_row(row, self._turns(conn, run_id), self._votes(conn, run_id))
 
     def get_run_since(self, run_id: str, since_seq: int) -> RunState | None:
         with connection() as conn:
-            row = conn.execute(
-                "select * from runs where id = %s", (run_id,)
-            ).fetchone()
+            row = conn.execute("select * from runs where id = %s", (run_id,)).fetchone()
             if row is None:
                 return None
             turns = conn.execute(
                 "select * from turns where run_id = %s and seq > %s order by seq",
                 (run_id, since_seq),
             ).fetchall()
-            return _run_from_row(
-                row, [_turn_from_row(r) for r in turns], self._votes(conn, run_id)
-            )
+            return _run_from_row(row, [_turn_from_row(r) for r in turns], self._votes(conn, run_id))
 
     def list_runs(
-        self, batch_id: str | None = None, is_demo: bool | None = None
+        self,
+        batch_id: str | None = None,
+        is_demo: bool | None = None,
+        scenario_id: str | None = None,
     ) -> list[RunSummary]:
         clauses: list[str] = []
         params: list[Any] = []
         if batch_id is not None:
             clauses.append("batch_id = %s")
             params.append(batch_id)
+        if scenario_id is not None:
+            clauses.append("scenario_id = %s")
+            params.append(scenario_id)
         if is_demo is not None:
             clauses.append("is_demo = %s")
             params.append(is_demo)
@@ -309,8 +341,7 @@ class PgStore:
     def finish_run(self, run_id: str, metrics: Metrics) -> None:
         with connection() as conn:
             conn.execute(
-                "update runs set status = 'done', metrics = %s, updated_at = now() "
-                "where id = %s",
+                "update runs set status = 'done', metrics = %s, updated_at = now() where id = %s",
                 (Jsonb(metrics.model_dump(by_alias=True)), run_id),
             )
 

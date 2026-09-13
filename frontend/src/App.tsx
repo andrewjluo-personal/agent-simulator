@@ -1,20 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
-import { createBatch, getBatch, getDemo } from './api'
+import { createBatch, getBatch, getDemo, listScenarios, resetScenario } from './api'
 import { Controls, ResultsStrip, Transcript, VerdictBadges, VerdictCard, type StripRow } from './components/Panels'
 import { Table } from './components/Table'
-import bundled from './demo/snapshot.json'
 import { usePlayback } from './hooks/usePlayback'
 import { track } from './telemetry'
 import { candidateName, sharedOnlyVerdict } from './truth'
-import type { DemoSnapshot, Paradigm, RunConfig, RunState, RunSummary, Scenario } from './types'
+import type { Paradigm, RunConfig, RunState, RunSummary, Scenario } from './types'
 
 const PARADIGMS: { id: Paradigm; label: string }[] = [
   { id: 'free_discussion', label: 'Free discussion' },
   { id: 'share_first', label: 'Share facts first' },
 ]
-
-const fallback = bundled as unknown as DemoSnapshot
 
 function defaultConfig(scenario: Scenario): RunConfig {
   return {
@@ -29,22 +26,22 @@ function defaultConfig(scenario: Scenario): RunConfig {
 }
 
 function App() {
-  const [scenario, setScenario] = useState<Scenario>(fallback.scenario)
-  const [demoRuns, setDemoRuns] = useState<RunState[]>(fallback.runs)
+  const [scenarios, setScenarios] = useState<Scenario[]>([])
+  const [scenario, setScenario] = useState<Scenario | null>(null)
+  const [demoRuns, setDemoRuns] = useState<RunState[]>([])
   const [apiDown, setApiDown] = useState(false)
-  const [config, setConfig] = useState<RunConfig>(() => defaultConfig(fallback.scenario))
+  const [config, setConfig] = useState<RunConfig | null>(null)
   const [n, setN] = useState(10)
   const [batchRuns, setBatchRuns] = useState<Record<string, RunSummary[]>>({})
   const [busy, setBusy] = useState(false)
   const [batchError, setBatchError] = useState<string | null>(null)
   const pb = usePlayback()
 
-  useEffect(() => {
-    getDemo()
+  const loadDemo = useCallback((scenarioId: string) => {
+    return getDemo(scenarioId)
       .then((snap) => {
         setScenario(snap.scenario)
-        setConfig((c) => ({ ...c, scenarioId: snap.scenario.id }))
-        if (snap.runs.length) setDemoRuns(snap.runs)
+        setDemoRuns(snap.runs)
         setApiDown(false)
       })
       .catch((cause: unknown) => {
@@ -52,6 +49,47 @@ function App() {
         setApiDown(true)
       })
   }, [])
+
+  useEffect(() => {
+    listScenarios()
+      .then((list) => {
+        setScenarios(list)
+        const initial = list.find((s) => s.id === 'hiring-panel-v1') ?? list[0]
+        if (!initial) {
+          setApiDown(true)
+          return
+        }
+        setConfig((c) => c ?? defaultConfig(initial))
+        void loadDemo(initial.id)
+      })
+      .catch((cause: unknown) => {
+        track('scenarios.load_failed', { reason: String(cause) }, 'warning')
+        setApiDown(true)
+      })
+  }, [loadDemo])
+
+  const selectScenario = useCallback(
+    (id: string) => {
+      setConfig((c) => (c ? { ...c, scenarioId: id } : defaultConfig(scenarios.find((s) => s.id === id)!)))
+      pb.clear()
+      void loadDemo(id)
+    },
+    [scenarios, pb, loadDemo],
+  )
+
+  const resetCurrent = useCallback(async () => {
+    if (!scenario) return
+    try {
+      const restored = await resetScenario(scenario.id)
+      setScenario(restored)
+      setScenarios((prev) => prev.map((s) => (s.id === restored.id ? restored : s)))
+      setConfig(defaultConfig(restored))
+      pb.clear()
+      void loadDemo(restored.id)
+    } catch (cause) {
+      setBatchError(cause instanceof Error ? cause.message : String(cause))
+    }
+  }, [scenario, pb, loadDemo])
 
   // Poll in-flight batches so the strip fills in as round jobs complete.
   const pendingBatchIds = useMemo(
@@ -74,8 +112,8 @@ function App() {
   }, [pendingBatchIds])
 
   const cachedForParadigm = useMemo(
-    () => demoRuns.filter((r) => r.config.paradigm === config.paradigm && r.status === 'done'),
-    [demoRuns, config.paradigm],
+    () => demoRuns.filter((r) => r.config.paradigm === config?.paradigm && r.status === 'done'),
+    [demoRuns, config?.paradigm],
   )
 
   const playCached = useCallback(() => {
@@ -84,6 +122,7 @@ function App() {
   }, [cachedForParadigm, pb])
 
   const runBatch = useCallback(async () => {
+    if (!config) return
     setBusy(true)
     setBatchError(null)
     try {
@@ -121,6 +160,18 @@ function App() {
     [demoRuns, pb],
   )
 
+  if (!scenario || !config) {
+    return (
+      <main>
+        <p className="banner">
+          {apiDown
+            ? 'API unavailable — the backend must be reachable to load scenarios and runs.'
+            : 'Loading scenario…'}
+        </p>
+      </main>
+    )
+  }
+
   const status: 'idle' | 'playing' | 'paused' | 'finished' = !pb.run
     ? 'idle'
     : pb.playing
@@ -146,12 +197,15 @@ function App() {
         </p>
       </header>
 
-      {apiDown && <div className="banner">API unavailable, showing cached runs</div>}
+      {apiDown && <div className="banner">API unavailable — the backend must be reachable to load scenarios and runs.</div>}
       {(pb.error || batchError) && <div className="banner error">{pb.error ?? batchError}</div>}
 
       <Controls
         config={config}
         onChange={setConfig}
+        scenarios={scenarios}
+        onSelectScenario={selectScenario}
+        onResetScenario={() => void resetCurrent()}
         paradigms={PARADIGMS}
         n={n}
         onChangeN={setN}

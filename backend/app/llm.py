@@ -129,10 +129,7 @@ class FakeClient:
 
     def _rng(self, req: LLMRequest) -> random.Random:
         meta = req.meta
-        key = "|".join(
-            str(meta.get(k))
-            for k in ("kind", "seed", "run_nonce", "agent_id", "round")
-        )
+        key = "|".join(str(meta.get(k)) for k in ("kind", "seed", "run_nonce", "agent_id", "round"))
         return random.Random(int(hashlib.sha256(key.encode()).hexdigest(), 16) % (2**32))
 
     async def complete(self, req: LLMRequest) -> LLMResponse:

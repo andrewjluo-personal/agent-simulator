@@ -45,6 +45,7 @@ class Scenario(Model):
     id: str
     title: str
     brief: str
+    is_sample: bool = False
     candidates: list[Candidate]
     facts: list[Fact]
     agents: list[AgentPersona]

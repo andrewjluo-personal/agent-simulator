@@ -25,9 +25,7 @@ async def main() -> None:
                 messageId=message["messageId"],
                 payload=message["payload"],
             )
-            await queues.acknowledge(
-                queues.GREETINGS_TOPIC, CONSUMER, message["receiptHandle"]
-            )
+            await queues.acknowledge(queues.GREETINGS_TOPIC, CONSUMER, message["receiptHandle"])
         if not messages:
             await asyncio.sleep(2)
 

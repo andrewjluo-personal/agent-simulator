@@ -5,15 +5,21 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from .models import Metrics, RunState, RunStatus, RunSummary, Turn, Vote, summary
+from .models import Metrics, RunState, RunStatus, RunSummary, Scenario, Turn, Vote, summary
 
 
 class Store(Protocol):
+    def list_scenarios(self) -> list[Scenario]: ...
+    def get_scenario(self, scenario_id: str) -> Scenario | None: ...
+    def upsert_scenario(self, scenario: Scenario) -> None: ...
     def create_run(self, run: RunState) -> None: ...
     def get_run(self, run_id: str) -> RunState | None: ...
     def get_run_since(self, run_id: str, since_seq: int) -> RunState | None: ...
     def list_runs(
-        self, batch_id: str | None = None, is_demo: bool | None = None
+        self,
+        batch_id: str | None = None,
+        is_demo: bool | None = None,
+        scenario_id: str | None = None,
     ) -> list[RunSummary]: ...
     def turn_exists(self, run_id: str, seq: int) -> bool: ...
     def insert_turn(self, run_id: str, turn: Turn) -> bool: ...
@@ -32,6 +38,20 @@ class Store(Protocol):
 class MemoryStore:
     def __init__(self) -> None:
         self._runs: dict[str, RunState] = {}
+        self._scenarios: dict[str, Scenario] = {}
+        from .samples import SAMPLE_SCENARIOS
+
+        for sample in SAMPLE_SCENARIOS:
+            self._scenarios[sample.id] = sample
+
+    def list_scenarios(self) -> list[Scenario]:
+        return list(self._scenarios.values())
+
+    def get_scenario(self, scenario_id: str) -> Scenario | None:
+        return self._scenarios.get(scenario_id)
+
+    def upsert_scenario(self, scenario: Scenario) -> None:
+        self._scenarios[scenario.id] = scenario
 
     def create_run(self, run: RunState) -> None:
         self._runs[run.id] = run
@@ -48,16 +68,18 @@ class MemoryStore:
         return clone
 
     def list_runs(
-        self, batch_id: str | None = None, is_demo: bool | None = None
+        self,
+        batch_id: str | None = None,
+        is_demo: bool | None = None,
+        scenario_id: str | None = None,
     ) -> list[RunSummary]:
-        runs = sorted(
-            self._runs.values(), key=lambda r: r.created_at, reverse=True
-        )
+        runs = sorted(self._runs.values(), key=lambda r: r.created_at, reverse=True)
         return [
             summary(r)
             for r in runs
             if (batch_id is None or r.batch_id == batch_id)
             and (is_demo is None or r.is_demo == is_demo)
+            and (scenario_id is None or r.scenario_id == scenario_id)
         ]
 
     def turn_exists(self, run_id: str, seq: int) -> bool:
@@ -74,9 +96,7 @@ class MemoryStore:
 
     def insert_vote(self, run_id: str, vote: Vote) -> None:
         run = self._runs[run_id]
-        if any(
-            v.round == vote.round and v.agent_id == vote.agent_id for v in run.votes
-        ):
+        if any(v.round == vote.round and v.agent_id == vote.agent_id for v in run.votes):
             return
         run.votes.append(vote)
         run.votes.sort(key=lambda v: (v.round, v.agent_id))

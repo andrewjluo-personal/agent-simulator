@@ -14,6 +14,7 @@ export type Scenario = {
   id: string
   title: string
   brief: string
+  isSample: boolean
   candidates: Candidate[]
   facts: Fact[]
   agents: AgentPersona[]

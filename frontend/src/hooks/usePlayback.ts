@@ -140,5 +140,12 @@ export function usePlayback() {
     setPlaying(true)
   }, [])
 
-  return { run, revealed, playing, error, derived, loadRun, startLive, replayById, setPlaying, skipToEnd, restart }
+  const clear = useCallback(() => {
+    setRun(null)
+    setRevealed(0)
+    setPlaying(false)
+    setError(null)
+  }, [])
+
+  return { run, revealed, playing, error, derived, loadRun, startLive, replayById, setPlaying, skipToEnd, restart, clear }
 }
