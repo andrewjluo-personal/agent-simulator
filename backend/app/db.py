@@ -61,6 +61,7 @@ create table if not exists turns (
     output_tokens int,
     primary key (run_id, seq)
 );
+alter table turns add column if not exists heard_before jsonb;
 
 create table if not exists votes (
     run_id uuid not null references runs(id) on delete cascade,
@@ -133,6 +134,7 @@ def _turn_from_row(row: dict[str, Any]) -> Turn:
         latency_ms=row["latency_ms"],
         input_tokens=row["input_tokens"],
         output_tokens=row["output_tokens"],
+        heard_before=row.get("heard_before") or [],
     )
 
 
@@ -295,8 +297,9 @@ class PgStore:
         with connection() as conn:
             cur = conn.execute(
                 "insert into turns (run_id, seq, round, agent_id, sentences, cited, "
-                "hallucinated, lean, confidence, latency_ms, input_tokens, output_tokens) "
-                "values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) "
+                "hallucinated, lean, confidence, latency_ms, input_tokens, output_tokens, "
+                "heard_before) "
+                "values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) "
                 "on conflict (run_id, seq) do nothing",
                 (
                     run_id,
@@ -311,6 +314,7 @@ class PgStore:
                     turn.latency_ms,
                     turn.input_tokens,
                     turn.output_tokens,
+                    Jsonb(turn.heard_before),
                 ),
             )
             return cur.rowcount == 1

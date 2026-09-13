@@ -43,6 +43,7 @@ export type Turn = {
   latencyMs?: number | null
   inputTokens?: number | null
   outputTokens?: number | null
+  heardBefore?: string[]
 }
 
 export type Vote = {
@@ -64,7 +65,19 @@ export type Metrics = {
   agreement: number
   hallucinationCount: number
   voteTrajectory: Record<string, number>[]
+  firstSurfaced?: Record<string, FirstSurfaced>
+  unspokenDecisive?: string[]
+  holders?: Record<string, string[]>
+  mentions?: { shared: number; unique: number }
+  voteRounds?: number[] // round index per *_ByRound entry; -1 = pre-discussion ballot
+  agreementByRound?: number[]
+  accuracyByRound?: number[]
+  tokensTotal?: { input: number; output: number }
+  llmCalls?: number
+  latencyTotalMs?: number
 }
+
+export type FirstSurfaced = { seq: number; round: number; agentId: string }
 
 export type RunState = {
   id: string

@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { createBatch, getBatch, getDemo, listScenarios, resetScenario } from './api'
 import { Controls, ResultsStrip, Transcript, VerdictBadges, VerdictCard, type StripRow } from './components/Panels'
+import { FlowTimeline } from './components/FlowTimeline'
 import { Table } from './components/Table'
+import { HighlightContext, useHighlightState } from './hooks/useHighlight'
 import { usePlayback } from './hooks/usePlayback'
 import { track } from './telemetry'
 import { candidateName, sharedOnlyVerdict } from './truth'
@@ -36,6 +38,7 @@ function App() {
   const [busy, setBusy] = useState(false)
   const [batchError, setBatchError] = useState<string | null>(null)
   const pb = usePlayback()
+  const highlight = useHighlightState()
 
   const loadDemo = useCallback((scenarioId: string) => {
     return getDemo(scenarioId)
@@ -186,6 +189,7 @@ function App() {
   const roundShown = pb.run ? Math.min(pb.run.config.rounds, Math.floor((pb.revealed - 1) / Math.max(1, runScenario.agents.length)) + 1) : 0
 
   return (
+    <HighlightContext.Provider value={highlight}>
     <main>
       <header>
         <h1>Hidden Profile</h1>
@@ -252,8 +256,18 @@ function App() {
         </aside>
       </section>
 
+      {pb.run && (
+        <section className="timeline-section">
+          <h3>
+            Information flow <span className="muted">· who said which fact when · ghosted chips are decisive facts still sitting unspoken in that hand</span>
+          </h3>
+          <FlowTimeline run={pb.run} turns={pb.derived.revealedTurns} />
+        </section>
+      )}
+
       <ResultsStrip rows={rows} activeRunId={pb.run?.id ?? null} onPick={pickRun} pending={pending} />
     </main>
+    </HighlightContext.Provider>
   )
 }
 
