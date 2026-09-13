@@ -114,4 +114,4 @@ export type RunSummary = Omit<RunState, 'turns' | 'votes' | 'scenario'>
 
 export type BatchState = { id: string; runs: RunSummary[] }
 
-export type DemoSnapshot = { scenario: Scenario; runs: RunState[] }
+export type DemoSnapshot = { scenario: Scenario; runs: RunSummary[] }

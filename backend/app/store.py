@@ -15,6 +15,7 @@ class Store(Protocol):
     def create_run(self, run: RunState) -> None: ...
     def get_run(self, run_id: str) -> RunState | None: ...
     def get_run_since(self, run_id: str, since_seq: int) -> RunState | None: ...
+    def demo_snapshot(self, scenario_id: str) -> tuple[Scenario, list[RunSummary]] | None: ...
     def list_runs(
         self,
         batch_id: str | None = None,
@@ -66,6 +67,12 @@ class MemoryStore:
         clone = run.model_copy()
         clone.turns = [t for t in run.turns if t.seq > since_seq]
         return clone
+
+    def demo_snapshot(self, scenario_id: str) -> tuple[Scenario, list[RunSummary]] | None:
+        scenario = self._scenarios.get(scenario_id)
+        if scenario is None:
+            return None
+        return scenario, self.list_runs(is_demo=True, scenario_id=scenario_id)[:100]
 
     def list_runs(
         self,
