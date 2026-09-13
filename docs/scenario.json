@@ -1,0 +1,51 @@
+{
+  "id": "hiring-panel-v1",
+  "title": "Senior Backend Engineer: Alex Rivera (A) vs. Brooke Chen (B)",
+  "candidates": { "A": "Alex Rivera", "B": "Brooke Chen" },
+  "brief": "The panel must recommend exactly one candidate for a senior backend role on a payments team. Each panelist attended different parts of the loop and holds different evidence.",
+  "truth": { "score_a": 12, "score_b": -1, "correct": "A" },
+  "shared_only_truth": { "score_a": -5, "score_b": 13, "correct_looking": "B" },
+  "domains": ["technical", "leadership", "references", "interview"],
+  "facts": [
+    { "id": "A1", "candidate": "A", "valence": "pro", "weight": 3, "domain": "technical", "text": "Alex single-handedly designed and shipped the ledger migration at their last company, moving 2B rows with zero downtime." },
+    { "id": "A2", "candidate": "A", "valence": "pro", "weight": 3, "domain": "leadership", "text": "Four engineers Alex mentored were promoted within two years; two now lead teams." },
+    { "id": "A3", "candidate": "A", "valence": "pro", "weight": 2, "domain": "references", "text": "Alex wrote the incident-postmortem process that their whole org adopted; their former director calls it the most valuable thing anyone did that year." },
+    { "id": "A4", "candidate": "A", "valence": "pro", "weight": 3, "domain": "technical", "text": "In the debugging session Alex found a silent data-loss bug in our sample legacy service in under 20 minutes, including the race that caused it." },
+    { "id": "A5", "candidate": "A", "valence": "pro", "weight": 2, "domain": "technical", "text": "Alex's system design answer correctly anticipated the double-spend failure mode and proposed idempotency keys before being prompted." },
+    { "id": "A6", "candidate": "A", "valence": "pro", "weight": 2, "domain": "references", "text": "Alex's back-channel reference, a former skip-level, says Alex is the person they would hire first for an ambiguous, under-specified problem." },
+    { "id": "A7", "candidate": "A", "valence": "pro", "weight": 2, "domain": "leadership", "text": "Alex drove an infrastructure cost reduction of 40% by rewriting the batch settlement job, and documented it so others could repeat it." },
+    { "id": "A8", "candidate": "A", "valence": "pro", "weight": 1, "domain": "technical", "text": "Alex maintains a small open-source Postgres migration tool with a few hundred stars." },
+    { "id": "A9", "candidate": "A", "valence": "pro", "weight": 1, "domain": "interview", "text": "Alex's written design sample was clear and well-structured." },
+    { "id": "A10", "candidate": "A", "valence": "con", "weight": 2, "domain": "interview", "text": "Alex was visibly nervous in the panel round and rambled through two answers before recovering." },
+    { "id": "A11", "candidate": "A", "valence": "con", "weight": 2, "domain": "technical", "text": "Alex has never written Go, which is our primary backend language." },
+    { "id": "A12", "candidate": "A", "valence": "con", "weight": 1, "domain": "references", "text": "Alex's most recent tenure was only 14 months." },
+    { "id": "A13", "candidate": "A", "valence": "con", "weight": 1, "domain": "interview", "text": "Alex declined to use the whiteboard and asked to work in an editor instead." },
+    { "id": "A14", "candidate": "A", "valence": "con", "weight": 1, "domain": "leadership", "text": "Alex has no formal management experience and no direct reports." },
+
+    { "id": "B1", "candidate": "B", "valence": "pro", "weight": 3, "domain": "interview", "text": "Brooke gave a polished, confident panel performance and answered every behavioural question crisply." },
+    { "id": "B2", "candidate": "B", "valence": "pro", "weight": 2, "domain": "technical", "text": "Brooke has eight years of Go, our primary backend language." },
+    { "id": "B3", "candidate": "B", "valence": "pro", "weight": 2, "domain": "leadership", "text": "Brooke led a team of six engineers at their last company." },
+    { "id": "B4", "candidate": "B", "valence": "pro", "weight": 2, "domain": "references", "text": "Brooke comes from a top-tier, brand-name employer that everyone on the panel recognises." },
+    { "id": "B5", "candidate": "B", "valence": "pro", "weight": 2, "domain": "technical", "text": "Brooke's take-home was submitted fast and the code was clean and idiomatic." },
+    { "id": "B6", "candidate": "B", "valence": "pro", "weight": 1, "domain": "references", "text": "Brooke already knows the fintech domain and used our vocabulary correctly throughout." },
+    { "id": "B7", "candidate": "B", "valence": "pro", "weight": 1, "domain": "interview", "text": "Brooke is available to start immediately." },
+    { "id": "B8", "candidate": "B", "valence": "con", "weight": 3, "domain": "leadership", "text": "Brooke's back-channel reference says three of their six reports left within a year, two citing Brooke directly in exit interviews." },
+    { "id": "B9", "candidate": "B", "valence": "con", "weight": 3, "domain": "technical", "text": "Brooke's take-home is near-identical to a public blog post solution, down to variable names and an unusual comment." },
+    { "id": "B10", "candidate": "B", "valence": "con", "weight": 2, "domain": "leadership", "text": "Brooke was openly dismissive of the QA engineer on the panel, talking over them twice." },
+    { "id": "B11", "candidate": "B", "valence": "con", "weight": 2, "domain": "leadership", "text": "Brooke claimed to have 'led the platform migration'; their former colleague says Brooke was one of twelve contributors and did not lead it." },
+    { "id": "B12", "candidate": "B", "valence": "con", "weight": 2, "domain": "references", "text": "Brooke refused to discuss a production outage they owned, calling it 'not really mine'." },
+    { "id": "B13", "candidate": "B", "valence": "con", "weight": 1, "domain": "interview", "text": "In the closing round Brooke asked only about title and compensation and no questions about the product or users." },
+    { "id": "B14", "candidate": "B", "valence": "con", "weight": 1, "domain": "references", "text": "This would be Brooke's third role in four years, each exit abrupt and mid-project." }
+  ],
+  "presets": {
+    "hidden_profile_n4": {
+      "shared": ["A8", "A9", "A10", "A11", "A12", "A13", "A14", "B1", "B2", "B3", "B4", "B5", "B6", "B7"],
+      "unique": {
+        "0": ["A1", "A5", "B9", "B13"],
+        "1": ["A2", "A6", "B10", "B14"],
+        "2": ["A3", "A7", "B11"],
+        "3": ["A4", "B8", "B12"]
+      }
+    }
+  }
+}
