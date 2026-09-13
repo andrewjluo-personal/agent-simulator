@@ -41,7 +41,7 @@ create table if not exists runs (
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now()
 );
-alter table runs add column if not exists engine_version text not null default ''
+alter table runs add column if not exists engine_version text not null default '';
 create index if not exists runs_demo_idx on runs (is_demo, created_at desc);
 create index if not exists runs_batch_idx on runs (batch_id);
 
