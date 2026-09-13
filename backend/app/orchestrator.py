@@ -106,6 +106,12 @@ async def run_round(store: Store, client: LLMClient, run_id: str, round_idx: int
     candidate_ids = {c.id for c in scenario.candidates}
 
     try:
+        if round_idx == 0:
+            # Pre-discussion private ballot: each agent votes on its own hand alone.
+            pre = store.get_run(run_id) or run
+            if not any(v.round == -1 for v in pre.votes):
+                await collect_votes(store, client, pre, -1)
+                run = store.get_run(run_id) or run
         for position, agent_id in enumerate(turn_order(run, round_idx)):
             seq = round_idx * n_agents + position
             if store.turn_exists(run_id, seq):
@@ -199,8 +205,22 @@ async def _vote_once(
     hand = list(scenario.distribution[agent_id])
     agent = next(a for a in scenario.agents if a.id == agent_id)
     system = prompts.system_prompt(scenario, cfg, agent, hand, spec)
-    user = prompts.vote_message(round_idx, cfg, final=round_idx == cfg.rounds - 1)
+    if round_idx < 0:
+        user = prompts.alone_vote_message(scenario)
+        said_lean = truth.UNDECIDED
+    else:
+        user = prompts.vote_message(
+            scenario,
+            cfg,
+            round_idx,
+            run.turns,
+            agent_id,
+            final=round_idx == cfg.rounds - 1,
+        )
+        own_turns = [t for t in run.turns if t.agent_id == agent_id]
+        said_lean = max(own_turns, key=lambda t: t.seq).lean if own_turns else truth.UNDECIDED
     meta = _meta(run, "vote", agent_id, round_idx, hand)
+    meta["alone"] = round_idx < 0
     resp = await _call(client, run, system, user, meta)
     raw = validate.parse_json_object(resp.text)
     choice, confidence, reason = validate.validate_vote(raw, candidate_ids)
@@ -212,6 +232,7 @@ async def _vote_once(
             choice=choice,
             confidence=confidence,
             reason=reason or None,
+            said_lean=said_lean,
         ),
     )
 
@@ -245,7 +266,9 @@ def compute_metrics(run: RunState) -> Metrics:
     decisive = truth.decisive_fact_ids(scenario)
     surfaced = decisive & {f for t in run.turns for f in t.cited}
     n_agents = len(scenario.agents)
-    majority_voters = sum(1 for v in final_votes if v.choice == majority)
+    # plurality count among decided candidates, even on a tie (2-2 of 4 -> 0.5)
+    decided_counts = [n for cid, n in final_tally.items() if cid != truth.UNDECIDED]
+    majority_voters = max(decided_counts, default=0)
     vote_trajectory: list[dict[str, int]] = []
     agreement_by_round: list[float] = []
     accuracy_by_round: list[float] = []
@@ -270,7 +293,9 @@ def compute_metrics(run: RunState) -> Metrics:
     for t in sorted(run.turns, key=lambda t: t.seq):
         for fact_id in t.cited:
             if fact_id not in first_surfaced:
-                first_surfaced[fact_id] = FirstSurfaced(seq=t.seq, round=t.round, agent_id=t.agent_id)
+                first_surfaced[fact_id] = FirstSurfaced(
+                    seq=t.seq, round=t.round, agent_id=t.agent_id
+                )
             if fact_id in shared:
                 mentions.shared += 1
             else:

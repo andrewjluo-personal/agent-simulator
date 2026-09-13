@@ -1,11 +1,26 @@
 from __future__ import annotations
 
 import asyncio
+import json
+from typing import Any
+
+import pytest
 
 from app import orchestrator
-from app.llm import FakeClient
+from app.llm import FakeClient, LLMClient, LLMRequest, LLMResponse
 from app.models import RunConfig, RunState, Turn
 from app.store import MemoryStore
+
+
+class RecordingClient(LLMClient):
+    def __init__(self, inner: LLMClient) -> None:
+        self.inner = inner
+        self.provider = inner.provider
+        self.requests: list[LLMRequest] = []
+
+    async def complete(self, request: LLMRequest) -> LLMResponse:
+        self.requests.append(request)
+        return await self.inner.complete(request)
 
 
 def _run(
@@ -25,11 +40,13 @@ def test_run_to_completion() -> None:
         n = len(run.scenario.agents)
         assert final.status == "done"
         assert len(final.turns) == run.config.rounds * n
-        assert len(final.votes) == run.config.rounds * n
+        # one private ballot per agent per round plus the pre-discussion ballot
+        assert len(final.votes) == (run.config.rounds + 1) * n
         assert final.metrics is not None
         assert final.metrics.correct_candidate_id == "sally"
         assert final.metrics.decisive_total == 14
-        assert len(final.metrics.vote_trajectory) == run.config.rounds
+        assert len(final.metrics.vote_trajectory) == run.config.rounds + 1
+        assert final.metrics.vote_rounds[0] == -1
 
     asyncio.run(go())
 
@@ -44,9 +61,11 @@ def test_idempotent_redelivery() -> None:
         assert state is not None
         assert len([t for t in state.turns if t.round == 0]) == n
         assert len([v for v in state.votes if v.round == 0]) == n
+        assert len([v for v in state.votes if v.round == -1]) == n
         # stale round after current_round advanced is a no-op
         state = await orchestrator.run_round(store, client, run.id, 0)
         assert len(state.turns) == n
+        assert len([v for v in state.votes if v.round == -1]) == n
 
     asyncio.run(go())
 
@@ -133,3 +152,67 @@ def test_compute_metrics_arithmetic() -> None:
     assert m.agreement == 0.75
     assert m.hallucination_count == 4
     assert m.vote_trajectory == [{"sally": 3, "john": 1}]
+
+
+def test_pre_discussion_ballot_has_no_transcript() -> None:
+    async def go() -> None:
+        store, client, run = _run(RunConfig(rounds=1))
+        rec = RecordingClient(client)
+        final = await orchestrator.run_to_completion(store, rec, run.id)
+        n = len(run.scenario.agents)
+        pre_votes = [v for v in final.votes if v.round == -1]
+        assert len(pre_votes) == n
+        assert all(v.said_lean == "undecided" for v in pre_votes)
+        pre_reqs = [
+            r for r in rec.requests if r.meta.get("kind") == "vote" and r.meta.get("round") == -1
+        ]
+        assert len(pre_reqs) == n
+        assert all("TRANSCRIPT SO FAR" not in r.user for r in pre_reqs)
+
+    asyncio.run(go())
+
+
+def test_ballot_sees_transcript_and_own_lean() -> None:
+    async def go() -> None:
+        store, client, run = _run(RunConfig(rounds=1))
+        rec = RecordingClient(client)
+        await orchestrator.run_to_completion(store, rec, run.id)
+        round0_votes = [
+            r for r in rec.requests if r.meta.get("kind") == "vote" and r.meta.get("round") == 0
+        ]
+        assert round0_votes
+        # the ballot saw the discussion: a FakeClient turn sentence appears in it
+        assert any("I noted the point about" in r.user for r in round0_votes)
+        assert all("TRANSCRIPT SO FAR" in r.user for r in round0_votes)
+        assert all("Your last stated lean:" in r.user for r in round0_votes)
+
+    asyncio.run(go())
+
+
+def _tie_client(monkeypatch: pytest.MonkeyPatch) -> FakeClient:
+    """FakeClient whose ballots alternate john/sally by agent index -> 2-2 tie."""
+
+    def _alt_vote(self: FakeClient, meta: dict[str, Any], rng: Any) -> str:
+        idx = ["dana", "marcus", "priya", "tom"].index(meta["agent_id"])
+        return json.dumps(
+            {
+                "vote": "john" if idx % 2 == 0 else "sally",
+                "confidence": 0.6,
+                "reason": "fixed",
+            }
+        )
+
+    monkeypatch.setattr(FakeClient, "_vote", _alt_vote)
+    return FakeClient()
+
+
+def test_agreement_is_plurality_share_on_tie(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def go() -> None:
+        client = _tie_client(monkeypatch)
+        store, _, run = _run(RunConfig(rounds=1))
+        final = await orchestrator.run_to_completion(store, client, run.id)
+        assert final.metrics is not None
+        assert final.metrics.majority_candidate_id == "undecided"
+        assert final.metrics.agreement == 0.5
+
+    asyncio.run(go())
