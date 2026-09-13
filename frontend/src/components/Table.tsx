@@ -264,7 +264,13 @@ export function Table({ scenario, config, derived, status, round }: Props) {
       </div>
 
       {currentTurn && status !== 'idle' && (
-        <SpeechBubble turn={currentTurn} seat={seatList.find((s) => s.agentId === currentTurn.agentId)!} scenario={scenario} />
+        currentTurn.agentId === 'moderator' ? (
+          <div className="moderator-banner">
+            Moderator: {currentTurn.sentences.join(' ') || '(said nothing)'}
+          </div>
+        ) : (
+          <SpeechBubble turn={currentTurn} seat={seatList.find((s) => s.agentId === currentTurn.agentId)!} scenario={scenario} />
+        )
       )}
 
       {inspectedAgent && (() => {

@@ -22,7 +22,7 @@ from .models import (
     Turn,
     Vote,
 )
-from .paradigms import get_paradigm
+from .paradigms import MODERATOR_ID, ParadigmSpec, get_paradigm
 from .scenario import load_scenario
 from .store import Store
 from .telemetry import emit
@@ -58,10 +58,33 @@ def turn_order(run: RunState, round_idx: int) -> list[str]:
     return order
 
 
+def _moderator_ask(heard_turns: list[Turn], agent_id: str, round_idx: int) -> str | None:
+    moderator_turn = next(
+        (
+            turn
+            for turn in reversed(heard_turns)
+            if turn.round == round_idx
+            and turn.agent_id == MODERATOR_ID
+            and turn.addressed_agent_id == agent_id
+        ),
+        None,
+    )
+    if moderator_turn is None:
+        return None
+    return f'The moderator asked you: "{" ".join(moderator_turn.sentences)}"'
+
+
 def _meta(
-    run: RunState, kind: str, agent_id: str, round_idx: int, hand: list[str]
+    run: RunState,
+    kind: str,
+    agent_id: str,
+    round_idx: int,
+    hand: list[str],
+    spec: ParadigmSpec | None = None,
+    **extra: Any,
 ) -> dict[str, Any]:
     scenario = run.scenario
+    spec = spec or get_paradigm(run.config.paradigm)
     heard = sorted({f for t in run.turns for f in t.cited})
     return {
         "kind": kind,
@@ -74,13 +97,15 @@ def _meta(
         "heard": heard,
         "candidates": [c.id for c in scenario.candidates],
         "sentences_per_turn": run.config.sentences_per_turn,
-        "share_first_round": not get_paradigm(run.config.paradigm).opinions_allowed(round_idx),
+        "share_first_round": not spec.opinions_allowed_for(round_idx, run.config),
         "fact_style": run.config.fact_style,
         "fact_text": {f.id: (f.keywords[0] if f.keywords else f.text) for f in scenario.facts},
         "fact_candidate": {f.id: f.candidate_id for f in scenario.facts},
         "fact_signed_weight": {
             f.id: f.weight if f.valence == "pro" else -f.weight for f in scenario.facts
         },
+        "output_format": spec.output_format,
+        **extra,
     }
 
 
@@ -106,7 +131,6 @@ async def run_round(store: Store, client: LLMClient, run_id: str, round_idx: int
     scenario = run.scenario
     spec = get_paradigm(cfg.paradigm)
     agent_ids = [a.id for a in scenario.agents]
-    n_agents = len(agent_ids)
     candidate_ids = {c.id for c in scenario.candidates}
 
     try:
@@ -116,25 +140,60 @@ async def run_round(store: Store, client: LLMClient, run_id: str, round_idx: int
             if not any(v.round == -1 for v in pre.votes):
                 await collect_votes(store, client, pre, -1)
                 run = store.get_run(run_id) or run
-        for position, agent_id in enumerate(turn_order(run, round_idx)):
-            seq = round_idx * n_agents + position
+        participants = [p.id for p in spec.extra_participants()] + turn_order(run, round_idx)
+        per_round = len(participants)
+        for position, agent_id in enumerate(participants):
+            seq = round_idx * per_round + position
             if store.turn_exists(run_id, seq):
                 continue
             run = store.get_run(run_id) or run
             heard_turns = run.turns
             common_ground = {f for t in heard_turns for f in t.cited}
-            hand = list(scenario.distribution[agent_id])
-            agent = next(a for a in scenario.agents if a.id == agent_id)
-            system = prompts.system_prompt(scenario, cfg, agent, hand, spec)
-            user = prompts.turn_message(
-                scenario, cfg, round_idx, heard_turns, spec, total_rounds(run)
-            )
-            meta = _meta(run, "turn", agent_id, round_idx, hand)
+            if agent_id == MODERATOR_ID:
+                unmentioned_counts = {
+                    a.id: len(
+                        set(scenario.distribution[a.id])
+                        - {fact_id for turn in heard_turns for fact_id in turn.cited}
+                    )
+                    for a in scenario.agents
+                }
+                system = prompts.moderator_system_prompt(scenario, cfg)
+                user = prompts.moderator_message(
+                    scenario, cfg, round_idx, heard_turns, unmentioned_counts
+                )
+                meta = _meta(
+                    run,
+                    "moderator",
+                    MODERATOR_ID,
+                    round_idx,
+                    [],
+                    spec,
+                    agent_ids=agent_ids,
+                    agent_names={a.id: a.name for a in scenario.agents},
+                    unmentioned_counts=unmentioned_counts,
+                )
+            else:
+                hand = list(scenario.distribution[agent_id])
+                agent = next(a for a in scenario.agents if a.id == agent_id)
+                addendum = spec.turn_addendum(run, agent_id, round_idx)
+                addendum = _moderator_ask(heard_turns, agent_id, round_idx) or addendum
+                system = prompts.system_prompt(scenario, cfg, agent, hand, spec)
+                user = prompts.turn_message(
+                    scenario,
+                    cfg,
+                    round_idx,
+                    heard_turns,
+                    spec,
+                    total_rounds(run),
+                    context=spec.visible_context(run, agent_id, round_idx),
+                    addendum=addendum,
+                )
+                meta = _meta(run, "turn", agent_id, round_idx, hand, spec)
             try:
                 resp = await _call(client, run, system, user, meta)
                 raw = validate.parse_json_object(resp.text)
                 inferred: list[str] | None = None
-                if cfg.fact_style == "memo":
+                if cfg.fact_style == "memo" and agent_id != MODERATOR_ID and spec.output_format != "board":
                     sentences = raw.get("sentences") if raw else None
                     inferred = truth.match_facts(
                         [s for s in sentences if isinstance(s, str)]
@@ -142,29 +201,49 @@ async def run_round(store: Store, client: LLMClient, run_id: str, round_idx: int
                         else [],
                         scenario.facts,
                     )
-                vt = validate.validate_turn(
-                    raw,
-                    hand=set(hand),
-                    common_ground=common_ground,
-                    candidate_ids=candidate_ids,
-                    sentences_per_turn=cfg.sentences_per_turn,
-                    opinions_allowed=spec.opinions_allowed(round_idx),
-                    inferred_cited=inferred,
-                )
-                turn = Turn(
-                    seq=seq,
-                    round=round_idx,
-                    agent_id=agent_id,
-                    sentences=vt.sentences,
-                    cited=vt.cited,
-                    hallucinated=vt.hallucinated,
-                    lean=vt.lean,
-                    confidence=vt.confidence,
-                    latency_ms=resp.latency_ms,
-                    input_tokens=resp.input_tokens,
-                    output_tokens=resp.output_tokens,
-                    heard_before=sorted(common_ground),
-                )
+                if agent_id == MODERATOR_ID:
+                    sentences, addressed = validate.validate_moderator(raw, set(agent_ids))
+                    turn = Turn(
+                        seq=seq,
+                        round=round_idx,
+                        agent_id=MODERATOR_ID,
+                        sentences=sentences,
+                        cited=[],
+                        hallucinated=[],
+                        lean=truth.UNDECIDED,
+                        confidence=0.0,
+                        latency_ms=resp.latency_ms,
+                        input_tokens=resp.input_tokens,
+                        output_tokens=resp.output_tokens,
+                        heard_before=sorted(common_ground),
+                        phase=spec.phase_for(round_idx, cfg),
+                        addressed_agent_id=addressed,
+                    )
+                else:
+                    vt = spec.parse_turn(
+                        raw,
+                        hand=set(hand),
+                        common_ground=common_ground,
+                        candidate_ids=candidate_ids,
+                        cfg=cfg,
+                        round_idx=round_idx,
+                        inferred_cited=inferred,
+                    )
+                    turn = Turn(
+                        seq=seq,
+                        round=round_idx,
+                        agent_id=agent_id,
+                        sentences=vt.sentences,
+                        cited=vt.cited,
+                        hallucinated=vt.hallucinated,
+                        lean=vt.lean,
+                        confidence=vt.confidence,
+                        latency_ms=resp.latency_ms,
+                        input_tokens=resp.input_tokens,
+                        output_tokens=resp.output_tokens,
+                        heard_before=sorted(common_ground),
+                        phase=spec.phase_for(round_idx, cfg),
+                    )
             except Exception as exc:  # noqa: BLE001 - one silent panelist beats a dead run
                 emit(
                     "warning",
@@ -184,6 +263,7 @@ async def run_round(store: Store, client: LLMClient, run_id: str, round_idx: int
                     lean=truth.UNDECIDED,
                     confidence=0.0,
                     heard_before=sorted(common_ground),
+                    phase=spec.phase_for(round_idx, cfg),
                 )
             store.insert_turn(run_id, turn)
             emit(
@@ -225,6 +305,7 @@ async def _vote_once(
         user = prompts.alone_vote_message(scenario)
         said_lean = truth.UNDECIDED
     else:
+        context = spec.visible_context(run, agent_id, round_idx)
         user = prompts.vote_message(
             scenario,
             cfg,
@@ -233,10 +314,11 @@ async def _vote_once(
             agent_id,
             final=round_idx == total_rounds(run) - 1,
             total=total_rounds(run),
+            context=context,
         )
         own_turns = [t for t in run.turns if t.agent_id == agent_id]
         said_lean = max(own_turns, key=lambda t: t.seq).lean if own_turns else truth.UNDECIDED
-    meta = _meta(run, "vote", agent_id, round_idx, hand)
+    meta = _meta(run, "vote", agent_id, round_idx, hand, spec)
     meta["alone"] = round_idx < 0
     resp = await _call(client, run, system, user, meta)
     raw = validate.parse_json_object(resp.text)
@@ -299,7 +381,8 @@ def compute_metrics(run: RunState) -> Metrics:
     )
     majority = truth.majority((v.choice for v in final_votes), chair_choice=chair_choice)
     decisive = truth.decisive_fact_ids(scenario)
-    surfaced = decisive & {f for t in run.turns for f in t.cited}
+    agent_turns = [t for t in run.turns if t.agent_id != MODERATOR_ID]
+    surfaced = decisive & {f for t in agent_turns for f in t.cited}
     n_agents = len(scenario.agents)
     # plurality count among decided candidates, even on a tie (2-2 of 4 -> 0.5)
     decided_counts = [n for cid, n in final_tally.items() if cid != truth.UNDECIDED]
@@ -325,7 +408,7 @@ def compute_metrics(run: RunState) -> Metrics:
     shared = truth.shared_fact_ids(scenario)
     first_surfaced: dict[str, FirstSurfaced] = {}
     mentions = MentionCounts()
-    for t in sorted(run.turns, key=lambda t: t.seq):
+    for t in sorted(agent_turns, key=lambda t: t.seq):
         for fact_id in t.cited:
             if fact_id not in first_surfaced:
                 first_surfaced[fact_id] = FirstSurfaced(
@@ -338,7 +421,7 @@ def compute_metrics(run: RunState) -> Metrics:
     unspoken_decisive = sorted(decisive - surfaced)
     holders = {fact_id: truth.holders(scenario, fact_id) for fact_id in unspoken_decisive}
 
-    answered_turns = [t for t in run.turns if t.latency_ms is not None]
+    answered_turns = [t for t in agent_turns if t.latency_ms is not None]
     return Metrics(
         correct=majority == correct_candidate_id and majority != truth.UNDECIDED,
         correct_candidate_id=correct_candidate_id,
@@ -348,7 +431,7 @@ def compute_metrics(run: RunState) -> Metrics:
         decisive_total=len(decisive),
         decisive_surfaced_count=len(surfaced),
         agreement=majority_voters / n_agents if n_agents else 0.0,
-        hallucination_count=sum(len(t.hallucinated) for t in run.turns),
+        hallucination_count=sum(len(t.hallucinated) for t in agent_turns),
         vote_trajectory=vote_trajectory,
         vote_rounds=vote_rounds,
         first_surfaced=first_surfaced,
@@ -358,11 +441,11 @@ def compute_metrics(run: RunState) -> Metrics:
         agreement_by_round=agreement_by_round,
         accuracy_by_round=accuracy_by_round,
         tokens_total=TokenTotals(
-            input=sum(t.input_tokens or 0 for t in run.turns),
-            output=sum(t.output_tokens or 0 for t in run.turns),
+            input=sum(t.input_tokens or 0 for t in agent_turns),
+            output=sum(t.output_tokens or 0 for t in agent_turns),
         ),
         llm_calls=len(answered_turns) + len(run.votes),
-        latency_total_ms=sum(t.latency_ms or 0 for t in run.turns),
+        latency_total_ms=sum(t.latency_ms or 0 for t in agent_turns),
     )
 
 

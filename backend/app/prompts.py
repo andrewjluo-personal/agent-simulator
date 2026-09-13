@@ -73,6 +73,12 @@ def system_prompt(
         f'{{"sentences": string[], {items_field}"current_lean": '
         f'"{_lean_options(scenario)}", "confidence": 0..1}}'
     )
+    response_format = paradigm.response_format()
+    response_block = (
+        f"Respond with JSON only:\n{response_format}"
+        if response_format
+        else f"Respond with JSON only:\n{schema}"
+    )
     return f"""You are {agent.name}, {agent.role} on the panel. Style: {agent.style}.
 The panel has {len(scenario.agents)} interviewers and must recommend exactly one candidate:
 {_candidate_lines(scenario)}
@@ -93,15 +99,21 @@ RULES
 
 Run nonce: {cfg.seed}
 
-Respond with JSON only:
-{schema}"""
+{response_block}"""
 
 
 def _agent_name(scenario: Scenario, agent_id: str) -> str:
     return next((a.name for a in scenario.agents if a.id == agent_id), agent_id)
 
 
-def transcript_block(scenario: Scenario, heard_turns: list[Turn], cfg: RunConfig) -> str:
+def transcript_block(
+    scenario: Scenario,
+    heard_turns: list[Turn],
+    cfg: RunConfig,
+    context: str | None = None,
+) -> str:
+    if context is not None:
+        return f"BOARD SO FAR:\n{context}"
     if heard_turns:
         if cfg.fact_style == "labelled":
             transcript = "\n".join(
@@ -137,12 +149,15 @@ def turn_message(
     heard_turns: list[Turn],
     paradigm: ParadigmSpec,
     total: int,
+    context: str | None = None,
+    addendum: str | None = None,
 ) -> str:
     instruction = paradigm.round_instruction(round_idx, cfg)
     instruction_block = f"\n{instruction}" if instruction else ""
+    addendum_block = f"\n{addendum}" if addendum else ""
     return f"""Round {round_idx + 1} of {total}. You speak now.
 
-{transcript_block(scenario, heard_turns, cfg)}{instruction_block}
+{transcript_block(scenario, heard_turns, cfg, context)}{instruction_block}{addendum_block}
 
 Your turn. JSON only."""
 
@@ -156,6 +171,7 @@ def vote_message(
     *,
     total: int,
     final: bool,
+    context: str | None = None,
 ) -> str:
     own = [t for t in heard_turns if t.agent_id == agent_id]
     own_lines = (
@@ -164,9 +180,10 @@ def vote_message(
     )
     last_lean = own[-1].lean if own else UNDECIDED
     lean_name = next((c.name for c in scenario.candidates if c.id == last_lean), last_lean)
+    transcript = transcript_block(scenario, heard_turns, cfg, context)
     return f"""Round {round_idx + 1} of {total} is over. This is a private recommendation; no other panelist will see it. Consider your own notes and what you heard.
 
-{transcript_block(scenario, heard_turns, cfg)}
+{transcript}
 
 YOUR OWN STATEMENTS SO FAR:
 {own_lines}
@@ -183,3 +200,42 @@ def alone_vote_message(scenario: Scenario) -> str:
     return f"""You have not spoken to any other panelist. Based only on your own notes,
 which candidate do you recommend? You must pick one.
 JSON only: {{"vote": "{options}", "confidence": 0..1, "reason": string}}"""
+def moderator_system_prompt(scenario: Scenario, cfg: RunConfig) -> str:
+    return f"""You are a non-voting moderator facilitating a panel discussion.
+The panel has {len(scenario.agents)} interviewers and must recommend exactly one candidate:
+{_candidate_lines(scenario)}
+
+{scenario.brief}
+
+Ask concise, neutral questions and summarise disagreement without asserting evidence.
+Respond with JSON only:
+{{"sentences": string[], "address_agent_id": string|null}}"""
+
+
+def moderator_message(
+    scenario: Scenario,
+    cfg: RunConfig,
+    round_idx: int,
+    heard_turns: list[Turn],
+    unmentioned_counts: dict[str, int],
+) -> str:
+    transcript = transcript_block(scenario, heard_turns, cfg)
+    mentioned = []
+    for turn in heard_turns:
+        for fact_id in turn.cited:
+            if fact_id not in mentioned:
+                mentioned.append(fact_id)
+    counts = ", ".join(
+        f"{_agent_name(scenario, agent_id)} (id: {agent_id}): {count}"
+        for agent_id, count in unmentioned_counts.items()
+    )
+    return f"""Round {round_idx + 1} of {cfg.rounds}. You speak first.
+
+{transcript}
+
+FACT IDS MENTIONED SO FAR: {", ".join(mentioned) if mentioned else "none"}
+STILL-UNMENTIONED HELD FACT COUNTS: {counts}
+
+In at most two sentences, name an agent and ask them to share anything unmentioned
+and/or summarise the open disagreement. address_agent_id must be one of the ids above,
+or null. JSON only."""

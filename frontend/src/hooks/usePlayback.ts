@@ -119,8 +119,14 @@ export function usePlayback() {
         if (!citedBy.has(id)) citedBy.set(id, t.agentId)
       }
     }
-    const n = run.scenario.agents.length
-    const completedRounds = n ? Math.floor(revealed / n) : 0
+    const completedRounds =
+      revealed === 0
+        ? 0
+        : revealed < run.turns.length
+          ? run.turns[revealed].round > revealedTurns[revealedTurns.length - 1].round
+            ? revealedTurns[revealedTurns.length - 1].round + 1
+            : revealedTurns[revealedTurns.length - 1].round
+          : run.currentRound
     const latestVotes = new Map<string, Vote>()
     for (const v of votes) if (v.round === completedRounds - 1) latestVotes.set(v.agentId, v)
     const finished = run.status === 'done' && revealed >= turns.length

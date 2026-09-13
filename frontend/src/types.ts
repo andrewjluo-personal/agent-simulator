@@ -1,7 +1,7 @@
 // Wire contract shared with backend/app/models.py (camelCase on the wire).
 
 export type Valence = 'pro' | 'con'
-export type Paradigm = 'free_discussion' | 'share_first'
+export type Paradigm = 'free_discussion' | 'share_first' | 'exchange_then_decide' | 'elicitation_moderator' | 'message_board'
 export type TurnOrder = 'clockwise' | 'random'
 export type TieBreak = 'none' | 'runoff' | 'chair'
 export type FactStyle = 'memo' | 'labelled'
@@ -69,6 +69,8 @@ export type Turn = {
   inputTokens?: number | null
   outputTokens?: number | null
   heardBefore?: string[]
+  phase?: 'exchange' | 'decide' | null
+  addressedAgentId?: string | null
 }
 
 export type Vote = {

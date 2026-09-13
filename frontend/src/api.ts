@@ -1,4 +1,4 @@
-import type { BatchState, DemoSnapshot, RunConfig, RunState, Scenario } from './types'
+import type { BatchState, DemoSnapshot, Paradigm, RunConfig, RunState, Scenario } from './types'
 
 const baseUrl = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
 
@@ -27,6 +27,8 @@ export const getHealth = () => request<Health>('/api/health')
 export const getScenario = () => request<Scenario>('/api/scenario')
 export const listScenarios = () => request<Scenario[]>('/api/scenarios')
 export const getScenarioById = (id: string) => request<Scenario>(`/api/scenarios/${encodeURIComponent(id)}`)
+export const listParadigms = () =>
+  request<{ id: Paradigm; label: string; description: string }[]>('/api/paradigms')
 export const resetScenario = (id: string) =>
   request<Scenario>(`/api/scenarios/${encodeURIComponent(id)}/reset`, { method: 'POST' })
 export const getDemo = (scenarioId?: string) =>

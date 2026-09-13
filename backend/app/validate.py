@@ -48,6 +48,46 @@ class ValidatedTurn:
     confidence: float = 0.0
 
 
+def validate_board(
+    raw: dict[str, Any] | None,
+    hand: set[str],
+    candidate_ids: set[str],
+    opinions_allowed: bool,
+) -> ValidatedTurn:
+    if raw is None:
+        return ValidatedTurn()
+    out = ValidatedTurn()
+    items = raw.get("fact_ids")
+    seen: set[str] = set()
+    if isinstance(items, list):
+        for item in items:
+            if not isinstance(item, str) or item in seen:
+                continue
+            seen.add(item)
+            (out.cited if item in hand else out.hallucinated).append(item)
+    note = raw.get("note")
+    if isinstance(note, str) and note:
+        first = re.split(r"(?<=[.!?])\s+", note.strip(), maxsplit=1)[0]
+        out.sentences = [_clip(first)]
+    lean = raw.get("current_lean")
+    out.lean = lean if isinstance(lean, str) and lean in candidate_ids else UNDECIDED
+    if not opinions_allowed:
+        out.lean = UNDECIDED
+    out.confidence = _clamp_confidence(raw.get("confidence"), default=0.5)
+    return out
+
+
+def validate_moderator(
+    raw: dict[str, Any] | None, agent_ids: set[str]
+) -> tuple[list[str], str | None]:
+    if raw is None:
+        return [], None
+    sentences = raw.get("sentences")
+    clipped = [_clip(s) for s in sentences if isinstance(s, str)][:2] if isinstance(sentences, list) else []
+    addressed = raw.get("address_agent_id")
+    return clipped, addressed if isinstance(addressed, str) and addressed in agent_ids else None
+
+
 def validate_turn(
     raw: dict[str, Any] | None,
     hand: set[str],
