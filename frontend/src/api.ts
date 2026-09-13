@@ -1,11 +1,6 @@
-const baseUrl = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
+import type { BatchState, DemoSnapshot, RunConfig, RunState, Scenario } from './types'
 
-export type Greeting = {
-  id: number
-  message: string
-  created_at: string
-  queued?: boolean
-}
+const baseUrl = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
 
 export type Health = {
   status: string
@@ -25,9 +20,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const getHealth = () => request<Health>('/api/health')
-export const listGreetings = () => request<Greeting[]>('/api/greetings')
-export const createGreeting = (message: string) =>
-  request<Greeting>('/api/greetings', {
-    method: 'POST',
-    body: JSON.stringify({ message }),
-  })
+export const getScenario = () => request<Scenario>('/api/scenario')
+export const getDemo = () => request<DemoSnapshot>('/api/demo')
+export const getRun = (id: string, sinceSeq = -1) =>
+  request<RunState>(`/api/runs/${encodeURIComponent(id)}?since_seq=${sinceSeq}`)
+export const getBatch = (id: string) => request<BatchState>(`/api/batches/${encodeURIComponent(id)}`)
+export const createRun = (config: RunConfig) =>
+  request<RunState>('/api/runs', { method: 'POST', body: JSON.stringify(config) })
+export const createBatch = (config: RunConfig, n: number) =>
+  request<BatchState>('/api/runs/batch', { method: 'POST', body: JSON.stringify({ config, n }) })
