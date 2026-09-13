@@ -13,7 +13,7 @@ class Model(BaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
 
-Valence = Literal["pro", "con"]
+Valence = Literal["pro", "con", "neutral"]
 Paradigm = Literal["free_discussion", "share_first"]
 TurnOrder = Literal["clockwise", "random"]
 TieBreak = Literal["none", "runoff", "chair"]
@@ -56,6 +56,14 @@ class ValidationResult(Model):
     free_discussion_runs: int = 0
 
 
+class ScenarioSource(Model):
+    kind: Literal["sample", "paper", "custom"]
+    paper: str | None = None
+    doi_or_url: str | None = None
+    fidelity: Literal["verbatim", "reconstructed", "inspired", "modified"] | None = None
+    notes: str | None = None
+
+
 class Scenario(Model):
     id: str
     title: str
@@ -67,6 +75,9 @@ class Scenario(Model):
     distribution: dict[str, list[str]]
     decision_rule: DecisionRule = "majority"
     validation: dict[str, ValidationResult] | None = None  # keyed by model
+    source: ScenarioSource = ScenarioSource(kind="sample")
+    parent_id: str | None = None
+    created_at: str | None = None
 
     @model_validator(mode="after")
     def _check(self) -> Scenario:
@@ -106,6 +117,40 @@ class RunConfig(Model):
     fact_style: FactStyle = "memo"
     model: str = "claude-haiku-4-5"
     seed: int = 0
+
+
+class AgentLean(Model):
+    agent_id: str
+    scores: dict[str, int]
+    verdict: str
+
+
+class ScenarioAnalysis(Model):
+    agent_leans: list[AgentLean]
+    pooled_scores: dict[str, int]
+    pooled_verdict: str
+    shared_only_verdict: str
+    margin: int
+    total_weight: int
+    decisive_fact_ids: list[str]
+    hidden_decisive_fact_ids: list[str]
+    flip_k: int
+    is_hidden_profile: bool
+    validation: ValidationResult | None
+
+
+class ValidationJob(Model):
+    id: str
+    scenario_id: str
+    model: str
+    status: RunStatus
+    trials: int
+    discussion_runs: int
+    batch_id: str | None = None
+    result: ValidationResult | None = None
+    error: str | None = None
+    created_at: str
+    updated_at: str
 
 
 class TurnOut(Model):

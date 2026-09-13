@@ -6,14 +6,20 @@ import re
 from collections import Counter
 from collections.abc import Iterable
 
-from .models import Fact, Scenario
+from .models import AgentLean, Fact, Scenario, ScenarioAnalysis
 
 UNDECIDED = "undecided"
 
 
+def signed_weight(fact: Fact) -> int:
+    if fact.valence == "neutral":
+        return 0
+    return fact.weight if fact.valence == "pro" else -fact.weight
+
+
 def _signed_weight(scenario: Scenario, fact_id: str) -> tuple[str, int]:
     fact = scenario.fact(fact_id)
-    return fact.candidate_id, fact.weight if fact.valence == "pro" else -fact.weight
+    return fact.candidate_id, signed_weight(fact)
 
 
 def scores(scenario: Scenario, fact_ids: Iterable[str]) -> dict[str, int]:
@@ -70,7 +76,7 @@ def decisive_fact_ids(scenario: Scenario) -> set[str]:
     out: set[str] = set()
     for fact_id in unique_fact_ids(scenario):
         fact = scenario.fact(fact_id)
-        if (fact.valence == "pro") == (fact.candidate_id == correct):
+        if fact.valence != "neutral" and (fact.valence == "pro") == (fact.candidate_id == correct):
             out.add(fact_id)
     return out
 
@@ -78,6 +84,62 @@ def decisive_fact_ids(scenario: Scenario) -> set[str]:
 def is_hidden_profile(scenario: Scenario) -> bool:
     pooled = pooled_verdict(scenario)
     return pooled != UNDECIDED and shared_only_verdict(scenario) != pooled
+
+
+def analysis(scenario: Scenario) -> ScenarioAnalysis:
+    pooled_ids = pooled_fact_ids(scenario)
+    shared_ids = shared_fact_ids(scenario)
+    pooled_scores = scores(scenario, pooled_ids)
+    ordered_scores = sorted(pooled_scores.values(), reverse=True)
+    margin = ordered_scores[0] - ordered_scores[1] if len(ordered_scores) >= 2 else 0
+    decisive = decisive_fact_ids(scenario)
+    hidden_decisive = sorted(
+        decisive & unique_fact_ids(scenario),
+        key=lambda fact_id: (-scenario.fact(fact_id).weight, fact_id),
+    )
+    shared_verdict = verdict(scenario, shared_ids)
+    pooled_winner = verdict(scenario, pooled_ids)
+    flip_k = 0
+    if shared_verdict != pooled_winner:
+        added: list[str] = []
+        for fact_id in hidden_decisive:
+            added.append(fact_id)
+            if (
+                verdict(scenario, shared_ids | set(added)) == pooled_winner
+                and pooled_winner != UNDECIDED
+            ):
+                break
+        flip_k = len(added)
+        if (
+            pooled_winner == UNDECIDED
+            or verdict(scenario, shared_ids | set(added)) != pooled_winner
+        ):
+            flip_k = len(hidden_decisive)
+    validation = None
+    if scenario.validation:
+        validation = scenario.validation.get("claude-haiku-4-5") or next(
+            iter(scenario.validation.values()), None
+        )
+    return ScenarioAnalysis(
+        agent_leans=[
+            AgentLean(
+                agent_id=agent.id,
+                scores=scores(scenario, scenario.distribution[agent.id]),
+                verdict=verdict(scenario, scenario.distribution[agent.id]),
+            )
+            for agent in scenario.agents
+        ],
+        pooled_scores=pooled_scores,
+        pooled_verdict=pooled_winner,
+        shared_only_verdict=shared_verdict,
+        margin=margin,
+        total_weight=sum(abs(signed_weight(f)) for f in scenario.facts),
+        decisive_fact_ids=sorted(decisive),
+        hidden_decisive_fact_ids=hidden_decisive,
+        flip_k=flip_k,
+        is_hidden_profile=is_hidden_profile(scenario),
+        validation=validation,
+    )
 
 
 STOPWORDS = {

@@ -78,9 +78,7 @@ def _meta(
         "fact_style": run.config.fact_style,
         "fact_text": {f.id: (f.keywords[0] if f.keywords else f.text) for f in scenario.facts},
         "fact_candidate": {f.id: f.candidate_id for f in scenario.facts},
-        "fact_signed_weight": {
-            f.id: f.weight if f.valence == "pro" else -f.weight for f in scenario.facts
-        },
+        "fact_signed_weight": {f.id: truth.signed_weight(f) for f in scenario.facts},
     }
 
 
