@@ -10,6 +10,7 @@ from random import Random
 from typing import Any
 
 from . import prompts, truth, validate
+from .engine_version import ENGINE_VERSION
 from .llm import LLMClient, LLMRequest, LLMResponse
 from .models import (
     FirstSurfaced,
@@ -45,6 +46,7 @@ def new_run(
         is_demo=is_demo,
         batch_id=batch_id,
         llm_provider=provider,  # type: ignore[arg-type]
+        engine_version=ENGINE_VERSION,
         created_at=datetime.now(UTC).isoformat(),
     )
 

@@ -18,9 +18,12 @@ export function track(name: string, context: Record<string, unknown> = {}, level
 
 export function installGlobalHandlers() {
   window.addEventListener('error', (event) => {
-    track('window.error', { message: event.message, source: event.filename }, 'error')
+    track('window.error', { message: event.message, source: event.filename, stack: event.error?.stack }, 'error')
   })
   window.addEventListener('unhandledrejection', (event) => {
-    track('window.unhandledrejection', { reason: String(event.reason) }, 'error')
+    track('window.unhandledrejection', {
+      reason: String(event.reason),
+      stack: (event.reason as { stack?: string } | undefined)?.stack,
+    }, 'error')
   })
 }

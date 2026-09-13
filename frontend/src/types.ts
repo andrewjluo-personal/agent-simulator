@@ -117,6 +117,7 @@ export type RunState = {
   llmProvider: LlmProvider
   error?: string | null
   metrics?: Metrics | null
+  engineVersion?: string
   turns: Turn[]
   votes: Vote[]
   createdAt: string
@@ -126,4 +127,4 @@ export type RunSummary = Omit<RunState, 'turns' | 'votes' | 'scenario'>
 
 export type BatchState = { id: string; runs: RunSummary[] }
 
-export type DemoSnapshot = { scenario: Scenario; runs: RunSummary[] }
+export type DemoSnapshot = { scenario: Scenario; runs: RunSummary[]; engineVersion?: string }

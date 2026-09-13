@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
+from .engine_version import ENGINE_VERSION
 from .models import Metrics, RunState, RunStatus, RunSummary, Scenario, Turn, Vote, summary
 
 
@@ -23,6 +24,7 @@ class Store(Protocol):
         scenario_id: str | None = None,
     ) -> list[RunSummary]: ...
     def turn_exists(self, run_id: str, seq: int) -> bool: ...
+    def delete_stale_demo_runs(self, engine_version: str) -> int: ...
     def insert_turn(self, run_id: str, turn: Turn) -> bool: ...
     def insert_vote(self, run_id: str, vote: Vote) -> None: ...
     def set_status(
@@ -72,7 +74,11 @@ class MemoryStore:
         scenario = self._scenarios.get(scenario_id)
         if scenario is None:
             return None
-        return scenario, self.list_runs(is_demo=True, scenario_id=scenario_id)[:100]
+        return scenario, [
+            s
+            for s in self.list_runs(is_demo=True, scenario_id=scenario_id)
+            if s.engine_version == ENGINE_VERSION
+        ][:100]
 
     def list_runs(
         self,
@@ -129,6 +135,14 @@ class MemoryStore:
 
     def delete_demo_runs(self) -> int:
         doomed = [rid for rid, r in self._runs.items() if r.is_demo]
+        for rid in doomed:
+            del self._runs[rid]
+        return len(doomed)
+
+    def delete_stale_demo_runs(self, engine_version: str) -> int:
+        doomed = [
+            rid for rid, r in self._runs.items() if r.is_demo and r.engine_version != engine_version
+        ]
         for rid in doomed:
             del self._runs[rid]
         return len(doomed)

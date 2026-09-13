@@ -15,6 +15,7 @@ from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 from psycopg_pool import ConnectionPool
 
+from .engine_version import ENGINE_VERSION
 from .models import Metrics, RunState, RunStatus, RunSummary, Scenario, Turn, Vote
 
 SCHEMA = """
@@ -34,11 +35,13 @@ create table if not exists runs (
     is_demo boolean not null default false,
     batch_id uuid,
     llm_provider text not null,
+    engine_version text not null default '',
     error text,
     metrics jsonb,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now()
 );
+alter table runs add column if not exists engine_version text not null default '';
 create index if not exists runs_demo_idx on runs (is_demo, created_at desc);
 create index if not exists runs_batch_idx on runs (batch_id);
 
@@ -218,6 +221,7 @@ def _run_from_row(row: dict[str, Any], turns: list[Turn], votes: list[Vote]) -> 
         llm_provider=row["llm_provider"],
         error=row["error"],
         metrics=row["metrics"],
+        engine_version=row.get("engine_version") or "",
         turns=turns,
         votes=votes,
         created_at=row["created_at"].isoformat(),
@@ -236,6 +240,7 @@ def _summary_from_row(row: dict[str, Any]) -> RunSummary:
         llm_provider=row["llm_provider"],
         error=row["error"],
         metrics=row["metrics"],
+        engine_version=row.get("engine_version") or "",
         created_at=row["created_at"].isoformat(),
     )
 
@@ -271,8 +276,8 @@ class PgStore:
         with connection() as conn:
             conn.execute(
                 "insert into runs (id, scenario_id, scenario, config, status, "
-                "current_round, is_demo, batch_id, llm_provider) "
-                "values (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                "current_round, is_demo, batch_id, llm_provider, engine_version) "
+                "values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                 (
                     run.id,
                     run.scenario_id,
@@ -283,6 +288,7 @@ class PgStore:
                     run.is_demo,
                     run.batch_id,
                     run.llm_provider,
+                    run.engine_version,
                 ),
             )
 
@@ -314,8 +320,9 @@ class PgStore:
                 return None
             rows = conn.execute(
                 "select * from runs where is_demo and scenario_id = %s "
+                "and engine_version = %s "
                 "order by created_at desc limit 100",
-                (scenario_id,),
+                (scenario_id, ENGINE_VERSION),
             ).fetchall()
         return Scenario.model_validate(row["body"]), [_summary_from_row(r) for r in rows]
 
@@ -431,4 +438,12 @@ class PgStore:
     def delete_demo_runs(self) -> int:
         with connection() as conn:
             cur = conn.execute("delete from runs where is_demo")
+            return cur.rowcount
+
+    def delete_stale_demo_runs(self, engine_version: str) -> int:
+        with connection() as conn:
+            cur = conn.execute(
+                "delete from runs where is_demo and engine_version <> %s",
+                (engine_version,),
+            )
             return cur.rowcount

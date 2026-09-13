@@ -61,3 +61,19 @@ Two Vercel projects share this repo:
 
 `VERCEL_OIDC_TOKEN` is injected by Vercel at runtime and authenticates queue calls; pull it locally
 with `vercel env pull` if you want to exercise queues outside Vercel.
+
+## Demo runs & engine version
+
+Every run is stamped with `ENGINE_VERSION` (`backend/app/engine_version.py`) — the first 12 hex of
+sha256 over `app/prompts.py`, `app/orchestrator.py`, `app/truth.py`, `app/paradigms.py`, and
+`app/samples.py`. `/api/demo` only returns demo runs stamped with the current version, so any deploy
+that touches those files makes old demo runs invisible on the landing page until reseeded.
+
+After such a deploy, reseed with (idempotent — tops up to N done runs per paradigm and deletes
+stale-version demo rows; `--keep-stale` to keep them, `--reset-demo` to wipe all demos):
+
+```
+cd backend && DATABASE_URL=<prod> LLM_PROVIDER=anthropic \
+  .venv/bin/python scripts/seed_demo.py --provider anthropic \
+  --scenario hiring-panel-v1 --per-paradigm 5
+```

@@ -68,12 +68,13 @@ export function usePlayback() {
     const timer = window.setInterval(async () => {
       const current = runRef.current
       if (!current || current.id !== id) return
-      const sinceSeq = current.turns.length ? current.turns[current.turns.length - 1].seq : -1
+      const turns = current.turns ?? []
+      const sinceSeq = turns.length ? turns[turns.length - 1].seq : -1
       try {
         const delta = await getRun(id, sinceSeq)
         setRun((prev) =>
           prev && prev.id === id
-            ? { ...delta, turns: mergeTurns(prev.turns, delta.turns), votes: delta.votes }
+            ? { ...delta, turns: mergeTurns(prev.turns ?? [], delta.turns ?? []), votes: delta.votes ?? [] }
             : prev,
         )
       } catch (cause) {
@@ -86,7 +87,8 @@ export function usePlayback() {
   // Reveal one turn per tick so replays and live runs animate identically.
   useEffect(() => {
     if (!playing || !run) return
-    if (revealed >= run.turns.length) {
+    const turns = run.turns ?? []
+    if (revealed >= turns.length) {
       if (run.status === 'done' || run.status === 'error') setPlaying(false)
       return
     }
@@ -106,7 +108,9 @@ export function usePlayback() {
         finished: false,
       }
     }
-    const revealedTurns = run.turns.slice(0, revealed)
+    const turns = run.turns ?? []
+    const votes = run.votes ?? []
+    const revealedTurns = turns.slice(0, revealed)
     const commonGround = new Set<string>()
     const citedBy = new Map<string, string>()
     for (const t of revealedTurns) {
@@ -118,8 +122,8 @@ export function usePlayback() {
     const n = run.scenario.agents.length
     const completedRounds = n ? Math.floor(revealed / n) : 0
     const latestVotes = new Map<string, Vote>()
-    for (const v of run.votes) if (v.round === completedRounds - 1) latestVotes.set(v.agentId, v)
-    const finished = run.status === 'done' && revealed >= run.turns.length
+    for (const v of votes) if (v.round === completedRounds - 1) latestVotes.set(v.agentId, v)
+    const finished = run.status === 'done' && revealed >= turns.length
     return {
       revealedTurns,
       currentTurn: revealedTurns.length ? revealedTurns[revealedTurns.length - 1] : null,
@@ -132,7 +136,7 @@ export function usePlayback() {
   }, [run, revealed])
 
   const skipToEnd = useCallback(() => {
-    setRevealed(runRef.current?.turns.length ?? 0)
+    setRevealed(runRef.current?.turns?.length ?? 0)
   }, [])
 
   const restart = useCallback(() => {

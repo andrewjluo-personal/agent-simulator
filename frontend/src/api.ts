@@ -27,10 +27,13 @@ export const resetScenario = (id: string) =>
   request<Scenario>(`/api/scenarios/${encodeURIComponent(id)}/reset`, { method: 'POST' })
 export const getDemo = (scenarioId?: string) =>
   request<DemoSnapshot>(`/api/demo${scenarioId ? `?scenarioId=${encodeURIComponent(scenarioId)}` : ''}`)
+export function normalizeRun(run: RunState): RunState {
+  return { ...run, turns: run.turns ?? [], votes: run.votes ?? [] }
+}
 export const getRun = (id: string, sinceSeq = -1) =>
-  request<RunState>(`/api/runs/${encodeURIComponent(id)}?since_seq=${sinceSeq}`)
+  request<RunState>(`/api/runs/${encodeURIComponent(id)}?since_seq=${sinceSeq}`).then(normalizeRun)
 export const getBatch = (id: string) => request<BatchState>(`/api/batches/${encodeURIComponent(id)}`)
 export const createRun = (config: RunConfig) =>
-  request<RunState>('/api/runs', { method: 'POST', body: JSON.stringify(config) })
+  request<RunState>('/api/runs', { method: 'POST', body: JSON.stringify(config) }).then(normalizeRun)
 export const createBatch = (config: RunConfig, n: number) =>
   request<BatchState>('/api/runs/batch', { method: 'POST', body: JSON.stringify({ config, n }) })
