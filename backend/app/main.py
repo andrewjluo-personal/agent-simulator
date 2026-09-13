@@ -318,7 +318,7 @@ async def _consume_simulation(request: Request, message_id: str) -> dict[str, st
             raise
     else:
         next_round = run.current_round
-        if run.status == "running" and next_round < run.config.rounds:
+        if run.status == "running" and next_round < orchestrator.total_rounds(run):
             await queues.send(
                 queues.SIMULATION_TOPIC,
                 {"kind": "round", "runId": run_id, "round": next_round},
