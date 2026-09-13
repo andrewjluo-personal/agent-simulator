@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import base64
 import json
 import os
-from typing import Annotated, Any
+from typing import Any
 
-from fastapi import Body, FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -42,13 +41,13 @@ class Greeting(BaseModel):
 
 
 @app.get("/api/health")
-def health() -> dict[str, Any]:
+def health(request: Request) -> dict[str, Any]:
     checks: dict[str, Any] = {"api": "ok"}
     try:
         checks["database"] = "ok" if db.ping() else "unhealthy"
     except Exception as exc:  # noqa: BLE001 - health endpoint reports, never raises
         checks["database"] = f"error: {exc.__class__.__name__}"
-    checks["queues"] = "ok" if os.getenv("VERCEL_OIDC_TOKEN") else "unconfigured"
+    checks["queues"] = "ok" if queues.oidc_token(request) else "unconfigured"
     return {"status": "ok", "checks": checks, "env": os.getenv("VERCEL_ENV", "development")}
 
 
@@ -61,7 +60,7 @@ def get_greetings() -> list[dict[str, Any]]:
 
 
 @app.post("/api/greetings", status_code=201)
-async def create_greeting(payload: GreetingIn) -> dict[str, Any]:
+async def create_greeting(payload: GreetingIn, request: Request) -> dict[str, Any]:
     row = db.insert_greeting(payload.message)
     message_id: str | None = None
     try:
@@ -69,6 +68,7 @@ async def create_greeting(payload: GreetingIn) -> dict[str, Any]:
             queues.GREETINGS_TOPIC,
             {"greetingId": row["id"], "message": row["message"]},
             idempotency_key=f"greeting-{row['id']}",
+            token=queues.oidc_token(request),
         )
     except Exception as exc:  # noqa: BLE001 - a queue outage must not fail the write
         emit("warning", "queue.publish_failed", greetingId=row["id"], reason=str(exc))
@@ -81,16 +81,35 @@ async def create_greeting(payload: GreetingIn) -> dict[str, Any]:
 
 
 @app.post("/api/queues/greetings")
-def consume_greeting(body: Annotated[dict[str, Any], Body()]) -> dict[str, str]:
+@app.post(queues.TRIGGER_PATH)
+async def consume_greeting(request: Request) -> dict[str, str]:
     """Push callback for the `greetings` topic (see vercel.json experimentalTriggers).
 
     Vercel Queues delivers at-least-once, so handlers must be idempotent.
     """
-    payload = body
-    if "body" in body and isinstance(body["body"], str):
-        try:
-            payload = json.loads(base64.b64decode(body["body"]))
-        except (ValueError, TypeError) as exc:
-            raise HTTPException(status_code=400, detail="unreadable message body") from exc
-    emit("info", "queue.consumed", topic=queues.GREETINGS_TOPIC, payload=payload)
+    try:
+        event = json.loads(await request.body())
+        message_id = event["data"]["messageId"]
+    except (ValueError, KeyError, TypeError) as exc:
+        raise HTTPException(status_code=400, detail="unrecognized queue callback") from exc
+
+    token = queues.oidc_token(request)
+    message = await queues.receive_by_id(
+        queues.GREETINGS_TOPIC, queues.GREETINGS_CONSUMER, message_id, token=token
+    )
+    if message is None:
+        emit("info", "queue.already_processed", messageId=message_id)
+        return {"status": "skipped"}
+
+    emit(
+        "info",
+        "queue.consumed",
+        topic=queues.GREETINGS_TOPIC,
+        messageId=message_id,
+        deliveryCount=message.get("deliveryCount"),
+        payload=message["payload"],
+    )
+    await queues.acknowledge(
+        queues.GREETINGS_TOPIC, queues.GREETINGS_CONSUMER, message["receiptHandle"], token=token
+    )
     return {"status": "processed"}
