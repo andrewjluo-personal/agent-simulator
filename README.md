@@ -1,0 +1,63 @@
+# agent-simulator
+
+Hello-World scaffold for the stack:
+
+| Piece | Tech |
+| --- | --- |
+| Frontend | Vite + React 19 + TypeScript (`frontend/`) |
+| Backend | FastAPI on the Vercel Python runtime (`backend/`) |
+| Database | Neon Postgres (`DATABASE_URL`) |
+| Async work | Vercel Queues (topic `greetings`) |
+| Telemetry | Structured JSON logs → Vercel Logs / Observability |
+
+## Layout
+
+```
+frontend/   Vite app, deployed as its own Vercel project
+backend/    FastAPI app, deployed as a single Vercel Function
+  app/main.py        routes (entrypoint declared in pyproject [tool.vercel])
+  app/db.py          Neon access via psycopg3
+  app/queues.py      Vercel Queues HTTP API client
+  app/telemetry.py   JSON log formatter + request middleware
+  scripts/init_db.py schema bootstrap
+  scripts/worker.py  poll-mode queue consumer for local dev
+```
+
+## Local development
+
+Backend:
+
+```bash
+cd backend
+uv venv --python 3.12
+uv pip install -e ".[dev]"
+cp .env.example .env          # set DATABASE_URL to your Neon branch
+set -a && source .env && set +a
+python scripts/init_db.py
+uvicorn app.main:app --reload --port 8000
+```
+
+Frontend (proxies `/api` to `http://127.0.0.1:8000`):
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## Endpoints
+
+- `GET /api/health` — API, Neon, and queue configuration status
+- `GET /api/greetings` — recent rows
+- `POST /api/greetings` — insert a row, then publish to the `greetings` topic
+- `POST /api/queues/greetings` — push callback invoked by Vercel Queues
+
+## Deployment
+
+Two Vercel projects share this repo:
+
+- frontend → root directory `frontend`, env `VITE_API_BASE_URL` = backend URL
+- backend → root directory `backend`, env `DATABASE_URL`, `ALLOWED_ORIGINS`, `VERCEL_QUEUE_REGION`
+
+`VERCEL_OIDC_TOKEN` is injected by Vercel at runtime and authenticates queue calls; pull it locally
+with `vercel env pull` if you want to exercise queues outside Vercel.
