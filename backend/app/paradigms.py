@@ -49,7 +49,6 @@ class ParadigmSpec:
         self, round_idx: int, cfg: RunConfig
     ) -> Literal["exchange", "decide"] | None:
         return None
-
     def visible_context(self, run: RunState, agent_id: str, round_idx: int) -> str | None:
         return None
 
@@ -118,7 +117,6 @@ class ExchangeThenDecide(ParadigmSpec):
         self, round_idx: int, cfg: RunConfig
     ) -> Literal["exchange", "decide"]:
         return "exchange" if round_idx < self.exchange_rounds(cfg) else "decide"
-
     def opinions_allowed_for(self, round_idx: int, cfg: RunConfig) -> bool:
         return self.phase_for(round_idx, cfg) == "decide"
 
@@ -152,9 +150,9 @@ class ElicitationModerator(ParadigmSpec):
 class MessageBoard(ParadigmSpec):
     def system_rules(self, cfg: RunConfig) -> str:
         return (
-            '- Post fact ids plus a one-line note to the shared board. Use JSON shape '
-            '{"fact_ids": string[], "note": string, "current_lean": candidate id or '
-            '"undecided", "confidence": 0..1}.'
+            "- You are posting to a shared board, not chatting: other panelists see the "
+            "canonical text of each fact id you post, plus at most one sentence of note "
+            "from you. Post only fact ids you hold."
         )
 
     def response_format(self) -> str | None:

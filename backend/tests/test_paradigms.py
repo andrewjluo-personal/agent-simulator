@@ -49,7 +49,55 @@ def test_existing_prompt_snapshots_are_unchanged() -> None:
         assert system_prompt(scenario, cfg, agent, hand, spec) == fixture[paradigm_id]["system"]
         assert turn_message(scenario, cfg, 0, [], spec) == fixture[paradigm_id]["turn_0"]
         assert turn_message(scenario, cfg, 0, heard, spec) == fixture[paradigm_id]["turn_2"]
-        assert vote_message(0, cfg, final=False) == fixture[paradigm_id]["vote"]
+        assert (
+            vote_message(
+                0,
+                cfg,
+                final=False,
+                scenario=scenario,
+                heard_turns=heard,
+            )
+            == fixture[paradigm_id]["vote"]
+        )
+
+
+def test_exchange_and_moderator_prompt_addenda() -> None:
+    scenario = SAMPLE_SCENARIOS[0]
+    cfg = RunConfig(paradigm="exchange_then_decide", rounds=3)
+    run = RunState(
+        id="test",
+        scenario_id=scenario.id,
+        scenario=scenario,
+        config=cfg,
+        status="running",
+        llm_provider="fake",
+    )
+    agent = scenario.agents[0]
+    spec = get_paradigm(cfg.paradigm)
+    first_addendum = spec.turn_addendum(run, agent.id, 0)
+    first_prompt = turn_message(scenario, cfg, 0, [], spec, addendum=first_addendum)
+    assert all(fact_id in first_prompt for fact_id in scenario.distribution[agent.id])
+    decide_round = spec.exchange_rounds(cfg)
+    decide_addendum = spec.turn_addendum(run, agent.id, decide_round)
+    decide_prompt = turn_message(
+        scenario, cfg, decide_round, [], spec, addendum=decide_addendum
+    )
+    assert "Discussion phase begins" in decide_prompt
+    moderator_turn = Turn(
+        seq=0,
+        round=0,
+        agent_id=MODERATOR_ID,
+        sentences=["Please share your remaining evidence."],
+        cited=[],
+        hallucinated=[],
+        lean=UNDECIDED,
+        confidence=0.0,
+        addressed_agent_id=agent.id,
+    )
+    run.turns = [moderator_turn]
+    ask = orchestrator._moderator_ask(run.turns, agent.id, 0)
+    addressed_prompt = turn_message(scenario, cfg, 0, run.turns, spec, addendum=ask)
+    assert "The moderator asked you" in addressed_prompt
 
 
 def test_new_paradigms_run_to_completion() -> None:

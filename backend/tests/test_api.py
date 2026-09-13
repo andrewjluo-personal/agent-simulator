@@ -26,7 +26,8 @@ def test_paradigms_endpoint() -> None:
     resp = client.get("/api/paradigms")
     assert resp.status_code == 200
     ids = {p["id"] for p in resp.json()}
-    assert ids == {"free_discussion", "share_first"}
+    assert {"free_discussion", "share_first"} <= ids
+    assert {"exchange_then_decide", "elicitation_moderator", "message_board"} <= ids
 
 
 def test_run_lifecycle_sync() -> None:
