@@ -11,8 +11,8 @@ def test_bundled_scenario_hidden_profile() -> None:
     assert truth.shared_only_verdict(s) == "john"
     assert truth.pooled_verdict(s) == "sally"
     assert truth.is_hidden_profile(s)
-    assert truth.decisive_fact_ids(s) == truth.unique_fact_ids(s)
-    assert len(truth.unique_fact_ids(s)) == 14
+    assert len(truth.decisive_fact_ids(s)) == 12
+    assert len(truth.unique_fact_ids(s)) == 17
     assert set(truth.alone_votes(s).values()) == {"john"}
     result = truth.analysis(s)
     assert 0 < result.flip_k <= len(result.hidden_decisive_fact_ids)

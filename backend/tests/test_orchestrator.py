@@ -44,7 +44,7 @@ def test_run_to_completion() -> None:
         assert len(final.votes) == (run.config.rounds + 1) * n
         assert final.metrics is not None
         assert final.metrics.correct_candidate_id == "sally"
-        assert final.metrics.decisive_total == 14
+        assert final.metrics.decisive_total == 12
         assert len(final.metrics.vote_trajectory) == run.config.rounds + 1
         assert final.metrics.vote_rounds[0] == -1
 
@@ -149,9 +149,9 @@ def test_compute_metrics_arithmetic() -> None:
     assert m.correct
     assert m.decisive_surfaced_count == 2
     assert abs(m.decisive_surfaced - 2 / len(decisive)) < 1e-9
-    assert m.agreement == 0.75
-    assert m.hallucination_count == 4
-    assert m.vote_trajectory == [{"sally": 3, "john": 1}]
+    assert m.agreement == 0.8
+    assert m.hallucination_count == 5
+    assert m.vote_trajectory == [{"sally": 4, "john": 1}]
 
 
 def test_pre_discussion_ballot_has_no_transcript() -> None:
@@ -206,14 +206,18 @@ def test_memo_mode_run_yields_cited() -> None:
     asyncio.run(go())
 
 
-def _tie_client(monkeypatch: pytest.MonkeyPatch) -> FakeClient:
-    """FakeClient whose ballots alternate john/sally by agent index -> 2-2 tie."""
+def _tie_client(monkeypatch: pytest.MonkeyPatch, agent_ids: list[str]) -> FakeClient:
+    """FakeClient whose ballots tie after the undecided vote is excluded."""
 
     def _alt_vote(self: FakeClient, meta: dict[str, Any], rng: Any) -> str:
-        idx = ["dana", "marcus", "priya", "tom"].index(meta["agent_id"])
+        idx = agent_ids.index(meta["agent_id"])
         return json.dumps(
             {
-                "vote": "john" if idx % 2 == 0 else "sally",
+                "vote": (
+                    "undecided"
+                    if idx == len(agent_ids) - 1
+                    else ("john" if idx % 2 == 0 else "sally")
+                ),
                 "confidence": 0.6,
                 "reason": "fixed",
             }
@@ -225,8 +229,8 @@ def _tie_client(monkeypatch: pytest.MonkeyPatch) -> FakeClient:
 
 def test_runoff_extends_on_tie(monkeypatch: pytest.MonkeyPatch) -> None:
     async def go() -> None:
-        client = _tie_client(monkeypatch)
         store, _, run = _run(RunConfig(rounds=2, tie_break="runoff"))
+        client = _tie_client(monkeypatch, [agent.id for agent in run.scenario.agents])
         final = await orchestrator.run_to_completion(store, client, run.id)
         n = len(run.scenario.agents)
         assert final.status == "done"
@@ -239,8 +243,8 @@ def test_runoff_extends_on_tie(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_tie_break_none_stops_on_tie(monkeypatch: pytest.MonkeyPatch) -> None:
     async def go() -> None:
-        client = _tie_client(monkeypatch)
         store, _, run = _run(RunConfig(rounds=2, tie_break="none"))
+        client = _tie_client(monkeypatch, [agent.id for agent in run.scenario.agents])
         final = await orchestrator.run_to_completion(store, client, run.id)
         n = len(run.scenario.agents)
         assert final.status == "done"
@@ -248,15 +252,15 @@ def test_tie_break_none_stops_on_tie(monkeypatch: pytest.MonkeyPatch) -> None:
         assert len(final.votes) == (run.config.rounds + 1) * n
         assert final.metrics is not None
         assert final.metrics.majority_candidate_id == "undecided"
-        assert final.metrics.agreement == 0.5
+        assert final.metrics.agreement == 0.4
 
     asyncio.run(go())
 
 
 def test_tie_break_chair(monkeypatch: pytest.MonkeyPatch) -> None:
     async def go() -> None:
-        client = _tie_client(monkeypatch)
         store, _, run = _run(RunConfig(rounds=2, tie_break="chair"))
+        client = _tie_client(monkeypatch, [agent.id for agent in run.scenario.agents])
         final = await orchestrator.run_to_completion(store, client, run.id)
         assert final.status == "done"
         assert len(final.turns) == run.config.rounds * len(run.scenario.agents)
