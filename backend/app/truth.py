@@ -86,3 +86,17 @@ def _majority(choices: Iterable[str]) -> str:
     best = max(tally.values())
     winners = [cid for cid, n in tally.items() if n == best]
     return winners[0] if len(winners) == 1 else UNDECIDED
+
+
+def majority(choices: Iterable[str], *, chair_choice: str | None = None) -> str:
+    """Plurality winner; on a tie the chair's ballot decides outright."""
+    tally = Counter(c for c in choices if c != UNDECIDED)
+    if not tally:
+        return UNDECIDED
+    best = max(tally.values())
+    winners = [cid for cid, n in tally.items() if n == best]
+    if len(winners) == 1:
+        return winners[0]
+    if chair_choice and chair_choice != UNDECIDED:
+        return chair_choice
+    return UNDECIDED

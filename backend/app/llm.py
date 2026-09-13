@@ -158,7 +158,12 @@ class FakeClient:
                 totals[fact_candidate[fact_id]] += fact_signed_weight[fact_id]
         best = max(totals.values()) if totals else 0
         winners = [c for c, t in totals.items() if t == best]
-        lean = winners[0] if len(winners) == 1 else UNDECIDED
+        if len(winners) == 1:
+            lean = winners[0]
+        elif meta.get("alone"):
+            lean = winners[0] if winners else UNDECIDED  # alone ballots must pick one
+        else:
+            lean = UNDECIDED
         return lean, round(0.55 + rng.random() * 0.4, 2)
 
     def _turn(self, meta: dict[str, Any], rng: random.Random) -> str:

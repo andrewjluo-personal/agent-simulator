@@ -21,9 +21,7 @@ def _fact_lines(scenario: Scenario, hand_fact_ids: list[str]) -> str:
         fact = scenario.fact(fact_id)
         name = scenario.fact(fact_id).candidate_id
         display = next((c.name for c in scenario.candidates if c.id == name), name)
-        lines.append(
-            f"[{fact.id}] (about {display}, {fact.valence}, weight {fact.weight}) {fact.text}"
-        )
+        lines.append(f"[{fact.id}] (about {display}) {fact.text}")
     return "\n".join(lines)
 
 
@@ -91,10 +89,11 @@ def turn_message(
     round_idx: int,
     heard_turns: list[Turn],
     paradigm: ParadigmSpec,
+    total: int,
 ) -> str:
     instruction = paradigm.round_instruction(round_idx, cfg)
     instruction_block = f"\n{instruction}" if instruction else ""
-    return f"""Round {round_idx + 1} of {cfg.rounds}. You speak now.
+    return f"""Round {round_idx + 1} of {total}. You speak now.
 
 {transcript_block(scenario, heard_turns)}{instruction_block}
 
@@ -108,6 +107,7 @@ def vote_message(
     heard_turns: list[Turn],
     agent_id: str,
     *,
+    total: int,
     final: bool,
 ) -> str:
     own = [t for t in heard_turns if t.agent_id == agent_id]
@@ -117,7 +117,7 @@ def vote_message(
     )
     last_lean = own[-1].lean if own else UNDECIDED
     lean_name = next((c.name for c in scenario.candidates if c.id == last_lean), last_lean)
-    return f"""Round {round_idx + 1} of {cfg.rounds} is over. This is a PRIVATE ballot — no other panelist will see it.
+    return f"""Round {round_idx + 1} of {total} is over. This is a PRIVATE ballot — no other panelist will see it.
 
 {transcript_block(scenario, heard_turns)}
 
