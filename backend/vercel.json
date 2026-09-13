@@ -1,8 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pip install -e '.[dev]' && ruff check . && mypy app scripts tests && pytest -q",
   "functions": {
     "app/main.py": {
       "maxDuration": 60,
+      "excludeFiles": "{tests/**,.venv/**}",
       "experimentalTriggers": [
         {
           "type": "queue/v1beta",
