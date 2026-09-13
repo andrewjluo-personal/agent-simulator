@@ -55,6 +55,8 @@ def validate_turn(
     candidate_ids: set[str],
     sentences_per_turn: int,
     opinions_allowed: bool,
+    *,
+    inferred_cited: list[str] | None = None,
 ) -> ValidatedTurn:
     if raw is None:
         return ValidatedTurn()
@@ -62,15 +64,21 @@ def validate_turn(
     sentences = raw.get("sentences")
     if isinstance(sentences, list):
         out.sentences = [_clip(s) for s in sentences if isinstance(s, str)][:sentences_per_turn]
-    items = raw.get("items_referenced")
     known = hand | common_ground
-    seen: set[str] = set()
-    if isinstance(items, list):
-        for item in items:
-            if not isinstance(item, str) or item in seen:
-                continue
-            seen.add(item)
-            (out.cited if item in known else out.hallucinated).append(item)
+    if inferred_cited is not None:
+        # memo mode: citations inferred lexically; best-effort, may catch facts the
+        # agent neither holds nor has heard
+        out.cited = [f for f in inferred_cited if f in known]
+        out.hallucinated = [f for f in inferred_cited if f not in known]
+    else:
+        items = raw.get("items_referenced")
+        seen: set[str] = set()
+        if isinstance(items, list):
+            for item in items:
+                if not isinstance(item, str) or item in seen:
+                    continue
+                seen.add(item)
+                (out.cited if item in known else out.hallucinated).append(item)
     lean = raw.get("current_lean")
     out.lean = lean if isinstance(lean, str) and lean in candidate_ids else UNDECIDED
     if not opinions_allowed:

@@ -4,11 +4,21 @@ export type Valence = 'pro' | 'con'
 export type Paradigm = 'free_discussion' | 'share_first'
 export type TurnOrder = 'clockwise' | 'random'
 export type TieBreak = 'none' | 'runoff' | 'chair'
+export type FactStyle = 'memo' | 'labelled'
+export type DecisionRule = 'majority' | 'consensus'
 export type RunStatus = 'queued' | 'running' | 'done' | 'error'
 export type LlmProvider = 'anthropic' | 'fake'
 
 export type Candidate = { id: string; name: string; blurb: string }
-export type Fact = { id: string; candidateId: string; valence: Valence; weight: number; text: string }
+export type Fact = {
+  id: string
+  candidateId: string
+  valence: Valence
+  weight: number
+  text: string
+  memoText?: string | null
+  keywords?: string[]
+}
 export type AgentPersona = { id: string; name: string; role: string; style: string }
 
 export type ValidationResult = {
@@ -30,6 +40,7 @@ export type Scenario = {
   facts: Fact[]
   agents: AgentPersona[]
   distribution: Record<string, string[]>
+  decisionRule?: DecisionRule
   validation?: Record<string, ValidationResult> | null
 }
 
@@ -40,6 +51,7 @@ export type RunConfig = {
   sentencesPerTurn: number
   turnOrder: TurnOrder
   tieBreak: TieBreak
+  factStyle: FactStyle
   model: string
   seed: number
 }

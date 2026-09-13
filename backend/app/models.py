@@ -17,6 +17,8 @@ Valence = Literal["pro", "con"]
 Paradigm = Literal["free_discussion", "share_first"]
 TurnOrder = Literal["clockwise", "random"]
 TieBreak = Literal["none", "runoff", "chair"]
+FactStyle = Literal["memo", "labelled"]
+DecisionRule = Literal["majority", "consensus"]
 RunStatus = Literal["queued", "running", "done", "error"]
 LlmProvider = Literal["anthropic", "fake"]
 
@@ -33,6 +35,8 @@ class Fact(Model):
     valence: Valence
     weight: int = Field(default=1, ge=1)
     text: str
+    memo_text: str | None = None
+    keywords: list[str] = []
 
 
 class AgentPersona(Model):
@@ -61,6 +65,7 @@ class Scenario(Model):
     facts: list[Fact]
     agents: list[AgentPersona]
     distribution: dict[str, list[str]]
+    decision_rule: DecisionRule = "majority"
     validation: dict[str, ValidationResult] | None = None  # keyed by model
 
     @model_validator(mode="after")
@@ -98,6 +103,7 @@ class RunConfig(Model):
     sentences_per_turn: int = Field(default=2, ge=1, le=5)
     turn_order: TurnOrder = "clockwise"
     tie_break: TieBreak = "runoff"
+    fact_style: FactStyle = "memo"
     model: str = "claude-haiku-4-5"
     seed: int = 0
 
@@ -106,7 +112,7 @@ class TurnOut(Model):
     """Raw model output for a discussion turn, pre-validation."""
 
     sentences: list[str]
-    items_referenced: list[str]
+    items_referenced: list[str] = []
     current_lean: str
     confidence: float
 

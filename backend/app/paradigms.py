@@ -17,6 +17,10 @@ class ParadigmSpec:
         """Extra RULES bullets for the system prompt."""
         return ""
 
+    def visibility_statement(self) -> str:
+        """One sentence telling the agent what of the discussion it will see."""
+        return "You will see the full discussion so far before each turn and before each ballot."
+
     def round_instruction(self, round_idx: int, cfg: RunConfig) -> str | None:
         """Appended to the per-turn user message."""
         return None

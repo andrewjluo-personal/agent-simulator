@@ -73,6 +73,8 @@ def _meta(
         "candidates": [c.id for c in scenario.candidates],
         "sentences_per_turn": run.config.sentences_per_turn,
         "share_first_round": not get_paradigm(run.config.paradigm).opinions_allowed(round_idx),
+        "fact_style": run.config.fact_style,
+        "fact_text": {f.id: (f.keywords[0] if f.keywords else f.text) for f in scenario.facts},
         "fact_candidate": {f.id: f.candidate_id for f in scenario.facts},
         "fact_signed_weight": {
             f.id: f.weight if f.valence == "pro" else -f.weight for f in scenario.facts
@@ -129,6 +131,15 @@ async def run_round(store: Store, client: LLMClient, run_id: str, round_idx: int
             try:
                 resp = await _call(client, run, system, user, meta)
                 raw = validate.parse_json_object(resp.text)
+                inferred: list[str] | None = None
+                if cfg.fact_style == "memo":
+                    sentences = raw.get("sentences") if raw else None
+                    inferred = truth.match_facts(
+                        [s for s in sentences if isinstance(s, str)]
+                        if isinstance(sentences, list)
+                        else [],
+                        scenario.facts,
+                    )
                 vt = validate.validate_turn(
                     raw,
                     hand=set(hand),
@@ -136,6 +147,7 @@ async def run_round(store: Store, client: LLMClient, run_id: str, round_idx: int
                     candidate_ids=candidate_ids,
                     sentences_per_turn=cfg.sentences_per_turn,
                     opinions_allowed=spec.opinions_allowed(round_idx),
+                    inferred_cited=inferred,
                 )
                 turn = Turn(
                     seq=seq,

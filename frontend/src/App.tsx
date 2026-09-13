@@ -25,6 +25,7 @@ function defaultConfig(scenario: Scenario): RunConfig {
     sentencesPerTurn: 2,
     turnOrder: 'clockwise',
     tieBreak: 'runoff',
+    factStyle: 'memo',
     model: 'claude-haiku-4-5',
     seed: Math.floor(Math.random() * 10000),
   }

@@ -174,7 +174,7 @@ def test_pre_discussion_ballot_has_no_transcript() -> None:
 
 def test_ballot_sees_transcript_and_own_lean() -> None:
     async def go() -> None:
-        store, client, run = _run(RunConfig(rounds=1))
+        store, client, run = _run(RunConfig(rounds=1, fact_style="labelled"))
         rec = RecordingClient(client)
         await orchestrator.run_to_completion(store, rec, run.id)
         round0_votes = [
@@ -185,6 +185,23 @@ def test_ballot_sees_transcript_and_own_lean() -> None:
         assert any("I noted the point about" in r.user for r in round0_votes)
         assert all("TRANSCRIPT SO FAR" in r.user for r in round0_votes)
         assert all("Your last stated lean:" in r.user for r in round0_votes)
+
+    asyncio.run(go())
+
+
+def test_memo_mode_run_yields_cited() -> None:
+    async def go() -> None:
+        store, client, run = _run(RunConfig(fact_style="memo", rounds=2))
+        rec = RecordingClient(client)
+        final = await orchestrator.run_to_completion(store, rec, run.id)
+        assert final.status == "done"
+        for t in final.turns:
+            if t.sentences:
+                assert t.cited, f"turn {t.seq} spoke but cited nothing"
+        assert all(r.meta.get("fact_style") == "memo" for r in rec.requests)
+        for r in rec.requests:
+            assert "items_referenced" not in r.system
+            assert "items_referenced" not in r.user
 
     asyncio.run(go())
 
