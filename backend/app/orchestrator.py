@@ -19,13 +19,14 @@ from .telemetry import emit
 
 
 def new_run(
+    store: Store,
     cfg: RunConfig,
     *,
     provider: str,
     is_demo: bool = False,
     batch_id: str | None = None,
 ) -> RunState:
-    scenario = load_scenario(cfg.scenario_id)
+    scenario = load_scenario(store, cfg.scenario_id)
     return RunState(
         id=str(uuid.uuid4()),
         scenario_id=cfg.scenario_id,
@@ -46,7 +47,9 @@ def turn_order(run: RunState, round_idx: int) -> list[str]:
     return order
 
 
-def _meta(run: RunState, kind: str, agent_id: str, round_idx: int, hand: list[str]) -> dict[str, Any]:
+def _meta(
+    run: RunState, kind: str, agent_id: str, round_idx: int, hand: list[str]
+) -> dict[str, Any]:
     scenario = run.scenario
     heard = sorted({f for t in run.turns for f in t.cited})
     return {
@@ -216,9 +219,7 @@ async def collect_votes(store: Store, client: LLMClient, run: RunState, round_id
                 reason=str(exc),
             )
 
-    await asyncio.gather(
-        *(guarded(a.id) for a in run.scenario.agents)
-    )
+    await asyncio.gather(*(guarded(a.id) for a in run.scenario.agents))
 
 
 def compute_metrics(run: RunState) -> Metrics:

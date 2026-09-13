@@ -61,9 +61,7 @@ def validate_turn(
     out = ValidatedTurn()
     sentences = raw.get("sentences")
     if isinstance(sentences, list):
-        out.sentences = [
-            _clip(s) for s in sentences if isinstance(s, str)
-        ][:sentences_per_turn]
+        out.sentences = [_clip(s) for s in sentences if isinstance(s, str)][:sentences_per_turn]
     items = raw.get("items_referenced")
     known = hand | common_ground
     seen: set[str] = set()
@@ -81,9 +79,7 @@ def validate_turn(
     return out
 
 
-def validate_vote(
-    raw: dict[str, Any] | None, candidate_ids: set[str]
-) -> tuple[str, float, str]:
+def validate_vote(raw: dict[str, Any] | None, candidate_ids: set[str]) -> tuple[str, float, str]:
     if raw is None:
         return UNDECIDED, 0.0, ""
     vote = raw.get("vote", raw.get("choice"))

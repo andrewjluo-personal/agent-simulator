@@ -1,9 +1,9 @@
-"""Seed demo runs against the configured store and write a DemoSnapshot JSON.
+"""Seed demo runs against the configured store.
 
 Usage:
   .venv/bin/python scripts/seed_demo.py --n 10 --provider fake \
       --paradigms free_discussion,share_first --rounds 3 --sentences 2 \
-      --out ../frontend/src/demo/snapshot.json [--reset-demo]
+      [--scenario hiring-panel-v1] [--reset-demo]
 """
 
 from __future__ import annotations
@@ -12,13 +12,15 @@ import argparse
 import asyncio
 import sys
 from pathlib import Path
+from typing import cast
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app import llm, orchestrator
-from app.models import DemoSnapshot
+from app.models import Paradigm, RunConfig
 from app.paradigms import PARADIGMS
-from app.scenario import load_scenario
+from app.samples import ensure_samples
+from app.scenario import DEFAULT_SCENARIO_ID
 from app.store import MemoryStore, Store
 
 
@@ -39,7 +41,7 @@ async def main() -> None:
     parser.add_argument("--paradigms", default="free_discussion,share_first")
     parser.add_argument("--rounds", type=int, default=3)
     parser.add_argument("--sentences", type=int, default=2)
-    parser.add_argument("--out", default="../frontend/src/demo/snapshot.json")
+    parser.add_argument("--scenario", default=DEFAULT_SCENARIO_ID)
     parser.add_argument("--reset-demo", action="store_true")
     args = parser.parse_args()
 
@@ -49,6 +51,9 @@ async def main() -> None:
     else:
         client = llm.AnthropicClient()
     store = get_store()
+    ensure_samples(store)
+    if store.get_scenario(args.scenario) is None:
+        sys.exit(f"unknown scenario {args.scenario!r}")
     if args.reset_demo:
         print(f"deleted {store.delete_demo_runs()} demo runs")
 
@@ -59,17 +64,14 @@ async def main() -> None:
             sys.exit(f"unknown paradigm {p!r}")
 
     async def one_run(paradigm: str, seed: int) -> None:
-        from typing import cast
-
-        from app.models import Paradigm, RunConfig
-
         cfg = RunConfig(
+            scenario_id=args.scenario,
             paradigm=cast("Paradigm", paradigm),
             rounds=args.rounds,
             sentences_per_turn=args.sentences,
             seed=seed,
         )
-        run = orchestrator.new_run(cfg, provider=client.provider, is_demo=True)
+        run = orchestrator.new_run(store, cfg, provider=client.provider, is_demo=True)
         store.create_run(run)
         async with sem:
             await orchestrator.run_to_completion(store, client, run.id)
@@ -77,28 +79,13 @@ async def main() -> None:
     for paradigm in paradigms:
         await asyncio.gather(*(one_run(paradigm, i) for i in range(args.n)))
         runs = [
-            store.get_run(s.id) for s in store.list_runs(is_demo=True)
+            store.get_run(s.id) for s in store.list_runs(is_demo=True, scenario_id=args.scenario)
         ]
         these = [r for r in runs if r and r.config.paradigm == paradigm and r.metrics]
         correct = sum(1 for r in these if r.metrics and r.metrics.correct)
         surfaced = [r.metrics.decisive_surfaced for r in these if r.metrics]
         mean = sum(surfaced) / len(surfaced) if surfaced else 0.0
-        print(
-            f"{paradigm}: {correct}/{len(these)} correct, "
-            f"mean decisive surfaced {mean:.2f}"
-        )
-
-    summaries = store.list_runs(is_demo=True)[:100]
-    full_runs = []
-    for s in summaries:
-        r = store.get_run(s.id)
-        if r is not None:
-            full_runs.append(r)
-    snapshot = DemoSnapshot(scenario=load_scenario(), runs=full_runs)
-    out = Path(args.out)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(snapshot.model_dump_json(by_alias=True, indent=2))
-    print(f"wrote {len(full_runs)} runs to {out}")
+        print(f"{paradigm}: {correct}/{len(these)} correct, mean decisive surfaced {mean:.2f}")
 
 
 if __name__ == "__main__":

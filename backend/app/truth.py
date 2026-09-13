@@ -35,9 +35,7 @@ def holders(scenario: Scenario, fact_id: str) -> list[str]:
 
 
 def shared_fact_ids(scenario: Scenario) -> set[str]:
-    return {
-        f.id for f in scenario.facts if len(holders(scenario, f.id)) == len(scenario.agents)
-    }
+    return {f.id for f in scenario.facts if len(holders(scenario, f.id)) == len(scenario.agents)}
 
 
 def unique_fact_ids(scenario: Scenario) -> set[str]:
@@ -60,10 +58,7 @@ def shared_only_verdict(scenario: Scenario) -> str:
 
 
 def alone_votes(scenario: Scenario) -> dict[str, str]:
-    return {
-        agent_id: verdict(scenario, held)
-        for agent_id, held in scenario.distribution.items()
-    }
+    return {agent_id: verdict(scenario, held) for agent_id, held in scenario.distribution.items()}
 
 
 def decisive_fact_ids(scenario: Scenario) -> set[str]:
