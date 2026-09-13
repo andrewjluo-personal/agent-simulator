@@ -48,6 +48,8 @@ class ValidationResult(Model):
     trials: int
     date: str  # ISO date
     passed: bool
+    free_discussion_rate: float | None = None  # mean(metrics.correct) over free_discussion runs
+    free_discussion_runs: int = 0
 
 
 class Scenario(Model):

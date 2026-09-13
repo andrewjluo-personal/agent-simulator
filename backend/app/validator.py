@@ -7,10 +7,11 @@ from __future__ import annotations
 import asyncio
 from datetime import UTC, datetime
 
-from . import prompts, truth, validate
+from . import orchestrator, prompts, truth, validate
 from .llm import LLMClient, LLMRequest
 from .models import AgentPersona, RunConfig, Scenario, ValidationResult
 from .paradigms import get_paradigm
+from .store import MemoryStore
 
 REVIEWER = AgentPersona(
     id="__all__", name="Reviewer", role="independent reviewer", style="thorough"
@@ -96,3 +97,31 @@ async def validate_scenario(
         date=datetime.now(UTC).isoformat(),
         passed=passed,
     )
+
+
+async def free_discussion_rate(
+    scenario: Scenario,
+    client: LLMClient,
+    *,
+    runs: int,
+    provider: str,
+) -> tuple[float, int]:
+    """Mean metrics.correct over `runs` free_discussion simulations (seeds 0..runs-1)
+    through the real orchestrator path, at most 4 concurrently."""
+    sem = asyncio.Semaphore(4)
+
+    async def one(seed: int) -> float:
+        store = MemoryStore()
+        store.upsert_scenario(scenario)
+        run = orchestrator.new_run(
+            store,
+            RunConfig(scenario_id=scenario.id, paradigm="free_discussion", seed=seed),
+            provider=provider,
+        )
+        store.create_run(run)
+        async with sem:
+            final = await orchestrator.run_to_completion(store, client, run.id)
+        return 1.0 if final.metrics and final.metrics.correct else 0.0
+
+    results = await asyncio.gather(*(one(s) for s in range(runs)))
+    return (sum(results) / runs if runs else 0.0), runs
