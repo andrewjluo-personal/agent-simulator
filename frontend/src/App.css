@@ -170,6 +170,11 @@ header h1 {
   font-weight: 700;
   fill: #fff;
 }
+.lean-diverge rect {
+  stroke: #fff;
+  stroke-width: 1.5;
+  stroke-dasharray: 3 2;
+}
 
 .center-box {
   position: absolute;
