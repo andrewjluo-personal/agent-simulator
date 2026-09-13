@@ -18,10 +18,11 @@ from .paradigms import PARADIGMS
 from .samples import SAMPLES_BY_ID, ensure_samples
 from .scenario import DEFAULT_SCENARIO_ID, load_scenario
 from .store import MemoryStore, Store
-from .telemetry import emit, request_logger
+from .telemetry import emit, request_logger, server_timing
 
 app = FastAPI(title="agent-simulator api")
 app.middleware("http")(request_logger)
+app.middleware("http")(server_timing)
 
 allowed_origins = [
     origin.strip()
@@ -34,6 +35,7 @@ app.add_middleware(
     allow_origin_regex=r"https://.*\.vercel\.app",
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Server-Timing", "x-request-id"],
 )
 
 _store: Store | None = None
@@ -54,6 +56,7 @@ def reset_state() -> None:
     global _store
     _store = None
     llm.reset_client()
+    db.reset_pool()
 
 
 class GreetingIn(BaseModel):
@@ -251,12 +254,12 @@ def get_batch(batch_id: str) -> dict[str, Any]:
 
 @app.get("/api/demo")
 def get_demo(scenario_id: str | None = Query(default=None, alias="scenarioId")) -> dict[str, Any]:
-    store = get_store()
-    scenario = store.get_scenario(scenario_id or DEFAULT_SCENARIO_ID)
-    if scenario is None:
+    """Scenario plus demo run *summaries*; the client fetches full transcripts via
+    GET /api/runs/{id} on demand."""
+    snap = get_store().demo_snapshot(scenario_id or DEFAULT_SCENARIO_ID)
+    if snap is None:
         raise HTTPException(status_code=404, detail="scenario not found")
-    summaries = store.list_runs(is_demo=True, scenario_id=scenario.id)[:100]
-    runs = [r for rid in summaries if (r := store.get_run(rid.id)) is not None]
+    scenario, runs = snap
     snapshot = DemoSnapshot(scenario=scenario, runs=runs)
     return snapshot.model_dump(by_alias=True, mode="json")
 

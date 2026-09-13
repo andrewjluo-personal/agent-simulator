@@ -207,7 +207,7 @@ class BatchState(Model):
 
 class DemoSnapshot(Model):
     scenario: Scenario
-    runs: list[RunState]
+    runs: list[RunSummary]
 
 
 def summary(run: RunState) -> RunSummary:

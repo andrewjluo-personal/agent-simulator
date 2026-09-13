@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
-import { createBatch, getBatch, getDemo, listScenarios, resetScenario } from './api'
+import { createBatch, getBatch, getDemo, getRun, listScenarios, resetScenario } from './api'
 import { Controls, ResultsStrip, Transcript, VerdictBadges, VerdictCard, type StripRow } from './components/Panels'
 import { FlowTimeline } from './components/FlowTimeline'
 import { Table } from './components/Table'
@@ -14,6 +14,8 @@ const PARADIGMS: { id: Paradigm; label: string }[] = [
   { id: 'free_discussion', label: 'Free discussion' },
   { id: 'share_first', label: 'Share facts first' },
 ]
+
+const DEFAULT_SCENARIO_ID = 'hiring-panel-v1'
 
 function defaultConfig(scenario: Scenario): RunConfig {
   return {
@@ -30,7 +32,9 @@ function defaultConfig(scenario: Scenario): RunConfig {
 function App() {
   const [scenarios, setScenarios] = useState<Scenario[]>([])
   const [scenario, setScenario] = useState<Scenario | null>(null)
-  const [demoRuns, setDemoRuns] = useState<RunState[]>([])
+  const [demoRuns, setDemoRuns] = useState<RunSummary[]>([])
+  // Full transcripts are fetched on demand (GET /api/runs/{id}) and kept here so replays are instant.
+  const fullRuns = useRef(new Map<string, RunState>())
   const [apiDown, setApiDown] = useState(false)
   const [config, setConfig] = useState<RunConfig | null>(null)
   const [n, setN] = useState(10)
@@ -40,42 +44,75 @@ function App() {
   const pb = usePlayback()
   const highlight = useHighlightState()
 
-  const loadDemo = useCallback((scenarioId: string) => {
-    return getDemo(scenarioId)
-      .then((snap) => {
-        setScenario(snap.scenario)
-        setDemoRuns(snap.runs)
-        setApiDown(false)
-      })
-      .catch((cause: unknown) => {
-        track('demo.load_failed', { reason: String(cause) }, 'warning')
-        setApiDown(true)
-      })
+  const loadDemo = useCallback(async (scenarioId: string): Promise<boolean> => {
+    try {
+      const snap = await getDemo(scenarioId)
+      setScenario(snap.scenario)
+      setDemoRuns(snap.runs)
+      setConfig((c) => (c ? { ...c, scenarioId: snap.scenario.id } : defaultConfig(snap.scenario)))
+      setApiDown(false)
+      return true
+    } catch (cause) {
+      track('demo.load_failed', { reason: String(cause) }, 'warning')
+      return false
+    }
   }, [])
 
+  // The scenario list and the default scenario's snapshot are independent, so fetch both at once;
+  // first paint only waits on the snapshot.
   useEffect(() => {
+    const demo = loadDemo(DEFAULT_SCENARIO_ID)
     listScenarios()
-      .then((list) => {
+      .then(async (list) => {
         setScenarios(list)
-        const initial = list.find((s) => s.id === 'hiring-panel-v1') ?? list[0]
-        if (!initial) {
-          setApiDown(true)
-          return
-        }
-        setConfig((c) => c ?? defaultConfig(initial))
-        void loadDemo(initial.id)
+        if (await demo) return
+        const fallback = list.find((s) => s.id !== DEFAULT_SCENARIO_ID)
+        if (!fallback || !(await loadDemo(fallback.id))) setApiDown(true)
       })
-      .catch((cause: unknown) => {
+      .catch(async (cause: unknown) => {
         track('scenarios.load_failed', { reason: String(cause) }, 'warning')
-        setApiDown(true)
+        if (!(await demo)) setApiDown(true)
       })
   }, [loadDemo])
+
+  const openRun = useCallback(
+    async (id: string) => {
+      const cached = fullRuns.current.get(id)
+      if (cached) {
+        pb.loadRun(cached, true)
+        return
+      }
+      try {
+        const full = await getRun(id)
+        fullRuns.current.set(id, full)
+        pb.loadRun(full, true)
+      } catch (cause) {
+        setBatchError(cause instanceof Error ? cause.message : String(cause))
+      }
+    },
+    [pb],
+  )
+
+  // Warm the cache with one finished run per paradigm so the first ▶ Play is instant.
+  useEffect(() => {
+    for (const p of PARADIGMS) {
+      const pick = demoRuns.find((r) => r.config.paradigm === p.id && r.status === 'done')
+      if (!pick || fullRuns.current.has(pick.id)) continue
+      getRun(pick.id)
+        .then((full) => fullRuns.current.set(full.id, full))
+        .catch(() => {
+          /* best effort; openRun refetches */
+        })
+    }
+  }, [demoRuns])
 
   const selectScenario = useCallback(
     (id: string) => {
       setConfig((c) => (c ? { ...c, scenarioId: id } : defaultConfig(scenarios.find((s) => s.id === id)!)))
       pb.clear()
-      void loadDemo(id)
+      void loadDemo(id).then((ok) => {
+        if (!ok) setApiDown(true)
+      })
     },
     [scenarios, pb, loadDemo],
   )
@@ -121,8 +158,8 @@ function App() {
 
   const playCached = useCallback(() => {
     const pick = cachedForParadigm[0]
-    if (pick) pb.loadRun(pick, true)
-  }, [cachedForParadigm, pb])
+    if (pick) void openRun(pick.id)
+  }, [cachedForParadigm, openRun])
 
   const runBatch = useCallback(async () => {
     if (!config) return
@@ -156,11 +193,10 @@ function App() {
 
   const pickRun = useCallback(
     (id: string) => {
-      const full = demoRuns.find((r) => r.id === id)
-      if (full) pb.loadRun(full, true)
+      if (demoRuns.some((r) => r.id === id)) void openRun(id)
       else void pb.replayById(id)
     },
-    [demoRuns, pb],
+    [demoRuns, pb, openRun],
   )
 
   if (!scenario || !config) {

@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 import os
+import time
 from collections.abc import Iterator
 from contextlib import contextmanager
+from contextvars import ContextVar
+from dataclasses import dataclass
 from typing import Any
 
 import psycopg
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
+from psycopg_pool import ConnectionPool
 
 from .models import Metrics, RunState, RunStatus, RunSummary, Scenario, Turn, Vote
 
@@ -88,10 +92,59 @@ def database_url() -> str:
     return url
 
 
+@dataclass
+class DbTiming:
+    """Per-request accounting surfaced as a `Server-Timing` header."""
+
+    acquire_ms: float = 0.0
+    total_ms: float = 0.0
+    connections: int = 0
+
+
+timing: ContextVar[DbTiming | None] = ContextVar("db_timing", default=None)
+
+_pool: ConnectionPool[psycopg.Connection[dict[str, Any]]] | None = None
+
+
+def pool() -> ConnectionPool[psycopg.Connection[dict[str, Any]]]:
+    """Module-level pool so warm function instances reuse Neon connections instead of
+    paying the TCP+TLS+auth handshake on every request."""
+    global _pool
+    if _pool is None:
+        _pool = ConnectionPool(
+            database_url(),
+            connection_class=psycopg.Connection[dict[str, Any]],
+            kwargs={"row_factory": dict_row, "connect_timeout": 10, "autocommit": True},
+            min_size=1,
+            max_size=int(os.getenv("DB_POOL_MAX", "5")),
+            max_idle=300,
+            check=ConnectionPool.check_connection,
+            open=True,
+        )
+    return _pool
+
+
+def reset_pool() -> None:
+    global _pool
+    if _pool is not None:
+        _pool.close()
+    _pool = None
+
+
 @contextmanager
 def connection() -> Iterator[psycopg.Connection[dict[str, Any]]]:
-    with psycopg.connect(database_url(), row_factory=dict_row, connect_timeout=10) as conn:
-        yield conn
+    started = time.perf_counter()
+    with pool().connection() as conn:
+        acquired = time.perf_counter()
+        try:
+            yield conn
+        finally:
+            stats = timing.get()
+            if stats is not None:
+                now = time.perf_counter()
+                stats.connections += 1
+                stats.acquire_ms += (acquired - started) * 1000
+                stats.total_ms += (now - started) * 1000
 
 
 def init_schema() -> None:
@@ -251,6 +304,20 @@ class PgStore:
             if row is None:
                 return None
             return _run_from_row(row, self._turns(conn, run_id), self._votes(conn, run_id))
+
+    def demo_snapshot(self, scenario_id: str) -> tuple[Scenario, list[RunSummary]] | None:
+        with connection() as conn:
+            row = conn.execute(
+                "select body from scenarios where id = %s", (scenario_id,)
+            ).fetchone()
+            if row is None:
+                return None
+            rows = conn.execute(
+                "select * from runs where is_demo and scenario_id = %s "
+                "order by created_at desc limit 100",
+                (scenario_id,),
+            ).fetchall()
+        return Scenario.model_validate(row["body"]), [_summary_from_row(r) for r in rows]
 
     def get_run_since(self, run_id: str, since_seq: int) -> RunState | None:
         with connection() as conn:

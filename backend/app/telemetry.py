@@ -13,6 +13,8 @@ from typing import Any
 
 from fastapi import Request, Response
 
+from . import db
+
 SERVICE = "agent-simulator-api"
 
 
@@ -78,4 +80,27 @@ async def request_logger(
         durationMs=duration_ms,
     )
     response.headers["x-request-id"] = request_id
+    return response
+
+
+async def server_timing(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
+    """`Server-Timing: db;dur=…, db-acquire;dur=…, app;dur=…` so DevTools shows how much
+    of a request was spent in Postgres (incl. connection acquire) vs. in Python."""
+    stats = db.DbTiming()
+    token = db.timing.set(stats)
+    started = time.perf_counter()
+    try:
+        response = await call_next(request)
+    finally:
+        db.timing.reset(token)
+    total_ms = (time.perf_counter() - started) * 1000
+    response.headers["Server-Timing"] = ", ".join(
+        [
+            f'db;dur={stats.total_ms:.1f};desc="{stats.connections} conn"',
+            f"db-acquire;dur={stats.acquire_ms:.1f}",
+            f"app;dur={max(total_ms - stats.total_ms, 0):.1f}",
+        ]
+    )
     return response
