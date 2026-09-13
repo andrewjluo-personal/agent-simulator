@@ -52,6 +52,7 @@ export type Vote = {
   choice: string // candidateId | 'undecided'
   confidence: number
   reason?: string | null
+  saidLean: string // latest public turn lean at ballot time
 }
 
 export type Metrics = {
