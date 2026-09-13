@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from .models import AgentPersona, RunConfig
 
 if TYPE_CHECKING:
-    from .models import RunState
+    from .models import RunState, Scenario
     from .validate import ValidatedTurn
 
 MODERATOR_ID = "moderator"
@@ -66,6 +66,7 @@ class ParadigmSpec:
         candidate_ids: set[str],
         cfg: RunConfig,
         round_idx: int,
+        scenario: Scenario,
         inferred_cited: list[str] | None = None,
     ) -> ValidatedTurn:
         from .validate import validate_turn
@@ -80,7 +81,7 @@ class ParadigmSpec:
             inferred_cited=inferred_cited,
         )
 
-    def response_format(self) -> str | None:
+    def response_format(self, cfg: RunConfig) -> str | None:
         return None
 
     @property
@@ -133,6 +134,12 @@ class ExchangeThenDecide(ParadigmSpec):
             heard = {fact_id for turn in run.turns for fact_id in turn.cited}
             unmentioned = [fact_id for fact_id in run.scenario.distribution[agent_id] if fact_id not in heard]
             if unmentioned:
+                if run.config.fact_style == "memo":
+                    points = "; ".join(
+                        run.scenario.fact(fact_id).memo_text or run.scenario.fact(fact_id).text
+                        for fact_id in unmentioned
+                    )
+                    return f"Points from your notes not yet raised by anyone: {points}"
                 return f"Your facts not yet mentioned by anyone: {', '.join(unmentioned)}"
             return "All your facts have been mentioned."
         if round_idx == self.exchange_rounds(run.config):
@@ -149,13 +156,24 @@ class ElicitationModerator(ParadigmSpec):
 @dataclass(frozen=True)
 class MessageBoard(ParadigmSpec):
     def system_rules(self, cfg: RunConfig) -> str:
+        if cfg.fact_style == "memo":
+            return (
+                "- You are posting to a shared board, not chatting: other panelists see the "
+                "canonical text of each fact sentence you post, plus at most one sentence of "
+                "note from you. Copy only facts verbatim from your notes."
+            )
         return (
             "- You are posting to a shared board, not chatting: other panelists see the "
             "canonical text of each fact id you post, plus at most one sentence of note "
             "from you. Post only fact ids you hold."
         )
 
-    def response_format(self) -> str | None:
+    def response_format(self, cfg: RunConfig) -> str | None:
+        if cfg.fact_style == "memo":
+            return (
+                '{"facts": string[], "note": string, "current_lean": '
+                'candidate id or "undecided", "confidence": 0..1}'
+            )
         return (
             '{"fact_ids": string[], "note": string, "current_lean": '
             'candidate id or "undecided", "confidence": 0..1}'
@@ -184,8 +202,9 @@ class MessageBoard(ParadigmSpec):
         fact_lines = []
         for fact_id in posted:
             turn = next(t for t in run.turns if fact_id in t.cited)
+            prefix = f"[{fact_id}] " if run.config.fact_style == "labelled" else "• "
             fact_lines.append(
-                f"[{fact_id}] {run.scenario.fact(fact_id).text} — posted by "
+                f"{prefix}{run.scenario.fact(fact_id).text} — posted by "
                 f"{agents[turn.agent_id].name} (R{turn.round + 1})"
             )
         note_lines = [
@@ -203,11 +222,19 @@ class MessageBoard(ParadigmSpec):
         candidate_ids: set[str],
         cfg: RunConfig,
         round_idx: int,
+        scenario: Scenario,
         inferred_cited: list[str] | None = None,
     ) -> ValidatedTurn:
         from .validate import validate_board
 
-        return validate_board(raw, hand, candidate_ids, self.opinions_allowed_for(round_idx, cfg))
+        return validate_board(
+            raw,
+            hand,
+            candidate_ids,
+            self.opinions_allowed_for(round_idx, cfg),
+            scenario=scenario,
+            fact_style=cfg.fact_style,
+        )
 
 
 EXCHANGE_THEN_DECIDE = ExchangeThenDecide(

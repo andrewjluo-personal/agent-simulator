@@ -100,6 +100,7 @@ def _meta(
         "share_first_round": not spec.opinions_allowed_for(round_idx, run.config),
         "fact_style": run.config.fact_style,
         "fact_text": {f.id: (f.keywords[0] if f.keywords else f.text) for f in scenario.facts},
+        "fact_canonical_text": {f.id: f.text for f in scenario.facts},
         "fact_candidate": {f.id: f.candidate_id for f in scenario.facts},
         "fact_signed_weight": {
             f.id: f.weight if f.valence == "pro" else -f.weight for f in scenario.facts
@@ -227,6 +228,7 @@ async def run_round(store: Store, client: LLMClient, run_id: str, round_idx: int
                         candidate_ids=candidate_ids,
                         cfg=cfg,
                         round_idx=round_idx,
+                        scenario=scenario,
                         inferred_cited=inferred,
                     )
                     turn = Turn(

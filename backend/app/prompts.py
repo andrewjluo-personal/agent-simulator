@@ -73,7 +73,7 @@ def system_prompt(
         f'{{"sentences": string[], {items_field}"current_lean": '
         f'"{_lean_options(scenario)}", "confidence": 0..1}}'
     )
-    response_format = paradigm.response_format()
+    response_format = paradigm.response_format(cfg)
     response_block = (
         f"Respond with JSON only:\n{response_format}"
         if response_format
@@ -220,21 +220,23 @@ def moderator_message(
     unmentioned_counts: dict[str, int],
 ) -> str:
     transcript = transcript_block(scenario, heard_turns, cfg)
-    mentioned = []
-    for turn in heard_turns:
-        for fact_id in turn.cited:
-            if fact_id not in mentioned:
-                mentioned.append(fact_id)
     counts = ", ".join(
         f"{_agent_name(scenario, agent_id)} (id: {agent_id}): {count}"
         for agent_id, count in unmentioned_counts.items()
     )
+    fact_ids = ""
+    if cfg.fact_style == "labelled":
+        mentioned = []
+        for turn in heard_turns:
+            for fact_id in turn.cited:
+                if fact_id not in mentioned:
+                    mentioned.append(fact_id)
+        fact_ids = f"\nFACT IDS MENTIONED SO FAR: {', '.join(mentioned) if mentioned else 'none'}\n"
     return f"""Round {round_idx + 1} of {cfg.rounds}. You speak first.
 
 {transcript}
 
-FACT IDS MENTIONED SO FAR: {", ".join(mentioned) if mentioned else "none"}
-STILL-UNMENTIONED HELD FACT COUNTS: {counts}
+{fact_ids}STILL-UNMENTIONED HELD FACT COUNTS: {counts}
 
 In at most two sentences, name an agent and ask them to share anything unmentioned
 and/or summarise the open disagreement. address_agent_id must be one of the ids above,

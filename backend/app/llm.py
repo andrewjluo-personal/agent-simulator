@@ -214,12 +214,21 @@ class FakeClient:
             "confidence": confidence,
         }
         if meta.get("output_format") == "board":
-            payload = {
-                "fact_ids": picked,
-                "note": sentences[0] if sentences else "",
-                "current_lean": lean,
-                "confidence": confidence,
-            }
+            if memo:
+                fact_text = meta.get("fact_canonical_text", {})
+                payload = {
+                    "facts": [fact_text.get(fid, fid) for fid in picked],
+                    "note": sentences[0] if sentences else "",
+                    "current_lean": lean,
+                    "confidence": confidence,
+                }
+            else:
+                payload = {
+                    "fact_ids": picked,
+                    "note": sentences[0] if sentences else "",
+                    "current_lean": lean,
+                    "confidence": confidence,
+                }
         elif not memo:
             payload["items_referenced"] = picked
         return self._dump(payload, rng)

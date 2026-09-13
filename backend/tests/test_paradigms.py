@@ -8,10 +8,10 @@ from app import orchestrator
 from app.llm import FakeClient
 from app.models import RunConfig, RunState, Turn
 from app.paradigms import MODERATOR_ID, ExchangeThenDecide, get_paradigm
-from app.prompts import system_prompt, turn_message, vote_message
+from app.prompts import moderator_message, system_prompt, turn_message, vote_message
 from app.samples import SAMPLE_SCENARIOS
 from app.store import MemoryStore
-from app.truth import UNDECIDED, _majority
+from app.truth import UNDECIDED, _majority, match_facts
 from app.validate import validate_board, validate_turn
 
 
@@ -65,7 +65,7 @@ def test_existing_prompt_snapshots_are_unchanged() -> None:
 
 def test_exchange_and_moderator_prompt_addenda() -> None:
     scenario = SAMPLE_SCENARIOS[0]
-    cfg = RunConfig(paradigm="exchange_then_decide", rounds=3)
+    cfg = RunConfig(paradigm="exchange_then_decide", rounds=3, fact_style="labelled")
     run = RunState(
         id="test",
         scenario_id=scenario.id,
@@ -124,7 +124,7 @@ def test_new_paradigms_run_to_completion() -> None:
 
 def test_exchange_phases_and_opinion_gate() -> None:
     async def go() -> None:
-        cfg = RunConfig(paradigm="exchange_then_decide", rounds=3)
+        cfg = RunConfig(paradigm="exchange_then_decide", rounds=3, fact_style="labelled")
         store, client, run = _run(cfg)
         await orchestrator.run_to_completion(store, client, run.id)
         for turn in run.turns:
@@ -217,7 +217,108 @@ def test_board_context_and_validation() -> None:
         {fact_id},
         {candidate.id for candidate in scenario.candidates},
         True,
+        scenario=scenario,
+        fact_style="labelled",
     )
     assert validated.cited == [fact_id]
     assert validated.hallucinated == [f"{fact_id}-hallucinated"]
     assert validated.sentences == ["one."]
+
+
+def test_memo_paradigm_prompts_hide_fact_ids() -> None:
+    scenario = SAMPLE_SCENARIOS[0]
+    agent = scenario.agents[0]
+    cfg = RunConfig(paradigm="exchange_then_decide", fact_style="memo")
+    run = RunState(
+        id="test",
+        scenario_id=scenario.id,
+        scenario=scenario,
+        config=cfg,
+        status="running",
+        llm_provider="fake",
+    )
+    spec = get_paradigm(cfg.paradigm)
+    addendum = spec.turn_addendum(run, agent.id, 0)
+    assert addendum is not None
+    assert "Points from your notes not yet raised by anyone:" in addendum
+    assert any(
+        (scenario.fact(fact_id).memo_text or scenario.fact(fact_id).text) in addendum
+        for fact_id in scenario.distribution[agent.id]
+    )
+    assert all(fact_id not in addendum for fact_id in scenario.distribution[agent.id])
+
+    heard = [
+        Turn(
+            seq=0,
+            round=0,
+            agent_id=scenario.agents[1].id,
+            sentences=["A note from the panel."],
+            cited=[scenario.distribution[scenario.agents[1].id][0]],
+            hallucinated=[],
+            lean=UNDECIDED,
+            confidence=0.5,
+        )
+    ]
+    moderator = moderator_message(
+        scenario,
+        cfg,
+        0,
+        heard,
+        {agent.id: len(scenario.distribution[agent.id]) for agent in scenario.agents},
+    )
+    assert "FACT IDS MENTIONED" not in moderator
+    assert all(fact.id not in moderator for fact in scenario.facts)
+
+
+def test_memo_board_context_and_validation_use_verbatim_facts() -> None:
+    scenario = SAMPLE_SCENARIOS[0]
+    agent = scenario.agents[0]
+    fact_id = scenario.distribution[agent.id][0]
+    run = RunState(
+        id="test",
+        scenario_id=scenario.id,
+        scenario=scenario,
+        config=RunConfig(paradigm="message_board", fact_style="memo"),
+        status="running",
+        llm_provider="fake",
+        turns=[
+            Turn(
+                seq=0,
+                round=0,
+                agent_id=agent.id,
+                sentences=["A note."],
+                cited=[fact_id],
+                hallucinated=[],
+                lean=UNDECIDED,
+                confidence=0.5,
+            )
+        ],
+    )
+    board = get_paradigm("message_board")
+    context = board.visible_context(run, agent.id, 0)
+    assert context is not None
+    assert scenario.fact(fact_id).text in context
+    assert f"[{fact_id}]" not in context
+
+    hand = set(scenario.distribution[agent.id])
+    off_hand = next(
+        fact
+        for fact in scenario.facts
+        if fact.id not in hand and not match_facts([fact.text], [scenario.fact(fid) for fid in hand])
+    )
+    validated = validate_board(
+        {
+            "facts": [scenario.fact(fact_id).text, off_hand.text],
+            "note": "",
+            "current_lean": UNDECIDED,
+            "confidence": 0.5,
+        },
+        hand,
+        {candidate.id for candidate in scenario.candidates},
+        True,
+        scenario=scenario,
+        fact_style="memo",
+    )
+    assert fact_id in validated.cited
+    assert off_hand.id not in validated.cited
+    assert f"unmatched:{off_hand.text[:60]}" in validated.hallucinated

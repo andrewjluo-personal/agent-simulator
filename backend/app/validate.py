@@ -7,7 +7,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
-from .truth import UNDECIDED
+from .models import FactStyle, Scenario
+from .truth import UNDECIDED, match_facts
 
 MAX_WORDS = 40
 _FENCE = re.compile(r"^```(?:json)?\s*|\s*```$", re.MULTILINE)
@@ -53,18 +54,38 @@ def validate_board(
     hand: set[str],
     candidate_ids: set[str],
     opinions_allowed: bool,
+    *,
+    scenario: Scenario,
+    fact_style: FactStyle,
 ) -> ValidatedTurn:
     if raw is None:
         return ValidatedTurn()
     out = ValidatedTurn()
-    items = raw.get("fact_ids")
-    seen: set[str] = set()
-    if isinstance(items, list):
-        for item in items:
-            if not isinstance(item, str) or item in seen:
-                continue
-            seen.add(item)
-            (out.cited if item in hand else out.hallucinated).append(item)
+    if fact_style == "labelled":
+        items = raw.get("fact_ids")
+        seen_ids: set[str] = set()
+        if isinstance(items, list):
+            for item in items:
+                if not isinstance(item, str) or item in seen_ids:
+                    continue
+                seen_ids.add(item)
+                (out.cited if item in hand else out.hallucinated).append(item)
+    else:
+        facts = raw.get("facts")
+        seen_cited: set[str] = set()
+        held_facts = [scenario.fact(fact_id) for fact_id in hand]
+        if isinstance(facts, list):
+            for text in facts:
+                if not isinstance(text, str):
+                    continue
+                matched = match_facts([text], held_facts)
+                if matched:
+                    for fact_id in matched:
+                        if fact_id not in seen_cited:
+                            seen_cited.add(fact_id)
+                            out.cited.append(fact_id)
+                else:
+                    out.hallucinated.append(f"unmatched:{text[:60]}")
     note = raw.get("note")
     if isinstance(note, str) and note:
         first = re.split(r"(?<=[.!?])\s+", note.strip(), maxsplit=1)[0]
