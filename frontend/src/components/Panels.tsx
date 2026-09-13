@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { aloneVotes, candidateName, decisiveFactIds, pooledVerdict, sharedFactIds, tally, tallyText } from '../truth'
-import type { Paradigm, RunConfig, RunState, RunSummary, Scenario, Turn, TurnOrder } from '../types'
+import type { Paradigm, RunConfig, RunState, RunSummary, Scenario, TieBreak, Turn, TurnOrder } from '../types'
 import { candidateColor } from './Table'
 
 export function VerdictBadges({ scenario }: { scenario: Scenario }) {
@@ -98,6 +98,14 @@ export function Controls(p: ControlsProps) {
           <option value="random">random</option>
         </select>
       </label>
+      <label>
+        Tie-break
+        <select value={p.config.tieBreak} onChange={(e) => set('tieBreak', e.target.value as TieBreak)}>
+          <option value="runoff">runoff</option>
+          <option value="none">none</option>
+          <option value="chair">chair</option>
+        </select>
+      </label>
       <span className="spacer" />
       {p.status === 'playing' ? (
         <button onClick={p.onPause}>❚❚ Pause</button>
@@ -134,7 +142,7 @@ export function Transcript({ run, turns }: { run: RunState; turns: Turn[] }) {
       {turns.map((t) => (
         <div key={t.seq} className="utt">
           <div className="utt-head">
-            <span className="utt-round">R{t.round + 1}</span>
+            <span className="utt-round">{t.round >= run.config.rounds ? 'Runoff' : `R${t.round + 1}`}</span>
             <strong>{agents.get(t.agentId)?.name ?? t.agentId}</strong>
             {t.lean !== 'undecided' && (
               <span className="lean" style={{ color: candidateColor(run.scenario, t.lean) }}>

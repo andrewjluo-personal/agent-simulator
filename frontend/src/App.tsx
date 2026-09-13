@@ -20,6 +20,7 @@ function defaultConfig(scenario: Scenario): RunConfig {
     rounds: 3,
     sentencesPerTurn: 2,
     turnOrder: 'clockwise',
+    tieBreak: 'runoff',
     model: 'claude-haiku-4-5',
     seed: Math.floor(Math.random() * 10000),
   }
@@ -183,7 +184,7 @@ function App() {
           : 'paused'
 
   const runScenario = pb.run?.scenario ?? scenario
-  const roundShown = pb.run ? Math.min(pb.run.config.rounds, Math.floor((pb.revealed - 1) / Math.max(1, runScenario.agents.length)) + 1) : 0
+  const roundShown = pb.run ? Math.min(Math.ceil(pb.run.turns.length / Math.max(1, runScenario.agents.length)), Math.floor((pb.revealed - 1) / Math.max(1, runScenario.agents.length)) + 1) : 0
 
   return (
     <main>

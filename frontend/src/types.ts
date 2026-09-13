@@ -3,12 +3,21 @@
 export type Valence = 'pro' | 'con'
 export type Paradigm = 'free_discussion' | 'share_first'
 export type TurnOrder = 'clockwise' | 'random'
+export type TieBreak = 'none' | 'runoff' | 'chair'
 export type RunStatus = 'queued' | 'running' | 'done' | 'error'
 export type LlmProvider = 'anthropic' | 'fake'
 
 export type Candidate = { id: string; name: string; blurb: string }
 export type Fact = { id: string; candidateId: string; valence: Valence; weight: number; text: string }
 export type AgentPersona = { id: string; name: string; role: string; style: string }
+
+export type ValidationResult = {
+  aloneWrongRate: Record<string, number>
+  pooledRightRate: number
+  trials: number
+  date: string
+  passed: boolean
+}
 
 export type Scenario = {
   id: string
@@ -19,6 +28,7 @@ export type Scenario = {
   facts: Fact[]
   agents: AgentPersona[]
   distribution: Record<string, string[]>
+  validation?: Record<string, ValidationResult> | null
 }
 
 export type RunConfig = {
@@ -27,6 +37,7 @@ export type RunConfig = {
   rounds: number
   sentencesPerTurn: number
   turnOrder: TurnOrder
+  tieBreak: TieBreak
   model: string
   seed: number
 }
