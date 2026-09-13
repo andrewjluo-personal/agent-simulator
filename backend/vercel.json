@@ -5,7 +5,7 @@
       "maxDuration": 60,
       "experimentalTriggers": [
         {
-          "type": "queue/v2beta",
+          "type": "queue/v1beta",
           "topic": "greetings",
           "consumer": "greetings-worker"
         }
