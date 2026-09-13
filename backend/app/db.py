@@ -69,11 +69,14 @@ create table if not exists votes (
     choice text not null,
     confidence real not null,
     reason text,
+    said_lean text not null default 'undecided',
     latency_ms int,
     input_tokens int,
     output_tokens int,
     primary key (run_id, round, agent_id)
-)
+);
+
+alter table votes add column if not exists said_lean text not null default 'undecided'
 """
 
 
@@ -143,6 +146,7 @@ def _vote_from_row(row: dict[str, Any]) -> Vote:
         choice=row["choice"],
         confidence=row["confidence"],
         reason=row["reason"],
+        said_lean=row.get("said_lean") or "undecided",
     )
 
 
@@ -318,10 +322,18 @@ class PgStore:
     def insert_vote(self, run_id: str, vote: Vote) -> None:
         with connection() as conn:
             conn.execute(
-                "insert into votes (run_id, round, agent_id, choice, confidence, reason) "
-                "values (%s, %s, %s, %s, %s, %s) "
+                "insert into votes (run_id, round, agent_id, choice, confidence, reason, said_lean) "
+                "values (%s, %s, %s, %s, %s, %s, %s) "
                 "on conflict (run_id, round, agent_id) do nothing",
-                (run_id, vote.round, vote.agent_id, vote.choice, vote.confidence, vote.reason),
+                (
+                    run_id,
+                    vote.round,
+                    vote.agent_id,
+                    vote.choice,
+                    vote.confidence,
+                    vote.reason,
+                    vote.said_lean,
+                ),
             )
 
     def set_status(

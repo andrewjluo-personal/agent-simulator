@@ -135,6 +135,7 @@ class Vote(Model):
     choice: str
     confidence: float
     reason: str | None = None
+    said_lean: str = "undecided"  # latest public turn lean at ballot time
 
 
 class Metrics(Model):
@@ -148,6 +149,7 @@ class Metrics(Model):
     agreement: float
     hallucination_count: int
     vote_trajectory: list[dict[str, int]]
+    vote_trajectory_rounds: list[int] = []
 
 
 class RunState(Model):

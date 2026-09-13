@@ -63,6 +63,26 @@ def _agent_name(scenario: Scenario, agent_id: str) -> str:
     return next((a.name for a in scenario.agents if a.id == agent_id), agent_id)
 
 
+def transcript_block(scenario: Scenario, heard_turns: list[Turn]) -> str:
+    if heard_turns:
+        transcript = "\n".join(
+            f"Round {t.round + 1} — {_agent_name(scenario, t.agent_id)}: "
+            f"{' '.join(t.sentences)}  [cited: {', '.join(t.cited)}]"
+            for t in heard_turns
+        )
+    else:
+        transcript = "Nothing has been said yet."
+    mentioned: list[str] = []
+    for t in heard_turns:
+        for fact_id in t.cited:
+            if fact_id not in mentioned:
+                mentioned.append(fact_id)
+    return f"""TRANSCRIPT SO FAR (what the panel has actually heard):
+{transcript}
+
+FACTS ALREADY MENTIONED BY ANYONE: {", ".join(mentioned) if mentioned else "none"}"""
+
+
 def turn_message(
     scenario: Scenario,
     cfg: RunConfig,
@@ -71,35 +91,44 @@ def turn_message(
     paradigm: ParadigmSpec,
     total: int,
 ) -> str:
-    if heard_turns:
-        transcript = "\n".join(
-            f"Round {t.round + 1} — {_agent_name(scenario, t.agent_id)}: "
-            f"{' '.join(t.sentences)}  [cited: {', '.join(t.cited)}]"
-            for t in heard_turns
-        )
-    else:
-        transcript = "Nothing has been said yet. You speak first."
-    mentioned: list[str] = []
-    for t in heard_turns:
-        for fact_id in t.cited:
-            if fact_id not in mentioned:
-                mentioned.append(fact_id)
     instruction = paradigm.round_instruction(round_idx, cfg)
     instruction_block = f"\n{instruction}" if instruction else ""
     return f"""Round {round_idx + 1} of {total}. You speak now.
 
-TRANSCRIPT SO FAR (what the panel has actually heard):
-{transcript}
-
-FACTS ALREADY MENTIONED BY ANYONE: {", ".join(mentioned) if mentioned else "none"}{instruction_block}
+{transcript_block(scenario, heard_turns)}{instruction_block}
 
 Your turn. JSON only."""
 
 
-def vote_message(round_idx: int, cfg: RunConfig, final: bool, total: int) -> str:
-    reason = "\nGive one sentence of reasoning." if final else ""
+def vote_message(
+    scenario: Scenario,
+    cfg: RunConfig,
+    round_idx: int,
+    heard_turns: list[Turn],
+    agent_id: str,
+    *,
+    total: int,
+    final: bool,
+) -> str:
+    own = [t for t in heard_turns if t.agent_id == agent_id]
+    own_lines = (
+        "\n".join(f"Round {t.round + 1}: {' '.join(t.sentences)}" for t in own)
+        or "You have not spoken yet."
+    )
+    last_lean = own[-1].lean if own else UNDECIDED
+    lean_name = next((c.name for c in scenario.candidates if c.id == last_lean), last_lean)
     return f"""Round {round_idx + 1} of {total} is over. This is a PRIVATE ballot — no other panelist will see it.
-Based on everything you hold plus everything you have heard, which candidate do you recommend?{reason}
+
+{transcript_block(scenario, heard_turns)}
+
+YOUR OWN STATEMENTS SO FAR:
+{own_lines}
+Your last stated lean: {lean_name}.
+
+Vote consistently with what you said unless something you heard changed your mind;
+if you changed your mind, say what changed it in "reason".
+Based on everything you hold plus everything you have heard, which candidate do you recommend?
+Give one sentence of reasoning.
 JSON only: {{"vote": candidate id or "undecided", "confidence": 0..1, "reason": string}}"""
 
 
