@@ -21,7 +21,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const getHealth = () => request<Health>('/api/health')
 export const getScenario = () => request<Scenario>('/api/scenario')
-export const getDemo = () => request<DemoSnapshot>('/api/demo')
+export const listScenarios = () => request<Scenario[]>('/api/scenarios')
+export const getScenarioById = (id: string) => request<Scenario>(`/api/scenarios/${encodeURIComponent(id)}`)
+export const resetScenario = (id: string) =>
+  request<Scenario>(`/api/scenarios/${encodeURIComponent(id)}/reset`, { method: 'POST' })
+export const getDemo = (scenarioId?: string) =>
+  request<DemoSnapshot>(`/api/demo${scenarioId ? `?scenarioId=${encodeURIComponent(scenarioId)}` : ''}`)
 export const getRun = (id: string, sinceSeq = -1) =>
   request<RunState>(`/api/runs/${encodeURIComponent(id)}?since_seq=${sinceSeq}`)
 export const getBatch = (id: string) => request<BatchState>(`/api/batches/${encodeURIComponent(id)}`)

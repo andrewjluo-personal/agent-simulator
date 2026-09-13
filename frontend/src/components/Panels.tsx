@@ -29,6 +29,9 @@ export function VerdictBadges({ scenario }: { scenario: Scenario }) {
 export type ControlsProps = {
   config: RunConfig
   onChange: (c: RunConfig) => void
+  scenarios: Scenario[]
+  onSelectScenario: (id: string) => void
+  onResetScenario: () => void
   paradigms: { id: Paradigm; label: string }[]
   n: number
   onChangeN: (n: number) => void
@@ -46,8 +49,24 @@ export type ControlsProps = {
 
 export function Controls(p: ControlsProps) {
   const set = <K extends keyof RunConfig>(k: K, v: RunConfig[K]) => p.onChange({ ...p.config, [k]: v })
+  const selected = p.scenarios.find((s) => s.id === p.config.scenarioId)
   return (
     <div className="controls">
+      <label>
+        Scenario
+        <select value={p.config.scenarioId} onChange={(e) => p.onSelectScenario(e.target.value)}>
+          {p.scenarios.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.title}
+            </option>
+          ))}
+        </select>
+      </label>
+      {selected?.isSample && (
+        <button className="link" onClick={p.onResetScenario} title="Restore this sample scenario to its original state">
+          Reset scenario
+        </button>
+      )}
       <label>
         Paradigm
         <select value={p.config.paradigm} onChange={(e) => set('paradigm', e.target.value as Paradigm)}>
