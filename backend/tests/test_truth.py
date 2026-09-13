@@ -27,9 +27,9 @@ def _tiny() -> Scenario:
         ],
         agents=[AgentPersona(id="x", name="X", role="r", style="s")],
         facts=[
-            Fact(id="f1", candidateId="a", valence="pro", weight=3, text="t"),
-            Fact(id="f2", candidateId="b", valence="pro", weight=2, text="t"),
-            Fact(id="f3", candidateId="b", valence="con", weight=2, text="t"),
+            Fact(id="f1", candidate_id="a", valence="pro", weight=3, text="t"),
+            Fact(id="f2", candidate_id="b", valence="pro", weight=2, text="t"),
+            Fact(id="f3", candidate_id="b", valence="con", weight=2, text="t"),
         ],
         distribution={"x": ["f1", "f2", "f3"]},
     )

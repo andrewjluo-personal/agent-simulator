@@ -5,6 +5,7 @@ import { Controls, ResultsStrip, Transcript, VerdictBadges, VerdictCard, type St
 import { Table } from './components/Table'
 import bundled from './demo/snapshot.json'
 import { usePlayback } from './hooks/usePlayback'
+import { track } from './telemetry'
 import { candidateName, sharedOnlyVerdict } from './truth'
 import type { DemoSnapshot, Paradigm, RunConfig, RunState, RunSummary, Scenario } from './types'
 
@@ -46,7 +47,10 @@ function App() {
         if (snap.runs.length) setDemoRuns(snap.runs)
         setApiDown(false)
       })
-      .catch(() => setApiDown(true))
+      .catch((cause: unknown) => {
+        track('demo.load_failed', { reason: String(cause) }, 'warning')
+        setApiDown(true)
+      })
   }, [])
 
   // Poll in-flight batches so the strip fills in as round jobs complete.
@@ -84,9 +88,12 @@ function App() {
     setBatchError(null)
     try {
       const b = await createBatch(config, n)
+      track('batch.created', { batchId: b.id, n, paradigm: config.paradigm })
       setBatchRuns((prev) => ({ ...prev, [b.id]: b.runs }))
     } catch (cause) {
-      setBatchError(cause instanceof Error ? cause.message : String(cause))
+      const reason = cause instanceof Error ? cause.message : String(cause)
+      track('batch.create_failed', { reason }, 'error')
+      setBatchError(reason)
     } finally {
       setBusy(false)
     }

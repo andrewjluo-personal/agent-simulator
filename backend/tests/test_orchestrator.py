@@ -4,11 +4,13 @@ import asyncio
 
 from app import orchestrator
 from app.llm import FakeClient
-from app.models import RunConfig, Turn
+from app.models import RunConfig, RunState, Turn
 from app.store import MemoryStore
 
 
-def _run(cfg: RunConfig | None = None, store: MemoryStore | None = None):
+def _run(
+    cfg: RunConfig | None = None, store: MemoryStore | None = None
+) -> tuple[MemoryStore, FakeClient, RunState]:
     store = store or MemoryStore()
     client = FakeClient()
     run = orchestrator.new_run(cfg or RunConfig(), provider="fake")
@@ -106,8 +108,13 @@ def test_compute_metrics_arithmetic() -> None:
         store.insert_turn(
             run.id,
             Turn(
-                seq=i, round=0, agent_id=t.id, sentences=["x"],
-                cited=decisive[:2] if i == 0 else [], hallucinated=["X1"], lean="john",
+                seq=i,
+                round=0,
+                agent_id=t.id,
+                sentences=["x"],
+                cited=decisive[:2] if i == 0 else [],
+                hallucinated=["X1"],
+                lean="john",
                 confidence=0.5,
             ),
         )
