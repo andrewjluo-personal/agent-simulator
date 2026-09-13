@@ -51,11 +51,12 @@ def test_existing_prompt_snapshots_are_unchanged() -> None:
         assert turn_message(scenario, cfg, 0, heard, spec) == fixture[paradigm_id]["turn_2"]
         assert (
             vote_message(
-                0,
+                scenario,
                 cfg,
+                0,
+                heard,
+                agent.id,
                 final=False,
-                scenario=scenario,
-                heard_turns=heard,
             )
             == fixture[paradigm_id]["vote"]
         )
@@ -110,7 +111,7 @@ def test_new_paradigms_run_to_completion() -> None:
             n_agents = len(run.scenario.agents)
             assert final.status == "done"
             assert len(final.turns) == final.config.rounds * (n_agents + extras)
-            assert len(final.votes) == final.config.rounds * n_agents
+            assert len(final.votes) == (final.config.rounds + 1) * n_agents
             assert all(v.agent_id in {a.id for a in run.scenario.agents} for v in final.votes)
             assert final.metrics is not None
 
