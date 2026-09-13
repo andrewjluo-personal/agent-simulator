@@ -48,3 +48,22 @@ def test_tie_is_undecided() -> None:
     s = _tiny()
     assert truth.verdict(s, ["f2"]) == "b"
     assert truth.verdict(s, ["f2", "f3"]) == "undecided"
+
+
+def test_match_facts_paraphrase() -> None:
+    s = SAMPLES_BY_ID[DEFAULT_SCENARIO_ID]
+    hits = truth.match_facts(
+        ["She found the data-loss race in that legacy service really quickly"], s.facts
+    )
+    assert hits == ["S4"]
+
+
+def test_match_facts_unrelated() -> None:
+    s = SAMPLES_BY_ID[DEFAULT_SCENARIO_ID]
+    assert truth.match_facts(["I think we should wrap up soon"], s.facts) == []
+
+
+def test_match_facts_self_consistency() -> None:
+    s = SAMPLES_BY_ID[DEFAULT_SCENARIO_ID]
+    for f in s.facts:
+        assert f.id in truth.match_facts([f.memo_text or f.text], s.facts)

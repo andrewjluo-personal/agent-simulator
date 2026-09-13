@@ -58,6 +58,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "pro",
                     "weight": 3,
                     "text": "Sally single-handedly designed and shipped the ledger migration at her last company, moving 2B rows with zero downtime.",
+                    "memoText": "Designed and shipped a ledger migration at her last company: 2B rows, zero downtime.",
+                    "keywords": ["ledger migration", "2b rows", "zero downtime"],
                 },
                 {
                     "id": "S2",
@@ -65,6 +67,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "pro",
                     "weight": 3,
                     "text": "Four engineers Sally mentored were promoted within two years; two now lead teams.",
+                    "memoText": "Mentored four engineers who were promoted within two years; two now lead teams.",
+                    "keywords": ["mentored four engineers", "promoted within two years"],
                 },
                 {
                     "id": "S3",
@@ -72,6 +76,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "pro",
                     "weight": 2,
                     "text": "Sally wrote the incident-postmortem process that her whole org adopted; her former director calls it the most valuable thing anyone did that year.",
+                    "memoText": "Wrote the incident-postmortem process her whole org adopted; her former director calls it the most valuable thing anyone did that year.",
+                    "keywords": ["incident postmortem", "postmortem process", "former director"],
                 },
                 {
                     "id": "S4",
@@ -79,6 +85,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "pro",
                     "weight": 3,
                     "text": "In the debugging session Sally found a silent data-loss bug in our sample legacy service in under 20 minutes, including the race that caused it.",
+                    "memoText": "Found a silent data-loss bug in a sample legacy service in under 20 minutes during the debugging session, including the race that caused it.",
+                    "keywords": ["data loss bug", "under 20 minutes", "debugging session"],
                 },
                 {
                     "id": "S5",
@@ -86,6 +94,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "pro",
                     "weight": 2,
                     "text": "Sally's system design answer correctly anticipated the double-spend failure mode and proposed idempotency keys before being prompted.",
+                    "memoText": "System design answer anticipated the double-spend failure mode and proposed idempotency keys unprompted.",
+                    "keywords": ["double spend", "idempotency keys"],
                 },
                 {
                     "id": "S6",
@@ -93,6 +103,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "pro",
                     "weight": 2,
                     "text": "Sally's back-channel reference, a former skip-level, says Sally is the person they would hire first for an ambiguous, under-specified problem.",
+                    "memoText": "Back-channel reference from a former skip-level says she is the person they would hire first for an ambiguous, under-specified problem.",
+                    "keywords": ["skip level", "hire first"],
                 },
                 {
                     "id": "S7",
@@ -100,6 +112,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "pro",
                     "weight": 2,
                     "text": "Sally drove an infrastructure cost reduction of 40% by rewriting the batch settlement job, and documented it so others could repeat it.",
+                    "memoText": "Drove a 40% infrastructure cost reduction by rewriting the batch settlement job and documenting it for reuse.",
+                    "keywords": ["cost reduction", "batch settlement", "40"],
                 },
                 {
                     "id": "S8",
@@ -107,6 +121,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "pro",
                     "weight": 1,
                     "text": "Sally maintains a small open-source Postgres migration tool with a few hundred stars.",
+                    "memoText": "Maintains a small open-source Postgres migration tool with a few hundred stars.",
+                    "keywords": ["postgres migration tool", "hundred stars"],
                 },
                 {
                     "id": "S9",
@@ -114,6 +130,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "pro",
                     "weight": 1,
                     "text": "Sally's written design sample was clear and well-structured.",
+                    "memoText": "Written design sample was clear and well-structured.",
+                    "keywords": ["design sample", "well structured"],
                 },
                 {
                     "id": "S10",
@@ -121,6 +139,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "con",
                     "weight": 2,
                     "text": "Sally was visibly nervous in the panel round and rambled through two answers before recovering.",
+                    "memoText": "Was visibly nervous in the panel round and rambled through two answers before recovering.",
+                    "keywords": ["visibly nervous", "rambled"],
                 },
                 {
                     "id": "S11",
@@ -128,6 +148,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "con",
                     "weight": 2,
                     "text": "Sally has never written Go, which is our primary backend language.",
+                    "memoText": "Has never written Go, which is the team's primary backend language.",
+                    "keywords": ["never written go", "new to go"],
                 },
                 {
                     "id": "S12",
@@ -135,6 +157,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "con",
                     "weight": 1,
                     "text": "Sally's most recent tenure was only 14 months.",
+                    "memoText": "Most recent tenure was only 14 months.",
+                    "keywords": ["14 months", "recent tenure"],
                 },
                 {
                     "id": "S13",
@@ -142,6 +166,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "con",
                     "weight": 1,
                     "text": "Sally declined to use the whiteboard and asked to work in an editor instead.",
+                    "memoText": "Declined to use the whiteboard and asked to work in an editor instead.",
+                    "keywords": ["whiteboard", "editor instead"],
                 },
                 {
                     "id": "S14",
@@ -149,6 +175,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "con",
                     "weight": 1,
                     "text": "Sally has no formal management experience and no direct reports.",
+                    "memoText": "Has no formal management experience and no direct reports.",
+                    "keywords": ["management experience", "direct reports"],
                 },
                 {
                     "id": "J1",
@@ -156,6 +184,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "pro",
                     "weight": 3,
                     "text": "John gave a polished, confident panel performance and answered every behavioural question crisply.",
+                    "memoText": "Gave a polished, confident panel performance and answered every behavioural question crisply.",
+                    "keywords": ["polished confident", "panel performance"],
                 },
                 {
                     "id": "J2",
@@ -163,6 +193,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "pro",
                     "weight": 2,
                     "text": "John has eight years of Go, our primary backend language.",
+                    "memoText": "Has eight years of Go experience.",
+                    "keywords": ["eight years", "years of go"],
                 },
                 {
                     "id": "J3",
@@ -170,6 +202,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "pro",
                     "weight": 2,
                     "text": "John led a team of six engineers at his last company.",
+                    "memoText": "Led a team of six engineers at his last company.",
+                    "keywords": ["team of six", "six engineers"],
                 },
                 {
                     "id": "J4",
@@ -177,6 +211,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "pro",
                     "weight": 2,
                     "text": "John comes from a top-tier, brand-name employer that everyone on the panel recognises.",
+                    "memoText": "Comes from a top-tier, brand-name employer everyone recognises.",
+                    "keywords": ["brand name", "top tier"],
                 },
                 {
                     "id": "J5",
@@ -184,6 +220,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "pro",
                     "weight": 2,
                     "text": "John's take-home was submitted fast and the code was clean and idiomatic.",
+                    "memoText": "Take-home exercise was submitted fast and the code was clean and idiomatic.",
+                    "keywords": ["submitted fast", "idiomatic"],
                 },
                 {
                     "id": "J6",
@@ -191,6 +229,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "pro",
                     "weight": 1,
                     "text": "John already knows the fintech domain and used our vocabulary correctly throughout.",
+                    "memoText": "Already knows the fintech domain and used the team's vocabulary correctly throughout.",
+                    "keywords": ["fintech domain", "vocabulary correctly"],
                 },
                 {
                     "id": "J7",
@@ -198,6 +238,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "pro",
                     "weight": 1,
                     "text": "John is available to start immediately.",
+                    "memoText": "Available to start immediately.",
+                    "keywords": ["start immediately", "available start"],
                 },
                 {
                     "id": "J8",
@@ -205,6 +247,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "con",
                     "weight": 3,
                     "text": "John's back-channel reference says three of his six reports left within a year, two citing John directly in exit interviews.",
+                    "memoText": "Three of his six reports quit inside a year, two citing him in exit interviews.",
+                    "keywords": ["reports quit", "exit interviews"],
                 },
                 {
                     "id": "J9",
@@ -212,6 +256,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "con",
                     "weight": 3,
                     "text": "John's take-home is near-identical to a public blog post solution, down to variable names and an unusual comment.",
+                    "memoText": "Take-home is near-identical to a public blog post solution, down to variable names and an unusual comment.",
+                    "keywords": ["near identical", "blog post"],
                 },
                 {
                     "id": "J10",
@@ -219,6 +265,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "con",
                     "weight": 2,
                     "text": "John was openly dismissive of the QA engineer on the panel, talking over them twice.",
+                    "memoText": "Was openly dismissive of the QA engineer on the panel, talking over them twice.",
+                    "keywords": ["dismissive", "qa engineer"],
                 },
                 {
                     "id": "J11",
@@ -226,6 +274,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "con",
                     "weight": 2,
                     "text": "John claimed to have 'led the platform migration'; his former colleague says John was one of twelve contributors and did not lead it.",
+                    "memoText": "Claimed to have led the platform migration; a former colleague says he was one of twelve contributors and did not lead it.",
+                    "keywords": ["platform migration", "twelve contributors"],
                 },
                 {
                     "id": "J12",
@@ -233,6 +283,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "con",
                     "weight": 2,
                     "text": "John refused to discuss a production outage he owned, calling it 'not really mine'.",
+                    "memoText": "Refused to discuss a production outage he owned.",
+                    "keywords": ["production outage", "refused to discuss"],
                 },
                 {
                     "id": "J13",
@@ -240,6 +292,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "con",
                     "weight": 1,
                     "text": "In the closing round John asked only about title and compensation and no questions about the product or users.",
+                    "memoText": "In the closing round, asked only about title and compensation and nothing about the product or users.",
+                    "keywords": ["closing round", "title compensation"],
                 },
                 {
                     "id": "J14",
@@ -247,6 +301,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                     "valence": "con",
                     "weight": 1,
                     "text": "This would be John's third role in four years, each exit abrupt and mid-project.",
+                    "memoText": "Would be his third role in four years; each exit was abrupt and mid-project.",
+                    "keywords": ["third role", "four years"],
                 },
             ],
             "distribution": {

@@ -194,7 +194,12 @@ class FakeClient:
         run_nonce = str(meta.get("run_nonce", ""))
         count = self._turn_counts.get(run_nonce, 0) + 1
         self._turn_counts[run_nonce] = count
-        sentences = [f"I noted the point about {fid}." for fid in picked]
+        memo = meta.get("fact_style") == "memo"
+        if memo:
+            fact_text: dict[str, str] = meta.get("fact_text", {})
+            sentences = [f"I noted that {fact_text[fid]}." for fid in picked if fid in fact_text]
+        else:
+            sentences = [f"I noted the point about {fid}." for fid in picked]
         if count % 3 == 0:
             sentences.append("There is more context here worth revisiting later.")
         if count % 5 == 0:
@@ -203,10 +208,11 @@ class FakeClient:
         lean, confidence = self._lean(meta, rng)
         payload = {
             "sentences": sentences,
-            "items_referenced": picked,
             "current_lean": lean,
             "confidence": confidence,
         }
+        if not memo:
+            payload["items_referenced"] = picked
         return self._dump(payload, rng)
 
     def _vote(self, meta: dict[str, Any], rng: random.Random) -> str:
