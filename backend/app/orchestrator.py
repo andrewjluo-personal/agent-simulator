@@ -249,7 +249,10 @@ def compute_metrics(run: RunState) -> Metrics:
     vote_trajectory: list[dict[str, int]] = []
     agreement_by_round: list[float] = []
     accuracy_by_round: list[float] = []
-    for r in range(run.config.rounds):
+    # Distinct ballot rounds actually recorded (a pre-discussion ballot may be stored as
+    # round -1); fall back to the configured rounds when no votes exist yet.
+    vote_rounds = sorted({v.round for v in run.votes}) or list(range(run.config.rounds))
+    for r in vote_rounds:
         tally: dict[str, int] = {}
         for v in run.votes:
             if v.round == r:
@@ -287,6 +290,7 @@ def compute_metrics(run: RunState) -> Metrics:
         agreement=majority_voters / n_agents if n_agents else 0.0,
         hallucination_count=sum(len(t.hallucinated) for t in run.turns),
         vote_trajectory=vote_trajectory,
+        vote_rounds=vote_rounds,
         first_surfaced=first_surfaced,
         unspoken_decisive=unspoken_decisive,
         holders=holders,

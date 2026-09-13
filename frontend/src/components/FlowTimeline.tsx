@@ -58,6 +58,7 @@ export function FlowTimeline({ run, turns }: Props) {
 
   const agreement = run.metrics?.agreementByRound ?? []
   const accuracy = run.metrics?.accuracyByRound ?? []
+  const voteRounds = run.metrics?.voteRounds?.length ? run.metrics.voteRounds : Array.from({ length: rounds }, (_, r) => r)
   const showChart = finished && agreement.length > 0
 
   const enterFact = (factId: string, agentId: string) => hl.set({ factId, agentId })
@@ -176,7 +177,7 @@ export function FlowTimeline({ run, turns }: Props) {
       <ConvergenceChart
         agreement={showChart ? agreement : []}
         accuracy={showChart ? accuracy : []}
-        rounds={rounds}
+        voteRounds={voteRounds}
         correctName={run.metrics ? candidateName(scenario, run.metrics.correctCandidateId) : 'the correct candidate'}
       />
     </div>
@@ -212,8 +213,18 @@ const CW = 360
 const CH = 120
 const PAD = { l: 34, r: 12, t: 10, b: 24 }
 
-function ConvergenceChart({ agreement, accuracy, rounds, correctName }: { agreement: number[]; accuracy: number[]; rounds: number; correctName: string }) {
-  const n = Math.max(rounds, 1)
+function ConvergenceChart({
+  agreement,
+  accuracy,
+  voteRounds,
+  correctName,
+}: {
+  agreement: number[]
+  accuracy: number[]
+  voteRounds: number[]
+  correctName: string
+}) {
+  const n = Math.max(voteRounds.length, 1)
   const x = (i: number) => PAD.l + (n === 1 ? (CW - PAD.l - PAD.r) / 2 : (i * (CW - PAD.l - PAD.r)) / (n - 1))
   const y = (v: number) => PAD.t + (1 - v) * (CH - PAD.t - PAD.b)
   const path = (vals: number[]) => vals.map((v, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ')
@@ -236,9 +247,9 @@ function ConvergenceChart({ agreement, accuracy, rounds, correctName }: { agreem
             </text>
           </g>
         ))}
-        {Array.from({ length: n }, (_, i) => (
+        {voteRounds.map((r, i) => (
           <text key={i} x={x(i)} y={CH - 8} textAnchor="middle" className="tick">
-            R{i + 1}
+            {r < 0 ? 'before discussion' : `R${r + 1}`}
           </text>
         ))}
         {!empty && (

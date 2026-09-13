@@ -69,6 +69,7 @@ export type Metrics = {
   unspokenDecisive?: string[]
   holders?: Record<string, string[]>
   mentions?: { shared: number; unique: number }
+  voteRounds?: number[] // round index per *_ByRound entry; -1 = pre-discussion ballot
   agreementByRound?: number[]
   accuracyByRound?: number[]
   tokensTotal?: { input: number; output: number }

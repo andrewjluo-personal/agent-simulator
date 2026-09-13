@@ -85,6 +85,29 @@ def test_agreement_and_accuracy_by_round() -> None:
     assert abs(m.accuracy_by_round[0] - 1 / n) < 1e-9
     assert m.agreement_by_round[1] == 1.0
     assert m.accuracy_by_round[1] == 1.0
+    assert m.vote_rounds == [0, 1]
+
+
+def test_pre_discussion_ballot_and_tie() -> None:
+    store, run = _run(RunConfig(rounds=1))
+    s = run.scenario
+    correct = truth.pooled_verdict(s)
+    wrong = next(c.id for c in s.candidates if c.id != correct)
+    agents = [a.id for a in s.agents]
+    # pre-discussion ballot stored as round -1: exact tie between the two candidates
+    for i, a in enumerate(agents):
+        store.insert_vote(run.id, Vote(round=-1, agent_id=a, choice=correct if i % 2 else wrong, confidence=0.5))
+    for a in agents:
+        store.insert_vote(run.id, Vote(round=0, agent_id=a, choice=wrong, confidence=0.9))
+    m = orchestrator.compute_metrics(store.get_run(run.id) or run)
+
+    assert m.vote_rounds == [-1, 0]
+    assert len(m.agreement_by_round) == len(m.accuracy_by_round) == len(m.vote_trajectory) == 2
+    n = len(agents)
+    assert abs(m.agreement_by_round[0] - max(n // 2, n - n // 2) / n) < 1e-9
+    assert m.agreement_by_round[0] > 0
+    assert m.agreement_by_round[1] == 1.0
+    assert m.accuracy_by_round[1] == 0.0
 
 
 def test_heard_before_recorded_in_run() -> None:
