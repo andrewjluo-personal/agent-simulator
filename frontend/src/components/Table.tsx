@@ -1,26 +1,21 @@
 import { useEffect, useMemo, useState, type CSSProperties, type MouseEvent } from 'react'
+import { useHighlight } from '../hooks/useHighlight'
 import type { Derived } from '../hooks/usePlayback'
 import { candidateName, decisiveFactIds, favoredCandidate, factsById, sharedFactIds, tally } from '../truth'
 import type { Fact, RunConfig, Scenario, Turn } from '../types'
+import { CHIP_H, CHIP_W, candidateColor, chipColors } from './FactChip'
+
+export { CANDIDATE_COLORS, candidateColor } from './FactChip'
 
 export const W = 820
 export const H = 600
 const CX = W / 2
 const CY = H / 2 + 6
 const R = 225
-const CHIP_W = 27
-const CHIP_H = 16
 const CHIP_GAP = 3
 const HAND_COLS = 6
 const CENTER_W = 250
 const CENTER_COLS = 8
-
-export const CANDIDATE_COLORS = ['#3b82f6', '#f59e0b', '#10b981', '#a855f7', '#ef4444']
-
-export function candidateColor(scenario: Scenario, candidateId: string | null): string {
-  const idx = scenario.candidates.findIndex((c) => c.id === candidateId)
-  return idx < 0 ? '#9ca3af' : CANDIDATE_COLORS[idx % CANDIDATE_COLORS.length]
-}
 
 type Seat = { agentId: string; x: number; y: number; angle: number }
 type Popover =
@@ -69,6 +64,7 @@ type Props = {
 
 export function Table({ scenario, config, derived, status, round }: Props) {
   const [popover, setPopover] = useState<Popover | null>(null)
+  const hl = useHighlight()
   const byId = useMemo(() => factsById(scenario), [scenario])
   const shared = useMemo(() => sharedFactIds(scenario), [scenario])
   const decisive = useMemo(() => decisiveFactIds(scenario), [scenario])
@@ -175,8 +171,10 @@ export function Table({ scenario, config, derived, status, round }: Props) {
           return (
             <g
               key={s.agentId}
-              className={`seat ${speaking ? 'speaking' : ''}`}
+              className={`seat ${speaking ? 'speaking' : ''} ${hl.agentId === s.agentId ? 'hl' : ''}`}
               onPointerDown={(e) => e.stopPropagation()}
+              onPointerEnter={() => hl.set({ agentId: s.agentId })}
+              onPointerLeave={() => hl.set({ agentId: null })}
               onClick={(e) => {
                 e.stopPropagation()
                 setPopover((current) =>
@@ -246,6 +244,9 @@ export function Table({ scenario, config, derived, status, round }: Props) {
               dim={c.dim}
               pulse={unspokenDecisive}
               fresh={c.inCenter && currentTurn?.cited.includes(c.factId) === true}
+              hl={hl.factId === c.factId || (hl.factId === null && hl.agentId === c.agentId)}
+              onEnter={() => hl.set({ factId: c.factId, agentId: c.agentId })}
+              onLeave={hl.clear}
               onClick={(e) => {
                 e.stopPropagation()
                 openFactPopover(c.agentId, c.factId, c.x + CHIP_W / 2, c.y + CHIP_H / 2)
@@ -348,22 +349,29 @@ type ChipProps = {
   dim: boolean
   pulse: boolean
   fresh: boolean
+  hl: boolean
+  onEnter: () => void
+  onLeave: () => void
   onClick: (e: MouseEvent<HTMLDivElement>) => void
 }
 
-function Chip({ fact, scenario, shared, x, y, inCenter, dim, pulse, fresh, onClick }: ChipProps) {
-  const color = candidateColor(scenario, favoredCandidate(fact, scenario))
+function Chip({ fact, scenario, shared, x, y, inCenter, dim, pulse, fresh, hl, onEnter, onLeave, onClick }: ChipProps) {
   const style: CSSProperties = {
     transform: `translate(${x}px, ${y}px)`,
     width: CHIP_W,
     height: CHIP_H,
-    background: shared ? '#e5e7eb' : color,
-    color: shared ? '#374151' : '#fff',
-    boxShadow: shared ? `inset 3px 0 0 ${color}` : undefined,
+    ...chipColors(fact, scenario, shared),
   }
-  const cls = ['chip', inCenter ? 'in-center' : '', dim ? 'dim' : '', pulse ? 'pulse' : '', fresh ? 'fresh' : ''].join(' ')
+  const cls = ['chip', inCenter ? 'in-center' : '', dim ? 'dim' : '', pulse ? 'pulse' : '', fresh ? 'fresh' : '', hl ? 'hl' : ''].join(' ')
   return (
-    <div className={cls} style={style} onPointerDown={(e) => e.stopPropagation()} onClick={onClick}>
+    <div
+      className={cls}
+      style={style}
+      onPointerDown={(e) => e.stopPropagation()}
+      onPointerEnter={onEnter}
+      onPointerLeave={onLeave}
+      onClick={onClick}
+    >
       {fact.id}
     </div>
   )

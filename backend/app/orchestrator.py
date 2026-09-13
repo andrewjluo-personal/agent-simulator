@@ -11,7 +11,16 @@ from typing import Any
 
 from . import prompts, truth, validate
 from .llm import LLMClient, LLMRequest, LLMResponse
-from .models import Metrics, RunConfig, RunState, Turn, Vote
+from .models import (
+    FirstSurfaced,
+    MentionCounts,
+    Metrics,
+    RunConfig,
+    RunState,
+    TokenTotals,
+    Turn,
+    Vote,
+)
 from .paradigms import get_paradigm
 from .scenario import load_scenario
 from .store import Store
@@ -132,6 +141,7 @@ async def run_round(store: Store, client: LLMClient, run_id: str, round_idx: int
                     latency_ms=resp.latency_ms,
                     input_tokens=resp.input_tokens,
                     output_tokens=resp.output_tokens,
+                    heard_before=sorted(common_ground),
                 )
             except Exception as exc:  # noqa: BLE001 - one silent panelist beats a dead run
                 emit(
@@ -151,6 +161,7 @@ async def run_round(store: Store, client: LLMClient, run_id: str, round_idx: int
                     hallucinated=[],
                     lean=truth.UNDECIDED,
                     confidence=0.0,
+                    heard_before=sorted(common_ground),
                 )
             store.insert_turn(run_id, turn)
             emit(
@@ -236,12 +247,34 @@ def compute_metrics(run: RunState) -> Metrics:
     n_agents = len(scenario.agents)
     majority_voters = sum(1 for v in final_votes if v.choice == majority)
     vote_trajectory: list[dict[str, int]] = []
+    agreement_by_round: list[float] = []
+    accuracy_by_round: list[float] = []
     for r in range(run.config.rounds):
         tally: dict[str, int] = {}
         for v in run.votes:
             if v.round == r:
                 tally[v.choice] = tally.get(v.choice, 0) + 1
         vote_trajectory.append(tally)
+        decided = {c: k for c, k in tally.items() if c != truth.UNDECIDED}
+        plurality = max(decided.values(), default=0)
+        agreement_by_round.append(plurality / n_agents if n_agents else 0.0)
+        accuracy_by_round.append(tally.get(correct_candidate_id, 0) / n_agents if n_agents else 0.0)
+
+    shared = truth.shared_fact_ids(scenario)
+    first_surfaced: dict[str, FirstSurfaced] = {}
+    mentions = MentionCounts()
+    for t in sorted(run.turns, key=lambda t: t.seq):
+        for fact_id in t.cited:
+            if fact_id not in first_surfaced:
+                first_surfaced[fact_id] = FirstSurfaced(seq=t.seq, round=t.round, agent_id=t.agent_id)
+            if fact_id in shared:
+                mentions.shared += 1
+            else:
+                mentions.unique += 1
+    unspoken_decisive = sorted(decisive - surfaced)
+    holders = {fact_id: truth.holders(scenario, fact_id) for fact_id in unspoken_decisive}
+
+    answered_turns = [t for t in run.turns if t.latency_ms is not None]
     return Metrics(
         correct=majority == correct_candidate_id and majority != truth.UNDECIDED,
         correct_candidate_id=correct_candidate_id,
@@ -253,6 +286,18 @@ def compute_metrics(run: RunState) -> Metrics:
         agreement=majority_voters / n_agents if n_agents else 0.0,
         hallucination_count=sum(len(t.hallucinated) for t in run.turns),
         vote_trajectory=vote_trajectory,
+        first_surfaced=first_surfaced,
+        unspoken_decisive=unspoken_decisive,
+        holders=holders,
+        mentions=mentions,
+        agreement_by_round=agreement_by_round,
+        accuracy_by_round=accuracy_by_round,
+        tokens_total=TokenTotals(
+            input=sum(t.input_tokens or 0 for t in run.turns),
+            output=sum(t.output_tokens or 0 for t in run.turns),
+        ),
+        llm_calls=len(answered_turns) + len(run.votes),
+        latency_total_ms=sum(t.latency_ms or 0 for t in run.turns),
     )
 
 

@@ -116,6 +116,7 @@ class Turn(Model):
     latency_ms: int | None = None
     input_tokens: int | None = None
     output_tokens: int | None = None
+    heard_before: list[str] = []
 
 
 class Vote(Model):
@@ -124,6 +125,22 @@ class Vote(Model):
     choice: str
     confidence: float
     reason: str | None = None
+
+
+class FirstSurfaced(Model):
+    seq: int
+    round: int
+    agent_id: str
+
+
+class MentionCounts(Model):
+    shared: int = 0
+    unique: int = 0
+
+
+class TokenTotals(Model):
+    input: int = 0
+    output: int = 0
 
 
 class Metrics(Model):
@@ -137,6 +154,15 @@ class Metrics(Model):
     agreement: float
     hallucination_count: int
     vote_trajectory: list[dict[str, int]]
+    first_surfaced: dict[str, FirstSurfaced] = {}
+    unspoken_decisive: list[str] = []
+    holders: dict[str, list[str]] = {}
+    mentions: MentionCounts = MentionCounts()
+    agreement_by_round: list[float] = []
+    accuracy_by_round: list[float] = []
+    tokens_total: TokenTotals = TokenTotals()
+    llm_calls: int = 0
+    latency_total_ms: int = 0
 
 
 class RunState(Model):
