@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -38,6 +38,15 @@ class Greeting(BaseModel):
     id: int
     message: str
     created_at: str
+
+
+class ClientEvent(BaseModel):
+    """Browser-side event forwarded into Vercel Logs; the frontend is static, so it cannot log."""
+
+    name: str = Field(min_length=1, max_length=120)
+    sessionId: str = Field(min_length=1, max_length=64)
+    level: Literal["info", "warning", "error"] = "info"
+    context: dict[str, Any] = Field(default_factory=dict)
 
 
 @app.get("/api/health")
@@ -79,6 +88,18 @@ async def create_greeting(payload: GreetingIn, request: Request) -> dict[str, An
         "created_at": row["created_at"].isoformat(),
         "queued": queued,
     }
+
+
+@app.post("/api/client-logs", status_code=202)
+def ingest_client_log(event: ClientEvent, request: Request) -> dict[str, str]:
+    emit(
+        event.level,
+        f"client.{event.name}",
+        clientSessionId=event.sessionId,
+        userAgent=request.headers.get("user-agent"),
+        context=json.dumps(event.context)[:2000],
+    )
+    return {"status": "accepted"}
 
 
 @app.post("/api/queues/greetings")
