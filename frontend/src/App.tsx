@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
-import { createBatch, getBatch, getDemo, getRun, listScenarios, resetScenario } from './api'
+import { getDemo, getRun, listScenarios, resetScenario } from './api'
 import { Controls, ResultsStrip, Transcript, VerdictBadges, VerdictCard, type StripRow } from './components/Panels'
 import { FlowTimeline } from './components/FlowTimeline'
 import { Table } from './components/Table'
-import { ScenarioLab } from './components/ScenarioLab'
 import { ResearchPage } from './ResearchPage'
 import { HighlightContext, useHighlightState } from './hooks/useHighlight'
 import { usePlayback } from './hooks/usePlayback'
@@ -50,11 +49,7 @@ function App() {
   const fullRuns = useRef(new Map<string, RunState>())
   const [apiDown, setApiDown] = useState(false)
   const [config, setConfig] = useState<RunConfig | null>(null)
-  const [n, setN] = useState(10)
-  const [batchRuns, setBatchRuns] = useState<Record<string, RunSummary[]>>({})
-  const [busy, setBusy] = useState(false)
   const [batchError, setBatchError] = useState<string | null>(null)
-  const [labOpen, setLabOpen] = useState(false)
   const [view, setView] = useState<'bench' | 'research'>(viewFromLocation)
   const pb = usePlayback()
   const highlight = useHighlightState()
@@ -175,26 +170,6 @@ function App() {
     }
   }, [scenario, pb, loadRecent])
 
-  // Poll in-flight batches so the strip fills in as round jobs complete.
-  const pendingBatchIds = useMemo(
-    () => Object.entries(batchRuns).filter(([, runs]) => runs.some((r) => r.status !== 'done' && r.status !== 'error')).map(([id]) => id),
-    [batchRuns],
-  )
-  useEffect(() => {
-    if (pendingBatchIds.length === 0) return
-    const timer = window.setInterval(async () => {
-      for (const id of pendingBatchIds) {
-        try {
-          const b = await getBatch(id)
-          setBatchRuns((prev) => ({ ...prev, [id]: b.runs }))
-        } catch {
-          /* transient; next tick retries */
-        }
-      }
-    }, 2000)
-    return () => window.clearInterval(timer)
-  }, [pendingBatchIds])
-
   const cachedForParadigm = useMemo(
     () => recentRuns.filter((r) => r.config.paradigm === config?.paradigm && r.status === 'done'),
     [recentRuns, config?.paradigm],
@@ -205,37 +180,15 @@ function App() {
     if (pick) void openRun(pick.id)
   }, [cachedForParadigm, openRun])
 
-  const runBatch = useCallback(async () => {
-    if (!config) return
-    setBusy(true)
-    setBatchError(null)
-    try {
-      const b = await createBatch(config, n)
-      track('batch.created', { batchId: b.id, n, paradigm: config.paradigm })
-      setBatchRuns((prev) => ({ ...prev, [b.id]: b.runs }))
-    } catch (cause) {
-      const reason = cause instanceof Error ? cause.message : String(cause)
-      track('batch.create_failed', { reason }, 'error')
-      setBatchError(reason)
-    } finally {
-      setBusy(false)
-    }
-  }, [config, n])
-
-  const rows: StripRow[] = useMemo(() => {
-    const byId = new Map<string, RunSummary>()
-    for (const r of [...Object.values(batchRuns).flat(), ...recentRuns]) byId.set(r.id, r)
-    const all = [...byId.values()]
-    return PARADIGMS.map((p) => ({ paradigm: p.id, label: p.label, runs: all.filter((r) => r.config.paradigm === p.id) })).filter(
-      (row) => row.runs.length > 0,
-    )
-  }, [recentRuns, batchRuns])
-
-  const pending = useMemo(() => {
-    const all = Object.values(batchRuns).flat()
-    if (!all.length) return null
-    return { done: all.filter((r) => r.status === 'done' || r.status === 'error').length, total: all.length }
-  }, [batchRuns])
+  const rows: StripRow[] = useMemo(
+    () =>
+      PARADIGMS.map((p) => ({
+        paradigm: p.id,
+        label: p.label,
+        runs: recentRuns.filter((r) => r.config.paradigm === p.id),
+      })).filter((row) => row.runs.length > 0),
+    [recentRuns],
+  )
 
   const pickRun = useCallback(
     (id: string) => {
@@ -300,20 +253,15 @@ function App() {
         onChange={setConfig}
         scenarios={scenarios}
         onSelectScenario={selectScenario}
-        onOpenLab={() => setLabOpen(true)}
         onResetScenario={() => void resetCurrent()}
         paradigms={PARADIGMS}
-        n={n}
-        onChangeN={setN}
         status={status}
         hasCached={cachedForParadigm.length > 0}
         onPlayCached={playCached}
         onPlayLive={() => void pb.startLive({ ...config, seed: Math.floor(Math.random() * 10000) })}
-        onRunBatch={() => void runBatch()}
         onPause={() => pb.setPlaying(false)}
         onResume={() => pb.setPlaying(true)}
         onSkip={pb.skipToEnd}
-        busy={busy}
         apiDown={apiDown}
       />
 
@@ -365,21 +313,6 @@ function App() {
         </aside>
       </section>
 
-      {labOpen && runScenario && (
-        <ScenarioLab
-          scenario={runScenario}
-          onClose={() => setLabOpen(false)}
-          onSaved={(saved) => {
-            setLabOpen(false)
-            setScenarios((prev) => [...prev.filter((item) => item.id !== saved.id), saved])
-            setConfig(defaultConfig(saved))
-            pb.clear()
-            void listScenarios().then(setScenarios)
-            void loadRecent(saved.id)
-          }}
-        />
-      )}
-
       {pb.run && (
         <section className="timeline-section">
           <h3>
@@ -389,7 +322,7 @@ function App() {
         </section>
       )}
 
-      <ResultsStrip rows={rows} activeRunId={pb.run?.id ?? null} onPick={pickRun} pending={pending} />
+      <ResultsStrip rows={rows} activeRunId={pb.run?.id ?? null} onPick={pickRun} />
     </main>
     </HighlightContext.Provider>
   )

@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { aloneVotes, candidateName, decisiveFactIds, pooledVerdict, sharedFactIds, tally, tallyText } from '../truth'
-import type { FactStyle, Paradigm, RunConfig, RunState, RunSummary, Scenario, TieBreak, Turn, TurnOrder } from '../types'
+import type { Paradigm, RunConfig, RunState, RunSummary, Scenario, TieBreak, Turn, TurnOrder } from '../types'
 import { candidateColor } from './Table'
 
 export function VerdictBadges({ scenario }: { scenario: Scenario }) {
@@ -30,60 +30,26 @@ function scenarioBaseId(id: string): string {
   return id.replace(/-(v\d+|\d+)$/, '')
 }
 
-function formatRate(rate: number): string {
-  return `${Math.round(rate * 100)}%`
-}
-
-function validationBadge(scenario: Scenario): { text: string; title: string } | null {
-  const first = Object.entries(scenario.validation ?? {})[0]
-  if (!first) return null
-  const [model, result] = first
-  const aloneRates = Object.entries(result.aloneWrongRate)
-  const rates = aloneRates.map(([, rate]) => rate)
-  const alone =
-    rates.length === 0
-      ? 'n/a'
-      : rates.every((rate) => rate === rates[0])
-        ? formatRate(rates[0])
-        : `${formatRate(Math.min(...rates))}..${formatRate(Math.max(...rates))} (${aloneRates
-            .map(([agentId, rate]) => `${agentId} ${formatRate(rate)}`)
-            .join(', ')})`
-  const pooled = formatRate(result.pooledRightRate)
-  const freeDiscussion =
-    result.freeDiscussionRate == null ? 'n/a' : formatRate(result.freeDiscussionRate)
-  const nullGate = result.nullGate == null ? 'n/a' : result.nullGate ? 'pass' : 'FAIL'
-  return {
-    text: `validated on ${model}${result.nullGate === false ? ' · fails null gate' : ''}`,
-    title: `alone-wrong ${alone}, pooled-right ${pooled}, free-discussion ${freeDiscussion}, null-gate ${nullGate}`,
-  }
-}
-
 export type ControlsProps = {
   config: RunConfig
   onChange: (c: RunConfig) => void
   scenarios: Scenario[]
   onSelectScenario: (id: string) => void
-  onOpenLab: () => void
   onResetScenario: () => void
   paradigms: { id: Paradigm; label: string }[]
-  n: number
-  onChangeN: (n: number) => void
   status: 'idle' | 'playing' | 'paused' | 'finished'
   hasCached: boolean
   onPlayCached: () => void
   onPlayLive: () => void
-  onRunBatch: () => void
   onPause: () => void
   onResume: () => void
   onSkip: () => void
-  busy: boolean
   apiDown: boolean
 }
 
 export function Controls(p: ControlsProps) {
   const set = <K extends keyof RunConfig>(k: K, v: RunConfig[K]) => p.onChange({ ...p.config, [k]: v })
   const selected = p.scenarios.find((s) => s.id === p.config.scenarioId)
-  const validation = selected ? validationBadge(selected) : null
   const variants = selected
     ? p.scenarios
         .filter((s) => scenarioBaseId(s.id) === scenarioBaseId(selected.id))
@@ -101,14 +67,6 @@ export function Controls(p: ControlsProps) {
           ))}
         </select>
       </label>
-      <button type="button" onClick={p.onOpenLab}>Scenario Lab</button>
-      {validation ? (
-        <span className="badge validation-badge" title={validation.title}>
-          {validation.text}
-        </span>
-      ) : (
-        <span className="badge validation-badge">unvalidated</span>
-      )}
       {variants.length > 1 && (
         <label>
           Agents
@@ -134,13 +92,6 @@ export function Controls(p: ControlsProps) {
               {x.label}
             </option>
           ))}
-        </select>
-      </label>
-      <label>
-        Evidence format
-        <select value={p.config.factStyle} onChange={(e) => set('factStyle', e.target.value as FactStyle)}>
-          <option value="memo">Memo (human-study style)</option>
-          <option value="labelled">Labelled facts</option>
         </select>
       </label>
       <label>
@@ -183,15 +134,9 @@ export function Controls(p: ControlsProps) {
         </button>
       )}
       {p.status === 'playing' && <button onClick={p.onSkip}>⏭ Skip</button>}
-      <button onClick={p.onPlayLive} disabled={p.busy || p.apiDown} title="Start a new run with live LLM agents">
+      <button onClick={p.onPlayLive} disabled={p.apiDown} title="Start a new run with live LLM agents">
         ⚡ Run live
       </button>
-      <span className="batch">
-        <button onClick={p.onRunBatch} disabled={p.busy || p.apiDown}>
-          Run ×
-        </button>
-        <input type="number" min={1} max={25} value={p.n} onChange={(e) => p.onChangeN(Number(e.target.value))} />
-      </span>
     </div>
   )
 }
@@ -266,23 +211,16 @@ export function ResultsStrip({
   rows,
   activeRunId,
   onPick,
-  pending,
 }: {
   rows: StripRow[]
   activeRunId: string | null
   onPick: (id: string) => void
-  pending: { done: number; total: number } | null
 }) {
   return (
     <div className="strip">
       <div className="strip-head">
         <h3>Recent runs</h3>
         <span className="muted">one dot per run · green = panel chose the correct candidate · click a dot to replay</span>
-        {pending && pending.done < pending.total && (
-          <span className="progress">
-            running {pending.done}/{pending.total}
-          </span>
-        )}
       </div>
       {rows.map((row) => {
         const done = row.runs.filter((r) => r.status === 'done' && r.metrics)
@@ -320,7 +258,7 @@ export function ResultsStrip({
           </div>
         )
       })}
-      {rows.length === 0 && <p className="muted">No runs yet — press Run ×N.</p>}
+      {rows.length === 0 && <p className="muted">No runs yet — press ⚡ Run live.</p>}
     </div>
   )
 }

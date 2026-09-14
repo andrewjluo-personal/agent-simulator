@@ -67,18 +67,6 @@ header h1 {
 .controls .spacer {
   flex: 1;
 }
-.controls .batch {
-  display: inline-flex;
-}
-.controls .batch button {
-  border-radius: 6px 0 0 6px;
-}
-.controls .batch input {
-  border-radius: 0 6px 6px 0;
-  border-left: none;
-  width: 56px;
-}
-
 /* verdict badges */
 .badges {
   display: flex;
@@ -103,10 +91,6 @@ header h1 {
 .badge-v {
   font-weight: 700;
   font-size: 16px;
-}
-.validation-badge {
-  font-size: 11px;
-  padding: 5px 8px;
 }
 
 /* stage */
