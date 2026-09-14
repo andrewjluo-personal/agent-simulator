@@ -4,6 +4,7 @@ Neon; `MemoryStore` backs local development and tests, `PgStore` (app.db) Neon."
 from __future__ import annotations
 
 import time
+from datetime import UTC, datetime, timedelta
 from typing import Protocol
 
 from .engine_version import ENGINE_VERSION
@@ -27,6 +28,7 @@ class Store(Protocol):
     def upsert_validation_job(self, job: ValidationJob) -> None: ...
     def get_validation_job(self, job_id: str) -> ValidationJob | None: ...
     def latest_validation_job(self, scenario_id: str) -> ValidationJob | None: ...
+    def active_validation_job(self, stale_after_s: int) -> ValidationJob | None: ...
     def create_run(self, run: RunState) -> None: ...
     def get_run(self, run_id: str) -> RunState | None: ...
     def get_run_since(self, run_id: str, since_seq: int) -> RunState | None: ...
@@ -83,6 +85,15 @@ class MemoryStore:
 
     def latest_validation_job(self, scenario_id: str) -> ValidationJob | None:
         jobs = [j for j in self._validation_jobs.values() if j.scenario_id == scenario_id]
+        return max(jobs, key=lambda j: j.updated_at) if jobs else None
+
+    def active_validation_job(self, stale_after_s: int) -> ValidationJob | None:
+        cutoff = datetime.now(UTC) - timedelta(seconds=stale_after_s)
+        jobs = [
+            j
+            for j in self._validation_jobs.values()
+            if j.status in ("queued", "running") and datetime.fromisoformat(j.updated_at) > cutoff
+        ]
         return max(jobs, key=lambda j: j.updated_at) if jobs else None
 
     def create_run(self, run: RunState) -> None:
