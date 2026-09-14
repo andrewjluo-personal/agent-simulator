@@ -145,6 +145,88 @@ def samples_for(k_candidates: int, requested: int) -> int:
     return max(adjusted, k_candidates)
 
 
+def twin_null(scenario: Scenario) -> Scenario:
+    """Expand each fact over cyclic candidate renamings to make a symmetric pool."""
+    candidates = scenario.candidates
+    k = len(candidates)
+    names = [candidate.name for candidate in candidates]
+    ids = [candidate.id for candidate in candidates]
+    index_by_id = {candidate.id: index for index, candidate in enumerate(candidates)}
+    replacement_values: dict[str, list[str]] = {
+        **{name: names for name in names},
+        **{candidate_id: ids for candidate_id in ids},
+    }
+    replacement_indices = {
+        value: next(
+            index
+            for index, candidate in enumerate(candidates)
+            if value in (candidate.id, candidate.name)
+        )
+        for value in replacement_values
+    }
+    alternatives = sorted(replacement_values, key=len, reverse=True)
+    pattern = re.compile(r"(?<!\w)(?:" + "|".join(re.escape(value) for value in alternatives) + r")(?!\w)")
+    id_values = set(ids)
+
+    def rotate_text(text: str, rotation: int) -> str:
+        def replace(match: re.Match[str]) -> str:
+            value = match.group(0)
+            if value in id_values and len(value) == 1 and value.isalpha():
+                before = text[: match.start()]
+                previous = text[match.start() - 1] if match.start() else ""
+                if previous not in "([{" and not re.search(
+                    r"(?:candidate|id)\s*$", before, re.IGNORECASE
+                ):
+                    return value
+            index = replacement_indices[value]
+            return replacement_values[value][(index + rotation) % k]
+
+        return pattern.sub(replace, text)
+
+    facts = [
+        fact.model_copy(
+            update={
+                "id": f"{fact.id}~{rotation}",
+                "candidate_id": candidates[
+                    (index_by_id[fact.candidate_id] + rotation) % k
+                ].id,
+                "text": rotate_text(fact.text, rotation),
+                "memo_text": rotate_text(fact.memo_text, rotation)
+                if fact.memo_text
+                else None,
+            }
+        )
+        for fact in scenario.facts
+        for rotation in range(k)
+    ]
+    distribution = {
+        agent_id: [
+            f"{fact_id}~{rotation}"
+            for fact_id in held
+            for rotation in range(k)
+        ]
+        for agent_id, held in scenario.distribution.items()
+    }
+    twin = scenario.model_copy(
+        update={
+            "id": scenario.id + "-twin",
+            "title": scenario.title + " (twin null)",
+            "candidates": [
+                candidate.model_copy(update={"blurb": ""}) for candidate in candidates
+            ],
+            "facts": facts,
+            "distribution": distribution,
+            "validation": None,
+        }
+    )
+    pooled_scores = truth.scores(twin, truth.pooled_fact_ids(twin))
+    assert len(set(pooled_scores.values())) == 1
+    for held in twin.distribution.values():
+        hand_scores = truth.scores(twin, held)
+        assert len(set(hand_scores.values())) == 1
+    return twin
+
+
 def load_scenario_arg(arg: str) -> Scenario:
     """`<sample id>`, `<sample id>:mirror`, or a path to a Scenario JSON file."""
     from app.samples import SAMPLES_BY_ID

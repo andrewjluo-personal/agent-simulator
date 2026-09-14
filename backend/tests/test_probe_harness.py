@@ -181,3 +181,57 @@ def test_samples_for_balances_rotations() -> None:
     assert probe_lib.samples_for(3, 8) == 6
     assert probe_lib.samples_for(4, 8) == 8
     assert probe_lib.samples_for(3, 2) == 3
+
+
+def test_twin_null_is_symmetric_and_rotates_names() -> None:
+    candidates = [
+        Candidate(id="a", name="Candidate A", blurb="A blurb"),
+        Candidate(id="b", name="Candidate B", blurb="B blurb"),
+        Candidate(id="c", name="Candidate C", blurb="C blurb"),
+    ]
+    agents = [
+        AgentPersona(id="one", name="One", role="reviewer", style="careful"),
+        AgentPersona(id="two", name="Two", role="reviewer", style="careful"),
+    ]
+    scenario = Scenario(
+        id="three-way",
+        title="Three-way",
+        brief="Choose.",
+        candidates=candidates,
+        facts=[
+            Fact(
+                id="fact-a",
+                candidate_id="a",
+                valence="pro",
+                weight=2,
+                text="Candidate A (a) has a strong result.",
+                memo_text="Candidate A (a) result.",
+            ),
+            Fact(
+                id="fact-b",
+                candidate_id="b",
+                valence="pro",
+                weight=1,
+                text="Candidate B (b) has a strong result.",
+                memo_text="Candidate B (b) result.",
+            ),
+        ],
+        agents=agents,
+        distribution={"one": ["fact-a"], "two": ["fact-b"]},
+    )
+    twin = probe_lib.twin_null(scenario)
+    assert twin.id == "three-way-twin"
+    assert twin.title == "Three-way (twin null)"
+    assert twin.validation is None
+    assert len(twin.facts) == 3 * len(scenario.facts)
+    assert all(candidate.blurb == "" for candidate in twin.candidates)
+    assert twin.facts[0].text == "Candidate A (a) has a strong result."
+    assert twin.facts[1].text == "Candidate B (b) has a strong result."
+    assert twin.facts[2].text == "Candidate C (c) has a strong result."
+    assert twin.facts[0].memo_text == "Candidate A (a) result."
+    assert len(twin.distribution["one"]) == 3
+    pooled_scores = truth.scores(twin, truth.pooled_fact_ids(twin))
+    assert len(set(pooled_scores.values())) == 1
+    for held in twin.distribution.values():
+        scores = truth.scores(twin, held)
+        assert len(set(scores.values())) == 1
