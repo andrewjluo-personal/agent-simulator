@@ -63,11 +63,14 @@ async def votes(
     samples: int,
 ) -> Counter[str]:
     spec = get_paradigm(cfg.paradigm)
-    system = prompts.system_prompt(scenario, cfg, agent, hand, spec)
     user = prompts.alone_vote_message(scenario)
     ids = {c.id for c in scenario.candidates}
 
-    async def one() -> str:
+    async def one(seed: int) -> str:
+        # one seed per sample so memo shuffle + run nonce vary as they do in real runs
+        system = prompts.system_prompt(
+            scenario, cfg.model_copy(update={"seed": seed}), agent, hand, spec
+        )
         resp = await client.complete(
             LLMRequest(system=system, user=user, model=MODEL, max_tokens=200)
         )
@@ -75,7 +78,7 @@ async def votes(
         v = raw.get("vote")
         return v if isinstance(v, str) and v in ids else truth.UNDECIDED
 
-    return Counter(await asyncio.gather(*(one() for _ in range(samples))))
+    return Counter(await asyncio.gather(*(one(i) for i in range(samples))))
 
 
 async def gate(
