@@ -7,7 +7,7 @@ import time
 from datetime import UTC, datetime, timedelta
 from typing import Protocol
 
-from .engine_version import ENGINE_VERSION
+from .engine_version import scenario_engine_version
 from .models import (
     Metrics,
     RunState,
@@ -41,7 +41,7 @@ class Store(Protocol):
         scenario_id: str | None = None,
     ) -> list[RunSummary]: ...
     def turn_exists(self, run_id: str, seq: int) -> bool: ...
-    def delete_stale_demo_runs(self, engine_version: str) -> int: ...
+    def delete_stale_demo_runs(self, current: dict[str, str]) -> int: ...
     def insert_turn(self, run_id: str, turn: Turn) -> bool: ...
     def insert_vote(self, run_id: str, vote: Vote) -> None: ...
     def set_status(
@@ -122,10 +122,11 @@ class MemoryStore:
         scenario = self._scenarios.get(scenario_id)
         if scenario is None:
             return None
+        stamp = scenario_engine_version(scenario)
         return scenario, [
             s
             for s in self.list_runs(scenario_id=scenario_id)
-            if s.engine_version == ENGINE_VERSION and s.status == "done"
+            if s.engine_version == stamp and s.status == "done"
         ][:40]
 
     def list_runs(
@@ -187,9 +188,12 @@ class MemoryStore:
             del self._runs[rid]
         return len(doomed)
 
-    def delete_stale_demo_runs(self, engine_version: str) -> int:
+    def delete_stale_demo_runs(self, current: dict[str, str]) -> int:
         doomed = [
-            rid for rid, r in self._runs.items() if r.is_demo and r.engine_version != engine_version
+            rid
+            for rid, r in self._runs.items()
+            if r.is_demo
+            and (r.scenario_id not in current or r.engine_version != current[r.scenario_id])
         ]
         for rid in doomed:
             del self._runs[rid]

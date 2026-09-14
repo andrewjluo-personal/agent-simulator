@@ -42,7 +42,7 @@ def test_run_rate_limit_disabled_when_zero(monkeypatch: pytest.MonkeyPatch) -> N
 def test_demo_lists_recent_finished_runs() -> None:
     store = main.get_store()
     from app import orchestrator
-    from app.engine_version import ENGINE_VERSION
+    from app.engine_version import scenario_engine_version
     from app.models import RunConfig
 
     done = orchestrator.new_run(store, RunConfig(rounds=1, seed=91), provider="fake")
@@ -60,7 +60,7 @@ def test_demo_lists_recent_finished_runs() -> None:
     assert done.id in ids
     assert running.id not in ids
     assert stale.id not in ids
-    assert ENGINE_VERSION == resp.json()["engineVersion"]
+    assert scenario_engine_version(done.scenario) == resp.json()["engineVersion"]
 
 
 def test_auto_run_on_load_flags(monkeypatch: pytest.MonkeyPatch) -> None:
