@@ -284,8 +284,7 @@ def get_client() -> LLMClient:
     if provider == "fake":
         _client = FakeClient()
     elif provider == "anthropic" or (
-        provider is None
-        and (os.getenv("ANTHROPIC_API_KEY") or WIFConfig.from_env() is not None)
+        provider is None and (os.getenv("ANTHROPIC_API_KEY") or WIFConfig.from_env() is not None)
     ):
         _client = AnthropicClient()
     elif provider is None:

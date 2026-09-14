@@ -97,8 +97,7 @@ async def gate(
         ("pooled", POOLED, sorted(truth.pooled_fact_ids(scenario)))
     ]
     cells.extend(
-        (agent.id, agent, list(scenario.distribution[agent.id]))
-        for agent in scenario.agents
+        (agent.id, agent, list(scenario.distribution[agent.id])) for agent in scenario.agents
     )
     result_cells: dict[str, Any] = {}
 
@@ -118,8 +117,7 @@ async def gate(
             "per_seed": [
                 dict(
                     Counter(
-                        ballot["vote"]
-                        for ballot in ballots[seed * samples : (seed + 1) * samples]
+                        ballot["vote"] for ballot in ballots[seed * samples : (seed + 1) * samples]
                     )
                 )
                 for seed in range(seeds)
@@ -161,21 +159,15 @@ async def main() -> int:
     scenario = original
     if args.twin:
         scenario = twin_null(scenario)
-        changed = sum(
-            scenario.fact(f"{fact.id}~1").text != fact.text for fact in original.facts
-        )
-        print(
-            f"{original.id}: rotation_1_changed_facts={changed}/{len(original.facts)}"
-        )
+        changed = sum(scenario.fact(f"{fact.id}~1").text != fact.text for fact in original.facts)
+        print(f"{original.id}: rotation_1_changed_facts={changed}/{len(original.facts)}")
     samples = samples_for(len(scenario.candidates), args.samples)
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
     ok = True
 
     for style in args.prompt:
-        result = await gate(
-            client, scenario, style, samples, args.seeds, args.lo, args.hi
-        )
+        result = await gate(client, scenario, style, samples, args.seeds, args.lo, args.hi)
         path = out_dir / f"{scenario.id}_{style}.json"
         path.write_text(json.dumps(result, indent=1))
         print(

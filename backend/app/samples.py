@@ -1150,6 +1150,128 @@ HIRING_PANEL_FLAT_V2 = Scenario.model_validate(
 )
 
 
+# ---------------------------------------------------------------------------
+# hiring-panel-flat-v3 — hidden profile cut from the null-v2 paraphrase bank.
+# Every item is one side of a null-v2 pair (same type and valence, one wording
+# per candidate); the pair's valence is restored from the flat-v2 base item:
+#   JOHN_PRO pairs: John's version shared, Sally's version omitted (includes
+#     F7x/F14x — the John versions of two Sally-pro pairs);
+#   SALLY_CON pairs: Sally's version shared, John's version omitted;
+#   FILLER pairs: both versions shared;
+#   hidden uniques: two Sally pros per hand.
+# Shared therefore leans John through both John pros and a Sally con; the union
+# of hands favours Sally. docs/probes/S4_flat_v3.md.
+# ---------------------------------------------------------------------------
+_NULL_V2_BY_ID = {f["id"]: f for f in NULL_V2_SHARED + NULL_V2_UNIQUE}
+_FLAT_V2_BY_ID = {f["id"]: f for f in FLAT_V2_SHARED + FLAT_V2_UNIQUE}
+
+FLAT_V3_JOHN_PRO = ["J1", "J3", "J5", "J7", "F7", "F14"]
+FLAT_V3_SALLY_CON = ["S10"]
+FLAT_V3_FILLER = ["S1", "S4", "J9", "J10", "J11"]
+_V3_SALLY_UNIQUE = {
+    "dana": ["F9", "F13"],
+    "marcus": ["F11", "F12"],
+    "priya": ["F1", "F3"],
+    "tom": ["F2", "F5"],
+}
+
+
+def _v3_john(base: str) -> str:
+    return base if _NULL_V2_BY_ID[base]["candidateId"] == "john" else base + "x"
+
+
+def _v3_sally(base: str) -> str:
+    return base if _NULL_V2_BY_ID[base]["candidateId"] == "sally" else base + "x"
+
+
+def _v3_fact(fact_id: str) -> dict[str, Any]:
+    base = fact_id.removesuffix("x")
+    return {
+        **_NULL_V2_BY_ID[fact_id],
+        "valence": _FLAT_V2_BY_ID[base]["valence"],
+        "weight": 1,
+    }
+
+
+def _v3_uniques(agent: str) -> list[str]:
+    return [_v3_sally(b) for b in _V3_SALLY_UNIQUE[agent]]
+
+
+FLAT_V3_SHARED_IDS = (
+    [_v3_john(b) for b in FLAT_V3_JOHN_PRO]
+    + [_v3_sally(b) for b in FLAT_V3_SALLY_CON]
+    + [v for b in FLAT_V3_FILLER for v in (b, b + "x")]
+)
+FLAT_V3_UNIQUE_IDS = [i for a in _V3_SALLY_UNIQUE for i in _v3_uniques(a)]
+FLAT_V3_SHARED: list[dict[str, Any]] = [_v3_fact(i) for i in FLAT_V3_SHARED_IDS]
+FLAT_V3_UNIQUE: list[dict[str, Any]] = [_v3_fact(i) for i in FLAT_V3_UNIQUE_IDS]
+
+HIRING_PANEL_FLAT_V3 = Scenario.model_validate(
+    {
+        "id": "hiring-panel-flat-v3",
+        "title": "Hiring panel (flat items, hidden profile from the null-v2 bank)",
+        "brief": HIRING_PANEL_NULL_V2.brief,
+        "isSample": True,
+        "candidates": HIRING_PANEL_NULL_V2.candidates,
+        "agents": HIRING_PANEL_AGENTS,
+        "facts": FLAT_V3_SHARED + FLAT_V3_UNIQUE,
+        "distribution": {a: FLAT_V3_SHARED_IDS + _v3_uniques(a) for a in _V3_SALLY_UNIQUE},
+        # gate_pool.py, n=20/cell, balanced order, naive+default prompts:
+        # pooled->Sally 1.00 on both; alone->John below is the naive prompt
+        # (default: dana .95, marcus 1.00, priya .95, tom 1.00). Null gate:
+        # pooled in band (0.50 naive / 0.45 default Sally) but agent cells out
+        # (naive dana .70, marcus .75, tom .25; default tom .30 of 0.35-0.65).
+        # See docs/probes/S4_flat_v3.md.
+        "validation": {
+            "claude-haiku-4-5": {
+                "aloneWrongRate": {
+                    "dana": 0.85,
+                    "marcus": 0.95,
+                    "priya": 0.85,
+                    "tom": 1.0,
+                },
+                "pooledRightRate": 1.0,
+                "trials": 20,
+                "date": "2026-09-14",
+                "passed": True,
+                "nullGate": False,
+            }
+        },
+    }
+)
+
+# Twin null of v3: both versions of every pair v3 draws on, all neutral. The
+# null hands mirror v3's structure — shared pairs shared to all, each agent's
+# unique pairs held only by them — so the Sally rate is the residual
+# name/order bias.
+_V3_NULL_UNIQUE_PAIRS = _V3_SALLY_UNIQUE
+FLAT_V3_NULL_FACTS: list[dict[str, Any]] = [
+    _NULL_V2_BY_ID[i]
+    for b in FLAT_V3_JOHN_PRO
+    + FLAT_V3_SALLY_CON
+    + FLAT_V3_FILLER
+    + [b for pairs in _V3_NULL_UNIQUE_PAIRS.values() for b in pairs]
+    for i in (b, b + "x")
+]
+FLAT_V3_NULL_SHARED_IDS = [
+    i for b in FLAT_V3_JOHN_PRO + FLAT_V3_SALLY_CON + FLAT_V3_FILLER for i in (b, b + "x")
+]
+
+HIRING_PANEL_FLAT_V3_NULL = Scenario.model_validate(
+    {
+        **HIRING_PANEL_FLAT_V3.model_dump(by_alias=True, exclude={"facts", "distribution"}),
+        "id": "hiring-panel-flat-v3-null",
+        "title": "Hiring panel (flat v3 twin null, zero margin)",
+        "facts": FLAT_V3_NULL_FACTS,
+        "distribution": {
+            a: FLAT_V3_NULL_SHARED_IDS + [i for b in pairs for i in (b, b + "x")]
+            for a, pairs in _V3_NULL_UNIQUE_PAIRS.items()
+        },
+        "validation": {},
+    }
+)
+
+
 def _haiku(
     agent_ids: list[str], pooled: float, passed: bool, *, alone: dict[str, float] | None = None
 ) -> dict[str, Any]:
@@ -2074,6 +2196,8 @@ VENDOR_SELECTION_V1 = Scenario.model_validate(
 
 ALL_SAMPLE_SCENARIOS: list[Scenario] = [
     HIRING_PANEL_FLAT_V2,
+    HIRING_PANEL_FLAT_V3,
+    HIRING_PANEL_FLAT_V3_NULL,
     HIRING_PANEL_NULL,
     HIRING_PANEL_NULL_V2,
     INCIDENT_REVIEW_V1,

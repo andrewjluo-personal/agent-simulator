@@ -1,0 +1,176 @@
+{
+ "scenario": "hiring-panel-flat-v3-null",
+ "prompt": "naive",
+ "order": "balanced",
+ "target": "sally",
+ "lo": 0.35,
+ "hi": 0.65,
+ "cells": {
+  "pooled": {
+   "n": 20,
+   "counts": {
+    "sally": 17,
+    "john": 3
+   },
+   "per_seed": [
+    {
+     "sally": 8,
+     "john": 2
+    },
+    {
+     "sally": 9,
+     "john": 1
+    }
+   ],
+   "by_order": {
+    "fixed": {
+     "sally": 8,
+     "john": 2
+    },
+    "reversed": {
+     "sally": 9,
+     "john": 1
+    }
+   },
+   "rate": 0.85,
+   "ci": [
+    0.6395767041130426,
+    0.9476322080405041
+   ],
+   "pass": false
+  },
+  "dana": {
+   "n": 20,
+   "counts": {
+    "john": 10,
+    "sally": 10
+   },
+   "per_seed": [
+    {
+     "john": 5,
+     "sally": 5
+    },
+    {
+     "john": 5,
+     "sally": 5
+    }
+   ],
+   "by_order": {
+    "fixed": {
+     "john": 9,
+     "sally": 1
+    },
+    "reversed": {
+     "sally": 9,
+     "john": 1
+    }
+   },
+   "rate": 0.5,
+   "ci": [
+    0.2992949144298199,
+    0.7007050855701801
+   ],
+   "pass": true
+  },
+  "marcus": {
+   "n": 20,
+   "counts": {
+    "john": 10,
+    "sally": 10
+   },
+   "per_seed": [
+    {
+     "john": 6,
+     "sally": 4
+    },
+    {
+     "john": 4,
+     "sally": 6
+    }
+   ],
+   "by_order": {
+    "fixed": {
+     "john": 9,
+     "sally": 1
+    },
+    "reversed": {
+     "sally": 9,
+     "john": 1
+    }
+   },
+   "rate": 0.5,
+   "ci": [
+    0.2992949144298199,
+    0.7007050855701801
+   ],
+   "pass": true
+  },
+  "priya": {
+   "n": 20,
+   "counts": {
+    "sally": 16,
+    "john": 4
+   },
+   "per_seed": [
+    {
+     "sally": 8,
+     "john": 2
+    },
+    {
+     "sally": 8,
+     "john": 2
+    }
+   ],
+   "by_order": {
+    "fixed": {
+     "sally": 7,
+     "john": 3
+    },
+    "reversed": {
+     "sally": 9,
+     "john": 1
+    }
+   },
+   "rate": 0.8,
+   "ci": [
+    0.5839782779742401,
+    0.9193436467288
+   ],
+   "pass": false
+  },
+  "tom": {
+   "n": 20,
+   "counts": {
+    "john": 7,
+    "sally": 13
+   },
+   "per_seed": [
+    {
+     "john": 4,
+     "sally": 6
+    },
+    {
+     "john": 3,
+     "sally": 7
+    }
+   ],
+   "by_order": {
+    "fixed": {
+     "john": 5,
+     "sally": 5
+    },
+    "reversed": {
+     "sally": 8,
+     "john": 2
+    }
+   },
+   "rate": 0.65,
+   "ci": [
+    0.43285051021946463,
+    0.8188104521320554
+   ],
+   "pass": true
+  }
+ },
+ "pass": false
+}

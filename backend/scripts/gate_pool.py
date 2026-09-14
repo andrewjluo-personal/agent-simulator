@@ -207,6 +207,7 @@ async def main() -> int:
                 continue
             res = await gate(client, scenario, style, samples, args.fact_style)
             path.write_text(json.dumps(res, indent=1))
+
             def fmt(value: float | None) -> str:
                 return "NA" if value is None else f"{value:.2f}"
 

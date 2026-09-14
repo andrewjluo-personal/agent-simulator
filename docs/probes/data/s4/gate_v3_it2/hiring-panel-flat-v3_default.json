@@ -1,0 +1,293 @@
+{
+ "scenario": "hiring-panel-flat-v3",
+ "prompt": "default",
+ "correct": "sally",
+ "shared_verdict": "john",
+ "pooled": {
+  "sally": 8
+ },
+ "pooled_right": 1.0,
+ "alone": {
+  "dana": {
+   "john": 8
+  },
+  "marcus": {
+   "john": 6,
+   "sally": 2
+  },
+  "priya": {
+   "john": 6,
+   "sally": 2
+  },
+  "tom": {
+   "john": 8
+  },
+  "omar": {
+   "john": 7,
+   "sally": 1
+  }
+ },
+ "alone_wrong": {
+  "dana": 1.0,
+  "marcus": 0.75,
+  "priya": 0.75,
+  "tom": 1.0,
+  "omar": 0.875
+ },
+ "order": "random",
+ "reasons": {
+  "pooled": [
+   {
+    "seed": 0,
+    "vote": "sally",
+    "reason": "Sally demonstrated exceptional incident response (ten-minute rollback, post-mortem leadership, lowest repeat-page rate), uncovered critical production issues (race condition with silent data loss, single point of failure), and showed ownership through service maintenance and mentoring\u2014outweighing concerns about late submission and one failed edge-case test."
+   },
+   {
+    "seed": 1,
+    "vote": "sally",
+    "reason": "Sally demonstrated exceptional production incident ownership (ledger migration with zero downtime, rollback in ten minutes), proactive risk-spotting (caught both planted bug and unscripted race condition plus architectural SPOF), and sustained team investment (led post-mortems, reviewed new hires, improved incident processes), whereas John's strengths are more narrowly technical despite strong certifications and mentoring."
+   },
+   {
+    "seed": 2,
+    "vote": "sally",
+    "reason": "Sally led a two-billion-row migration with zero downtime, found the planted bug, and demonstrated ownership through incident reviews and post-mortem documentation; John's shorter recent tenures and omitted setup instructions raise concerns about follow-through."
+   },
+   {
+    "seed": 3,
+    "vote": "sally",
+    "reason": "Sally's track record on high-stakes systems (two-billion-row migration, race condition discovery, blocking bug identification) and proactive incident prevention (post-mortem template, runbook creation) outweigh her process gaps, whereas John's missed deadline and incomplete take-home documentation raise execution concerns."
+   },
+   {
+    "seed": 4,
+    "vote": "sally",
+    "reason": "Sally demonstrated superior incident response (rollback in ten minutes with prepared runbook), found two bugs including a silent data loss race condition, led a major zero-downtime migration, and has consistent ownership patterns; John's strengths are real but offset by a job that lasted under eighteen months, a missed deadline, and incomplete take-home documentation."
+   },
+   {
+    "seed": 5,
+    "vote": "sally",
+    "reason": "Sally demonstrated exceptional incident response (ten-minute rollback, post-mortem template), proactive bug detection (found race condition causing silent data loss outside the exercise), and cross-team impact (brokered month-long API deadlock), though John's high-throughput experience and certification are strong."
+   },
+   {
+    "seed": 6,
+    "vote": "sally",
+    "reason": "Sally demonstrated exceptional ownership of critical systems (two-billion-row ledger migration, race condition discovery, API brokering) and proactive incident culture, though John's outage response speed and mentoring are notable strengths."
+   },
+   {
+    "seed": 7,
+    "vote": "sally",
+    "reason": "Sally demonstrated superior incident response (rolled back bad deploy in ten minutes, led two cross-team reviews), proactive ownership (named lead on two-billion-row migration with zero downtime, picked up orphaned service, wrote postmortem template), and found a race condition beyond the exercise scope."
+   }
+  ],
+  "dana": [
+   {
+    "seed": 0,
+    "vote": "john",
+    "reason": "John's proactive incident leadership (ran weekly reviews, restored service in <20min, added regression tests) and mentoring track record (two promotions in two years) demonstrate ownership and impact that outweigh Sally's solid but more reactive contributions."
+   },
+   {
+    "seed": 1,
+    "vote": "john",
+    "reason": "John demonstrated superior production judgment: led outage response restoring service in twenty minutes, added regression test unprompted after debugging, and proactively halved page rate on unpopular service. Sally sat on a blocking bug for a week before escalating."
+   },
+   {
+    "seed": 2,
+    "vote": "john",
+    "reason": "John demonstrates better incident response leadership, proactive debugging with regression testing, and stronger recent production impact; Sally's late submission and week-long delay surfacing a blocking bug are concerning."
+   },
+   {
+    "seed": 3,
+    "vote": "john",
+    "reason": "John demonstrates stronger operational ownership: halved page rate in a quarter, led sub-20-minute outage recovery, and proactively mentored two people to promotion; Sally's blocking-bug delay and late take-home submission raise reliability concerns."
+   },
+   {
+    "seed": 4,
+    "vote": "john",
+    "reason": "John's proactive bug-fix with regression testing, production incident leadership, two promotions mentored, and unprompted design insight on idempotency outweigh Sally's blocking-bug delay and late take-home submission."
+   },
+   {
+    "seed": 5,
+    "vote": "john",
+    "reason": "John showed proactive ownership (regression test, halved page rate, led outage response under 20min), stronger incident leadership (runs weekly reviews for a year), and two mentees promoted; Sally's delayed submission without warning and week-long blocking bug communication lag are reliability concerns."
+   },
+   {
+    "seed": 6,
+    "vote": "john",
+    "reason": "John demonstrated stronger incident response leadership (led outage resolution in under twenty minutes, ran weekly reviews for a year, halved page rate), proactive debugging (added regression test), and design depth (unprompted idempotency analysis), despite the take-home README gap and one short tenure."
+   },
+   {
+    "seed": 7,
+    "vote": "john",
+    "reason": "John's track record shows ownership at scale\u2014halving page rate, leading outage recovery in under twenty minutes, and proactive regression testing\u2014while Sally's delayed take-home and week-long bug-reporting delay raise reliability concerns."
+   }
+  ],
+  "marcus": [
+   {
+    "seed": 0,
+    "vote": "john",
+    "reason": "John's demonstrated production leadership (outage response, incident review ownership, mentee promotions) and proactive bug-fixing approach (regression test) outweigh Sally's delayed submission and blocking bug communication failure."
+   },
+   {
+    "seed": 1,
+    "vote": "john",
+    "reason": "John's debugging showed better engineering discipline (added regression test), his design answer demonstrated unprompted systems thinking on idempotency, and his incident response leadership under pressure (restored service in under twenty minutes) outweighs Sally's maintenance work and course completion."
+   },
+   {
+    "seed": 2,
+    "vote": "john",
+    "reason": "John demonstrated superior incident response (sub-20min outage resolution), proactive debugging (added regression test), and sustained high-throughput system ownership; Sally's late take-home submission without notice and week-long bug-reporting delay raise reliability concerns despite her strong technical foundations."
+   },
+   {
+    "seed": 3,
+    "vote": "john",
+    "reason": "John demonstrates consistent ownership and impact (halved page rate, sub-20min outage recovery, two promotions mentored) against Sally's delayed submission, known test failure, and week-long bug silence."
+   },
+   {
+    "seed": 4,
+    "vote": "john",
+    "reason": "John demonstrated superior production impact (sub-20min outage response, halved page rate), proactive incident leadership (ran weekly reviews for a year), and mentorship results (two promotions), though Sally's distributed-systems learning and bug-finding depth warrant consideration."
+   },
+   {
+    "seed": 5,
+    "vote": "sally",
+    "reason": "Sally found the planted bug, identified an unrequested race condition, and demonstrates systematic incident ownership; John's take-home omits setup instructions and he has tenure concerns, though his mentoring and outage response are strong."
+   },
+   {
+    "seed": 6,
+    "vote": "sally",
+    "reason": "Sally found a critical race condition causing silent data loss unprompted, demonstrating deep systems thinking; John's missed deadline and incomplete take-home documentation raise execution concerns despite strong outage response."
+   },
+   {
+    "seed": 7,
+    "vote": "john",
+    "reason": "John's proactive incident leadership (outage resolved in <20min), regression test discipline, and demonstrated ownership (halved page rate in a quarter) show stronger production impact than Sally's technical skills."
+   }
+  ],
+  "priya": [
+   {
+    "seed": 0,
+    "vote": "john",
+    "reason": "John's proactive ownership (halved page rate, led incident response, mentored two to promotion) and deliberate design thinking (unprompted idempotency analysis) outweigh Sally's communication gap (late submission, week-long bug silence per reference)."
+   },
+   {
+    "seed": 1,
+    "vote": "john",
+    "reason": "John led production incidents to resolution, mentored two promotions, and proactively owned high-impact operational work; Sally's late submission without warning and week-long delay on a blocking bug raise reliability concerns despite solid technical skills."
+   },
+   {
+    "seed": 2,
+    "vote": "john",
+    "reason": "John's proactive ownership (halved page rate, added regression test, led outage response in <20min) and mentorship track record outweigh Sally's late submission and reference concern about communication delays."
+   },
+   {
+    "seed": 3,
+    "vote": "john",
+    "reason": "John's demonstrated incident leadership, proactive debugging with regression tests, and sustained high-throughput systems experience show stronger operational maturity, though Sally's recent distributed-systems study and load-testing rigor are notable strengths."
+   },
+   {
+    "seed": 4,
+    "vote": "john",
+    "reason": "John demonstrates stronger team leadership (two mentees promoted, led incident response), ownership mindset (halved page rate, ran weekly reviews), and design depth (unprompted idempotency thinking), though Sally shows systematic rigor in testing and cross-team incident involvement."
+   },
+   {
+    "seed": 5,
+    "vote": "sally",
+    "reason": "Sally demonstrates stronger team integration and proactive learning\u2014she reviews new hires, attends incident reviews, completed a distributed-systems course, and picked up orphaned services\u2014while John's recent tenure instability and incomplete take-home documentation raise execution concerns."
+   },
+   {
+    "seed": 6,
+    "vote": "john",
+    "reason": "John demonstrated stronger incident ownership (led outage response, runs weekly reviews), proactive debugging (added regression test), and consistent delivery on high-stakes systems, despite Sally's organized design work and course investment."
+   },
+   {
+    "seed": 7,
+    "vote": "sally",
+    "reason": "Sally demonstrates stronger team integration through incident reviews, proactive debugging with load testing, and mentoring via code review, despite the late take-home submission raising process concerns."
+   }
+  ],
+  "tom": [
+   {
+    "seed": 0,
+    "vote": "john",
+    "reason": "John demonstrated stronger production ownership (halved page rate, led outage response under 20min, mentored two promotions), proactive debugging (added regression test), and operational excellence (runs incident reviews), despite Sally's strong architecture insight and migration leadership."
+   },
+   {
+    "seed": 1,
+    "vote": "john",
+    "reason": "John demonstrated proactive bug fixing with regression tests, led incident reviews, and shipped high-throughput services; Sally's late submission and week-long silence on blockers raise concerns despite strong technical spots."
+   },
+   {
+    "seed": 2,
+    "vote": "john",
+    "reason": "John found the bug and added a regression test; Sally sat on a blocking bug a week before reporting it, which is a serious judgement gap for a senior role."
+   },
+   {
+    "seed": 3,
+    "vote": "john",
+    "reason": "John demonstrated stronger production ownership (halved page rate, led incident response under 20 min, mentored two promoted engineers) versus Sally's delayed submission and week-long bug reporting delay."
+   },
+   {
+    "seed": 4,
+    "vote": "john",
+    "reason": "John's proactive incident leadership, regression test discipline, and demonstrated ownership (halving page rate) outweigh Sally's reference flag and late submission, though both are strong candidates."
+   },
+   {
+    "seed": 5,
+    "vote": "john",
+    "reason": "John found the bug and added a regression test, led production incident response, and ran weekly incident reviews for a year; Sally's known issue with delayed communication on a blocking bug is a red flag for a senior role."
+   },
+   {
+    "seed": 6,
+    "vote": "john",
+    "reason": "John found the bug and added regression tests, proactively owned unpopular work, led incident response successfully, and showed better process discipline; Sally's late take-home submission without warning and week-long blocking-bug silence raise reliability concerns."
+   },
+   {
+    "seed": 7,
+    "vote": "john",
+    "reason": "John's debugging added a regression test, he's led incident reviews for a year, and resolved production outages in under twenty minutes; Sally's reference flagged a blocking bug communication failure and her take-home was late without notice."
+   }
+  ],
+  "omar": [
+   {
+    "seed": 0,
+    "vote": "john",
+    "reason": "John demonstrated stronger incident response leadership (restored service in <20min, runs weekly reviews for a year), proactive bug-fixing with regression tests, and ownership of high-impact work (halved page rate); Sally's reference flagged a week-long communication delay on blocking bugs, which is concerning for a senior role."
+   },
+   {
+    "seed": 1,
+    "vote": "sally",
+    "reason": "Sally brokered a month-long cross-team API blocker and proactively picked up orphaned service maintenance, showing strong initiative and collaboration; John's take-home README omission and missed sprint deadline due to owned library suggest less thoroughness."
+   },
+   {
+    "seed": 2,
+    "vote": "john",
+    "reason": "John's proactive incident leadership, regression testing discipline, and demonstrated ownership of high-throughput systems outweigh Sally's communication gaps and take-home submission issues."
+   },
+   {
+    "seed": 3,
+    "vote": "john",
+    "reason": "John demonstrated measurable impact (halved page rate), proactive ownership of high-throughput services, and systematic debugging; Sally's delayed submission and week-long bug-reporting delay raise reliability concerns despite solid technical foundation."
+   },
+   {
+    "seed": 4,
+    "vote": "john",
+    "reason": "John demonstrated stronger production ownership (halved page rate, led sub-20min outage response, runs incident review) and attention to detail (found bug + regression test, unprompted idempotency thinking), though Sally shows solid fundamentals and cross-team collaboration."
+   },
+   {
+    "seed": 5,
+    "vote": "john",
+    "reason": "John demonstrated superior incident response (restored service in under 20 minutes), proactive debugging (added regression test), and mentorship impact (two promotees in two years), outweighing Sally's communication gaps like the late take-home and week-long bug silence."
+   },
+   {
+    "seed": 6,
+    "vote": "john",
+    "reason": "John demonstrated proactive ownership (halved page rate, led outage response in <20min), better communication patterns (concise answers, incident review leadership), and superior debugging instincts (added regression test), while Sally's late submission without warning and week-long bug silence suggest inconsistent communication discipline."
+   },
+   {
+    "seed": 7,
+    "vote": "john",
+    "reason": "John's mentoring track record (two promotions in two years), proactive bug-fixing discipline (added regression test), and demonstrated high-throughput systems expertise outweigh Sally's incident response experience, particularly given Sally's week-long communication lapse on a blocking bug."
+   }
+  ]
+ },
+ "pass": false
+}

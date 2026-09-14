@@ -198,33 +198,23 @@ def twin_null(scenario: Scenario) -> Scenario:
         fact.model_copy(
             update={
                 "id": f"{fact.id}~{rotation}",
-                "candidate_id": candidates[
-                    (index_by_id[fact.candidate_id] + rotation) % k
-                ].id,
+                "candidate_id": candidates[(index_by_id[fact.candidate_id] + rotation) % k].id,
                 "text": rotate_text(fact.text, rotation),
-                "memo_text": rotate_text(fact.memo_text, rotation)
-                if fact.memo_text
-                else None,
+                "memo_text": rotate_text(fact.memo_text, rotation) if fact.memo_text else None,
             }
         )
         for fact in scenario.facts
         for rotation in range(k)
     ]
     distribution = {
-        agent_id: [
-            f"{fact_id}~{rotation}"
-            for fact_id in held
-            for rotation in range(k)
-        ]
+        agent_id: [f"{fact_id}~{rotation}" for fact_id in held for rotation in range(k)]
         for agent_id, held in scenario.distribution.items()
     }
     twin = scenario.model_copy(
         update={
             "id": scenario.id + "-twin",
             "title": scenario.title + " (twin null)",
-            "candidates": [
-                candidate.model_copy(update={"blurb": ""}) for candidate in candidates
-            ],
+            "candidates": [candidate.model_copy(update={"blurb": ""}) for candidate in candidates],
             "facts": facts,
             "distribution": distribution,
             "validation": None,

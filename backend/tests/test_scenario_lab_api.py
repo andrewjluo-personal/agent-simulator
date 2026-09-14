@@ -41,7 +41,7 @@ def test_fork_and_validate_lifecycle(monkeypatch: pytest.MonkeyPatch) -> None:
     fork = client.post("/api/scenarios", json={"baseId": SID, "scenario": base})
     assert fork.status_code == 201
     forked = fork.json()
-    assert forked["id"] == "hiring-panel-flat-v3"
+    assert forked["id"] == "hiring-panel-flat-v4"  # v3 is a seeded sample
     assert forked["parentId"] == SID
     assert forked["isSample"] is False
     assert forked["source"]["kind"] == "custom"
@@ -51,7 +51,7 @@ def test_fork_and_validate_lifecycle(monkeypatch: pytest.MonkeyPatch) -> None:
 
     fork_again = client.post("/api/scenarios", json={"baseId": SID, "scenario": base})
     assert fork_again.status_code == 201
-    assert fork_again.json()["id"] == "hiring-panel-flat-v4"
+    assert fork_again.json()["id"] == "hiring-panel-flat-v5"
     slug = client.post(
         "/api/scenarios",
         json={"baseId": SID, "slug": "custom-panel", "scenario": base},

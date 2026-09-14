@@ -1,0 +1,113 @@
+{
+ "no_behavioural": {
+  "n_items": 48,
+  "pooled": {
+   "sally": 9,
+   "n": 10,
+   "ci": [
+    0.5958436145024278,
+    0.9821242504842788
+   ],
+   "by_order": {
+    "fixed": {
+     "sally": 4,
+     "john": 1
+    },
+    "reversed": {
+     "sally": 5
+    }
+   }
+  },
+  "priya": {
+   "sally": 8,
+   "n": 10,
+   "ci": [
+    0.49015684672072335,
+    0.9433190520193067
+   ],
+   "by_order": {
+    "fixed": {
+     "sally": 3,
+     "john": 2
+    },
+    "reversed": {
+     "sally": 5
+    }
+   }
+  }
+ },
+ "no_rigour": {
+  "n_items": 52,
+  "pooled": {
+   "sally": 7,
+   "n": 10,
+   "ci": [
+    0.39677321997956516,
+    0.892210712513788
+   ],
+   "by_order": {
+    "fixed": {
+     "john": 3,
+     "sally": 2
+    },
+    "reversed": {
+     "sally": 5
+    }
+   }
+  },
+  "priya": {
+   "sally": 7,
+   "n": 10,
+   "ci": [
+    0.39677321997956516,
+    0.892210712513788
+   ],
+   "by_order": {
+    "fixed": {
+     "sally": 2,
+     "john": 3
+    },
+    "reversed": {
+     "sally": 5
+    }
+   }
+  }
+ },
+ "no_cons": {
+  "n_items": 50,
+  "pooled": {
+   "sally": 8,
+   "n": 10,
+   "ci": [
+    0.49015684672072335,
+    0.9433190520193067
+   ],
+   "by_order": {
+    "fixed": {
+     "john": 2,
+     "sally": 3
+    },
+    "reversed": {
+     "sally": 5
+    }
+   }
+  },
+  "priya": {
+   "sally": 6,
+   "n": 10,
+   "ci": [
+    0.3126695474501864,
+    0.8318224187964902
+   ],
+   "by_order": {
+    "fixed": {
+     "sally": 1,
+     "john": 4
+    },
+    "reversed": {
+     "sally": 5
+    }
+   }
+  }
+ }
+}

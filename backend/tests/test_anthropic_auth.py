@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import time
+from typing import cast
 
 import httpx
 import pytest
@@ -64,7 +65,9 @@ def test_wif_config_parses_all(monkeypatch: pytest.MonkeyPatch) -> None:
     assert cfg.workspace_id == "wrkspc_test"
 
 
-def _mock_provider(workspace: str | None = None) -> tuple[WIFTokenProvider, list[dict[str, object]]]:
+def _mock_provider(
+    workspace: str | None = None,
+) -> tuple[WIFTokenProvider, list[dict[str, object]]]:
     bodies: list[dict[str, object]] = []
     calls = {"n": 0}
 
@@ -121,7 +124,7 @@ class _StubProvider:
 def test_client_wif_mode(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     _set_wif_env(monkeypatch)
-    client = AnthropicClient(token_provider=_StubProvider())
+    client = AnthropicClient(token_provider=cast(WIFTokenProvider, _StubProvider()))
     assert client.auth_mode == "wif"
     assert client._auth_headers() == {"Authorization": "Bearer stub-tok"}
 
@@ -187,9 +190,7 @@ def test_middleware_sets_and_resets_contextvar() -> None:
         return {"tok": vercel_oidc_token.get()}
 
     client = TestClient(app)
-    assert client.get("/", headers={"x-vercel-oidc-token": "hdr-tok"}).json() == {
-        "tok": "hdr-tok"
-    }
+    assert client.get("/", headers={"x-vercel-oidc-token": "hdr-tok"}).json() == {"tok": "hdr-tok"}
     assert vercel_oidc_token.get() is None
     assert client.get("/").json() == {"tok": None}
 
@@ -235,10 +236,8 @@ def test_client_retries_once_on_401(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     provider = _CountingProvider()
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    client = AnthropicClient(token_provider=provider)
-    resp = asyncio.run(
-        client.complete(LLMRequest(system="s", user="u", model="m", max_tokens=5))
-    )
+    client = AnthropicClient(token_provider=cast(WIFTokenProvider, provider))
+    resp = asyncio.run(client.complete(LLMRequest(system="s", user="u", model="m", max_tokens=5)))
     assert resp.text == "ok"
     assert len(calls) == 2
     assert provider.invalidated == 1

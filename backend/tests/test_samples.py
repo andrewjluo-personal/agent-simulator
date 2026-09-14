@@ -9,31 +9,40 @@ from app import prompts, truth, validator
 from app.llm import FakeClient
 from app.models import RunConfig, Scenario
 from app.samples import (
+    _V3_SALLY_UNIQUE,
     ALL_SAMPLE_SCENARIOS,
+    FLAT_V3_FILLER,
+    FLAT_V3_JOHN_PRO,
+    FLAT_V3_SALLY_CON,
     HIDDEN_SAMPLE_IDS,
     HIRING_PANEL_FLAT_V2,
+    HIRING_PANEL_FLAT_V3,
+    HIRING_PANEL_FLAT_V3_NULL,
     HIRING_PANEL_NULL,
     HIRING_PANEL_NULL_V2,
     NULL_V2_SHARED_IDS,
     SAMPLE_SCENARIOS,
     SAMPLES_BY_ID,
     _null_swap,
+    _v3_john,
+    _v3_sally,
     ensure_samples,
 )
 from app.scenarios.papers import PAPER_SCENARIOS
 
-# hiring-panel-null / hiring-panel-null-v2 are zero-margin bias controls,
-# deliberately not hidden profiles.
+NULL_POOLS = [HIRING_PANEL_NULL, HIRING_PANEL_NULL_V2, HIRING_PANEL_FLAT_V3_NULL]
+
+# null pools are zero-margin bias controls, deliberately not hidden profiles.
 NON_PAPER_SAMPLE_SCENARIOS = [
     scenario
     for scenario in SAMPLE_SCENARIOS
     if scenario.id not in {s.id for s in PAPER_SCENARIOS}
-    and scenario.id not in {HIRING_PANEL_NULL.id, HIRING_PANEL_NULL_V2.id}
+    and all(scenario is not n for n in NULL_POOLS)
 ]
 
 
-def test_null_pool_is_symmetric() -> None:
-    s = HIRING_PANEL_NULL
+@pytest.mark.parametrize("s", NULL_POOLS, ids=lambda s: s.id)
+def test_null_pool_is_symmetric(s: Scenario) -> None:
     assert truth.scores(s, truth.pooled_fact_ids(s)) == {"john": 0, "sally": 0}
     by_cand = {
         c.id: sorted(f.memo_text or f.text for f in s.facts if f.candidate_id == c.id)
@@ -134,7 +143,12 @@ def test_ensure_samples_overwrites_stale_rows() -> None:
 
 
 def test_hiring_panel_samples_have_four_panelists() -> None:
-    for s in (HIRING_PANEL_FLAT_V2, HIRING_PANEL_NULL):
+    for s in (
+        HIRING_PANEL_FLAT_V2,
+        HIRING_PANEL_NULL,
+        HIRING_PANEL_FLAT_V3,
+        HIRING_PANEL_FLAT_V3_NULL,
+    ):
         assert [a.id for a in s.agents] == ["dana", "marcus", "priya", "tom"]
         cfg = RunConfig()  # balanced candidate order, seed 0
         split = Counter(prompts.resolve_candidate_order(s, cfg, a) for a in s.agents)
@@ -181,8 +195,63 @@ def test_null_v2_hands() -> None:
     assert split == Counter({"fixed": 2, "reversed": 2})
 
 
-def test_null_pool_candidates_symmetric() -> None:
-    cands = HIRING_PANEL_NULL.candidates
+@pytest.mark.parametrize("s", NULL_POOLS + [HIRING_PANEL_FLAT_V3], ids=lambda s: s.id)
+def test_symmetric_candidates_and_brief(s: Scenario) -> None:
+    cands = s.candidates
     assert len(cands) == 2
-    assert cands[0].blurb == cands[1].blurb
-    assert "payments" not in HIRING_PANEL_NULL.brief
+    assert "payments" not in s.brief
+    if s is HIRING_PANEL_NULL:
+        assert cands[0].blurb == cands[1].blurb
+    else:
+        # null-v2 blurbs are equivalent paraphrases, not identical strings
+        assert cands[0].blurb != ""
+
+
+def test_flat_v3_is_cut_from_null_v2_bank() -> None:
+    s = HIRING_PANEL_FLAT_V3
+    bank = {f.id: f for f in HIRING_PANEL_NULL_V2.facts}
+    assert len(s.facts) == 25
+    assert all(f.id in bank for f in s.facts)
+    for f in s.facts:
+        twin = bank[f.id]
+        assert (f.text, f.memo_text, f.keywords) == (twin.text, twin.memo_text, twin.keywords)
+    shared = truth.shared_fact_ids(s)
+    assert len(shared) == 17
+    fact_ids = {f.id for f in s.facts}
+    for base in FLAT_V3_JOHN_PRO:
+        assert _v3_john(base) in shared
+        assert _v3_sally(base) not in fact_ids
+    for base in FLAT_V3_SALLY_CON:
+        assert _v3_sally(base) in shared
+        assert _v3_john(base) not in fact_ids
+    for base in FLAT_V3_FILLER:
+        assert base in shared and base + "x" in shared
+    uniques = [f for f in s.facts if f.id not in shared]
+    assert len(uniques) == 8
+    assert all(f.candidate_id == "sally" and f.valence == "pro" for f in uniques)
+    for agent, hand in s.distribution.items():
+        assert len([i for i in hand if i not in shared]) == 2
+    for agent, bases in _V3_SALLY_UNIQUE.items():
+        hand = s.distribution[agent]
+        assert all(_v3_sally(b) in hand for b in bases)
+    assert truth.shared_only_verdict(s) == "john"
+    assert truth.pooled_verdict(s) == "sally"
+    assert all(truth.verdict(s, hand) == "john" for hand in s.distribution.values())
+
+
+def test_flat_v3_null_mirrors_every_v3_item() -> None:
+    v3, null = HIRING_PANEL_FLAT_V3, HIRING_PANEL_FLAT_V3_NULL
+    pairs = (
+        set(FLAT_V3_JOHN_PRO)
+        | set(FLAT_V3_SALLY_CON)
+        | set(FLAT_V3_FILLER)
+        | {b for bases in _V3_SALLY_UNIQUE.values() for b in bases}
+    )
+    assert len(null.facts) == 2 * len(pairs) == 40
+    assert null.brief == v3.brief and null.candidates == v3.candidates
+    ids = {f.id for f in null.facts}
+    assert all(b in ids and b + "x" in ids for b in pairs)
+    assert all(f.id in ids for f in v3.facts)
+    assert all(f.valence == "neutral" for f in null.facts)
+    assert all(truth.verdict(null, hand) == "undecided" for hand in null.distribution.values())
+    assert truth.pooled_verdict(null) == "undecided"
