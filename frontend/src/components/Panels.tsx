@@ -32,7 +32,7 @@ export type ControlsProps = {
   scenarios: Scenario[]
   onSelectScenario: (id: string) => void
   onResetScenario: () => void
-  paradigms: { id: Paradigm; label: string }[]
+  paradigms: { id: Paradigm; label: string; description: string }[]
   n: number
   onChangeN: (n: number) => void
   status: 'idle' | 'playing' | 'paused' | 'finished'
@@ -71,7 +71,7 @@ export function Controls(p: ControlsProps) {
         Paradigm
         <select value={p.config.paradigm} onChange={(e) => set('paradigm', e.target.value as Paradigm)}>
           {p.paradigms.map((x) => (
-            <option key={x.id} value={x.id}>
+            <option key={x.id} value={x.id} title={x.description}>
               {x.label}
             </option>
           ))}
@@ -140,17 +140,27 @@ export function Controls(p: ControlsProps) {
 export function Transcript({ run, turns }: { run: RunState; turns: Turn[] }) {
   const shared = useMemo(() => sharedFactIds(run.scenario), [run.scenario])
   const agents = new Map(run.scenario.agents.map((a) => [a.id, a]))
+  if (run.config.paradigm === 'message_board') return <BoardView run={run} turns={turns} />
+  const firstDecide = turns.findIndex((t) => t.phase === 'decide')
   return (
     <div className="transcript">
       <h3>
         Transcript <span className="muted">· {run.llmProvider === 'fake' ? 'synthetic agents' : run.config.model}</span>
       </h3>
       {turns.length === 0 && <p className="muted">Nothing said yet.</p>}
-      {turns.map((t) => (
-        <div key={t.seq} className="utt">
+      {turns.map((t, index) => (
+        <div key={t.seq}>
+          {index === firstDecide && <div className="phase-divider">— Discussion phase begins —</div>}
+          <div className={`utt ${t.agentId === 'moderator' ? 'moderator' : ''}`}>
           <div className="utt-head">
             <span className="utt-round">{t.round >= run.config.rounds ? 'Runoff' : `R${t.round + 1}`}</span>
-            <strong>{agents.get(t.agentId)?.name ?? t.agentId}</strong>
+            <strong>{t.agentId === 'moderator' ? 'Moderator' : agents.get(t.agentId)?.name ?? t.agentId}</strong>
+            {t.agentId === 'moderator' && t.addressedAgentId && (
+              <span className="muted">
+                → asks {agents.get(t.addressedAgentId)?.name ?? t.addressedAgentId}
+              </span>
+            )}
+            {t.phase && <span className="phase">{t.phase}</span>}
             {t.lean !== 'undecided' && (
               <span className="lean" style={{ color: candidateColor(run.scenario, t.lean) }}>
                 leans {candidateName(run.scenario, t.lean)}
@@ -170,8 +180,55 @@ export function Transcript({ run, turns }: { run: RunState; turns: Turn[] }) {
               </span>
             ))}
           </div>
+          </div>
         </div>
       ))}
+    </div>
+  )
+}
+
+function BoardView({ run, turns }: { run: RunState; turns: Turn[] }) {
+  const shared = useMemo(() => sharedFactIds(run.scenario), [run.scenario])
+  const agents = new Map(run.scenario.agents.map((a) => [a.id, a]))
+  const posted: { id: string; turn: Turn }[] = []
+  const latest = new Map<string, Turn>()
+  for (const turn of turns) {
+    if (!agents.has(turn.agentId)) continue
+    latest.set(turn.agentId, turn)
+    for (const id of turn.cited) if (!posted.some((item) => item.id === id)) posted.push({ id, turn })
+  }
+  return (
+    <div className="transcript">
+      <h3>
+        Message board <span className="muted">· {run.llmProvider === 'fake' ? 'synthetic agents' : run.config.model}</span>
+      </h3>
+      {!posted.length && <p className="muted">The board is empty.</p>}
+      <div className="board-facts">
+        {posted.map(({ id, turn }) => {
+          const fact = run.scenario.facts.find((item) => item.id === id)
+          const agent = agents.get(turn.agentId)
+          if (!fact) return null
+          return (
+            <div key={id} className="board-fact">
+              <span className={`cite ${shared.has(id) ? 'shared' : 'unique'}`}>{id}</span>
+              <span className="board-poster" title={agent?.name}>
+                {(agent?.name ?? turn.agentId).slice(0, 1)}
+              </span>
+              <span>{fact.text}</span>
+            </div>
+          )
+        })}
+      </div>
+      <div className="board-notes">
+        {[...latest.entries()].map(([agentId, turn]) => {
+          const agent = agents.get(agentId)
+          return (
+            <div key={agentId} className="board-note">
+              <strong>{agent?.name ?? agentId}</strong>: {turn.sentences[0] ?? '(no note)'} · lean {turn.lean}
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }

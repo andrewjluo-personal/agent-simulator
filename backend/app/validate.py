@@ -7,7 +7,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
-from .truth import UNDECIDED
+from .models import FactStyle, Scenario
+from .truth import UNDECIDED, match_facts
 
 MAX_WORDS = 40
 _FENCE = re.compile(r"^```(?:json)?\s*|\s*```$", re.MULTILINE)
@@ -46,6 +47,66 @@ class ValidatedTurn:
     hallucinated: list[str] = field(default_factory=list)
     lean: str = UNDECIDED
     confidence: float = 0.0
+
+
+def validate_board(
+    raw: dict[str, Any] | None,
+    hand: set[str],
+    candidate_ids: set[str],
+    opinions_allowed: bool,
+    *,
+    scenario: Scenario,
+    fact_style: FactStyle,
+) -> ValidatedTurn:
+    if raw is None:
+        return ValidatedTurn()
+    out = ValidatedTurn()
+    if fact_style == "labelled":
+        items = raw.get("fact_ids")
+        seen_ids: set[str] = set()
+        if isinstance(items, list):
+            for item in items:
+                if not isinstance(item, str) or item in seen_ids:
+                    continue
+                seen_ids.add(item)
+                (out.cited if item in hand else out.hallucinated).append(item)
+    else:
+        facts = raw.get("facts")
+        seen_cited: set[str] = set()
+        all_facts = scenario.facts
+        if isinstance(facts, list):
+            for text in facts:
+                if not isinstance(text, str):
+                    continue
+                matched = match_facts([text], all_facts)
+                held = [fact_id for fact_id in matched if fact_id in hand]
+                for fact_id in held:
+                    if fact_id not in seen_cited:
+                        seen_cited.add(fact_id)
+                        out.cited.append(fact_id)
+                if not matched:
+                    out.hallucinated.append(f"unmatched:{text[:60]}")
+    note = raw.get("note")
+    if isinstance(note, str) and note:
+        first = re.split(r"(?<=[.!?])\s+", note.strip(), maxsplit=1)[0]
+        out.sentences = [_clip(first)]
+    lean = raw.get("current_lean")
+    out.lean = lean if isinstance(lean, str) and lean in candidate_ids else UNDECIDED
+    if not opinions_allowed:
+        out.lean = UNDECIDED
+    out.confidence = _clamp_confidence(raw.get("confidence"), default=0.5)
+    return out
+
+
+def validate_moderator(
+    raw: dict[str, Any] | None, agent_ids: set[str]
+) -> tuple[list[str], str | None]:
+    if raw is None:
+        return [], None
+    sentences = raw.get("sentences")
+    clipped = [_clip(s) for s in sentences if isinstance(s, str)][:2] if isinstance(sentences, list) else []
+    addressed = raw.get("address_agent_id")
+    return clipped, addressed if isinstance(addressed, str) and addressed in agent_ids else None
 
 
 def validate_turn(

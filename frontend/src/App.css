@@ -296,6 +296,67 @@ header h1 {
   font-weight: 600;
 }
 
+.utt.moderator {
+  color: var(--muted);
+  font-style: italic;
+}
+.phase {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+.phase-divider {
+  margin: 12px 0 8px;
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+}
+.moderator-banner {
+  position: absolute;
+  left: 50%;
+  top: calc(50% - 120px);
+  transform: translateX(-50%);
+  width: 300px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #f8fafc;
+  color: var(--muted);
+  text-align: center;
+  font-style: italic;
+  z-index: 3;
+}
+.board-facts,
+.board-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.board-fact {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.board-poster {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--border);
+  font-size: 11px;
+  font-weight: 700;
+}
+.board-notes {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
 .cite {
   font: 600 10px/1 var(--mono);
   padding: 2px 5px;

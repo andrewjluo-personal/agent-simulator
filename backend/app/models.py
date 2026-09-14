@@ -14,7 +14,13 @@ class Model(BaseModel):
 
 
 Valence = Literal["pro", "con"]
-Paradigm = Literal["free_discussion", "share_first"]
+Paradigm = Literal[
+    "free_discussion",
+    "share_first",
+    "exchange_then_decide",
+    "elicitation_moderator",
+    "message_board",
+]
 TurnOrder = Literal["clockwise", "random"]
 TieBreak = Literal["none", "runoff", "chair"]
 FactStyle = Literal["memo", "labelled"]
@@ -136,6 +142,8 @@ class Turn(Model):
     input_tokens: int | None = None
     output_tokens: int | None = None
     heard_before: list[str] = []
+    phase: Literal["exchange", "decide"] | None = None
+    addressed_agent_id: str | None = None
 
 
 class Vote(Model):

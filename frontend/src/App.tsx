@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
-import { createBatch, getBatch, getDemo, getRun, listScenarios, resetScenario } from './api'
+import { createBatch, getBatch, getDemo, getRun, listParadigms, listScenarios, resetScenario } from './api'
 import { Controls, ResultsStrip, Transcript, VerdictBadges, VerdictCard, type StripRow } from './components/Panels'
 import { FlowTimeline } from './components/FlowTimeline'
 import { Table } from './components/Table'
@@ -10,13 +10,7 @@ import { track } from './telemetry'
 import { candidateName, sharedOnlyVerdict } from './truth'
 import type { Paradigm, RunConfig, RunState, RunSummary, Scenario } from './types'
 
-const PARADIGMS: { id: Paradigm; label: string }[] = [
-  { id: 'free_discussion', label: 'Free discussion' },
-  { id: 'share_first', label: 'Share facts first' },
-]
-
 const DEFAULT_SCENARIO_ID = 'hiring-panel-v1'
-
 function defaultConfig(scenario: Scenario): RunConfig {
   return {
     scenarioId: scenario.id,
@@ -33,6 +27,7 @@ function defaultConfig(scenario: Scenario): RunConfig {
 
 function App() {
   const [scenarios, setScenarios] = useState<Scenario[]>([])
+  const [paradigms, setParadigms] = useState<{ id: Paradigm; label: string; description: string }[]>([])
   const [scenario, setScenario] = useState<Scenario | null>(null)
   const [recentRuns, setRecentRuns] = useState<RunSummary[]>([])
   // Full transcripts are fetched on demand (GET /api/runs/{id}) and kept here so replays are instant.
@@ -68,9 +63,12 @@ function App() {
   // first paint only waits on the snapshot.
   useEffect(() => {
     const demo = loadRecent(DEFAULT_SCENARIO_ID)
-    listScenarios()
-      .then(async (list) => {
+    const scenarios = listScenarios()
+    const paradigmsRequest = listParadigms()
+    Promise.all([scenarios, paradigmsRequest])
+      .then(async ([list, loadedParadigms]) => {
         setScenarios(list)
+        setParadigms(loadedParadigms)
         if (await demo) return
         const fallback = list.find((s) => s.id !== DEFAULT_SCENARIO_ID)
         if (!fallback || !(await loadRecent(fallback.id))) setApiDown(true)
@@ -113,7 +111,7 @@ function App() {
 
   // Warm the cache with one finished run per paradigm so the first ▶ Play is instant.
   useEffect(() => {
-    for (const p of PARADIGMS) {
+    for (const p of paradigms) {
       const pick = recentRuns.find((r) => r.config.paradigm === p.id && r.status === 'done')
       if (!pick || fullRuns.current.has(pick.id)) continue
       getRun(pick.id)
@@ -122,7 +120,7 @@ function App() {
           /* best effort; openRun refetches */
         })
     }
-  }, [recentRuns])
+  }, [recentRuns, paradigms])
 
   // A finished live run joins the recent list — refetch so the strip + stats include it.
   useEffect(() => {
@@ -207,10 +205,10 @@ function App() {
     const byId = new Map<string, RunSummary>()
     for (const r of [...Object.values(batchRuns).flat(), ...recentRuns]) byId.set(r.id, r)
     const all = [...byId.values()]
-    return PARADIGMS.map((p) => ({ paradigm: p.id, label: p.label, runs: all.filter((r) => r.config.paradigm === p.id) })).filter(
+    return paradigms.map((p) => ({ paradigm: p.id, label: p.label, runs: all.filter((r) => r.config.paradigm === p.id) })).filter(
       (row) => row.runs.length > 0,
     )
-  }, [recentRuns, batchRuns])
+  }, [recentRuns, batchRuns, paradigms])
 
   const pending = useMemo(() => {
     const all = Object.values(batchRuns).flat()
@@ -249,7 +247,7 @@ function App() {
           : 'paused'
 
   const runScenario = pb.run?.scenario ?? scenario
-  const roundShown = pb.run ? Math.min(Math.ceil(pb.run.turns.length / Math.max(1, runScenario.agents.length)), Math.floor((pb.revealed - 1) / Math.max(1, runScenario.agents.length)) + 1) : 0
+  const roundShown = pb.run ? (pb.derived.currentTurn?.round ?? -1) + 1 : 0
 
   return (
     <HighlightContext.Provider value={highlight}>
@@ -273,7 +271,7 @@ function App() {
         scenarios={scenarios}
         onSelectScenario={selectScenario}
         onResetScenario={() => void resetCurrent()}
-        paradigms={PARADIGMS}
+        paradigms={paradigms}
         n={n}
         onChangeN={setN}
         status={status}

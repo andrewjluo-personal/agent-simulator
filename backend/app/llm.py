@@ -137,6 +137,8 @@ class FakeClient:
         rng = self._rng(req)
         if meta.get("kind") == "vote":
             text = self._vote(meta, rng)
+        elif meta.get("kind") == "moderator":
+            text = self._moderator(meta, rng)
         else:
             text = self._turn(meta, rng)
         latency = rng.randint(5, 40)
@@ -211,9 +213,40 @@ class FakeClient:
             "current_lean": lean,
             "confidence": confidence,
         }
-        if not memo:
+        if meta.get("output_format") == "board":
+            if memo:
+                fact_text = meta.get("fact_canonical_text", {})
+                payload = {
+                    "facts": [fact_text.get(fid, fid) for fid in picked],
+                    "note": sentences[0] if sentences else "",
+                    "current_lean": lean,
+                    "confidence": confidence,
+                }
+            else:
+                payload = {
+                    "fact_ids": picked,
+                    "note": sentences[0] if sentences else "",
+                    "current_lean": lean,
+                    "confidence": confidence,
+                }
+        elif not memo:
             payload["items_referenced"] = picked
         return self._dump(payload, rng)
+
+    def _moderator(self, meta: dict[str, Any], rng: random.Random) -> str:
+        counts: dict[str, int] = meta.get("unmentioned_counts", {})
+        agent_ids: list[str] = list(meta.get("agent_ids", []))
+        agent_names: dict[str, str] = meta.get("agent_names", {})
+        eligible = [agent_id for agent_id in agent_ids if counts.get(agent_id, 0) > 0]
+        addressed = rng.choice(eligible) if eligible else None
+        name = agent_names.get(addressed, addressed) if addressed else "the panel"
+        sentences = [f"Let's hear from {name}."]
+        if not eligible:
+            sentences.append("The open disagreement remains to be resolved.")
+        return self._dump(
+            {"sentences": sentences, "address_agent_id": addressed},
+            rng,
+        )
 
     def _vote(self, meta: dict[str, Any], rng: random.Random) -> str:
         lean, confidence = self._lean(meta, rng)
