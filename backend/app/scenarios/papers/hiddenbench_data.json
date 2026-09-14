@@ -1,0 +1,1877 @@
+[
+  {
+    "id": "hiddenbench-evacuation-west-city",
+    "title": "HiddenBench: evacuation_west_city",
+    "brief": "You are participating in a study, acting as a community leader of a small village surrounded by mountains and rivers. Most villagers own cars, but there are also elderly people and children who may need additional assistance when walking. Earlier today, heavy rain began to fall, and the local government issued a warning about a potential disaster.\nHours ago, you requested relief supplies, but the supply truck has yet to arrive. Now, the rain has temporarily stopped, giving you and the other three community leaders a short window to decide on the safest evacuation route before the rain resumes. You don\u2019t know how much time you have left to make this critical decision.\nYour Task:\nYou will discuss with three other participants, who are also acting as community leaders, to decide where to evacuate. You have three options:\n- West City: Accessible through a bridge over the river.\n- East Town: Accessible through a tunnel on middle ground.\n- North Hill: Accessible through a driveway and walking trails.\nUsually, it takes the same time to reach all three places by car, but some routes may be inaccessible now.\nThere is only one correct evacuation location. After the discussion:\n- If you choose the correct location, you will earn $1.\n- If all other participants also choose the correct location, you will earn an additional $1 (for a total of $2).\nThis means that coordinating with others is critical to maximize your rewards. The chat will at most take 15 minutes. However, the exact time when the chat will end is unknown.",
+    "isSample": true,
+    "candidates": [
+      {
+        "id": "west-city",
+        "name": "West City",
+        "blurb": ""
+      },
+      {
+        "id": "east-town",
+        "name": "East Town",
+        "blurb": ""
+      },
+      {
+        "id": "north-hill",
+        "name": "North Hill",
+        "blurb": ""
+      }
+    ],
+    "facts": [
+      {
+        "id": "S1",
+        "candidateId": "west-city",
+        "valence": "pro",
+        "weight": 1,
+        "text": "The local government announced that hotels in West City are prepared to accommodate evacuees. While these hotels are fully stocked with food, they may lack medical supplies.",
+        "memoText": "The local government announced that hotels in West City are prepared to accommodate evacuees. While these hotels are fully stocked with food, they may lack medical supplies.",
+        "keywords": [
+          "government",
+          "announced",
+          "hotels"
+        ]
+      },
+      {
+        "id": "S2",
+        "candidateId": "east-town",
+        "valence": "pro",
+        "weight": 1,
+        "text": "The mayor of East Town has offered accommodations for any evacuees. She also ensures that volunteers are available to assist them.",
+        "memoText": "The mayor of East Town has offered accommodations for any evacuees. She also ensures that volunteers are available to assist them.",
+        "keywords": [
+          "offered",
+          "accommodations",
+          "evacuees"
+        ]
+      },
+      {
+        "id": "S3",
+        "candidateId": "north-hill",
+        "valence": "pro",
+        "weight": 1,
+        "text": "The school at North Hill can serve as a temporary evacuation center, providing a two-week supply of essentials and sleeping space in the gym.",
+        "memoText": "The school at North Hill can serve as a temporary evacuation center, providing a two-week supply of essentials and sleeping space in the gym.",
+        "keywords": [
+          "school",
+          "north",
+          "temporary"
+        ]
+      },
+      {
+        "id": "S4",
+        "candidateId": "west-city",
+        "valence": "pro",
+        "weight": 1,
+        "text": "The river level is still below the bridge to West City.",
+        "memoText": "The river level is still below the bridge to West City.",
+        "keywords": [
+          "bridge",
+          "the"
+        ]
+      },
+      {
+        "id": "H1",
+        "candidateId": "east-town",
+        "valence": "con",
+        "weight": 1,
+        "text": "The supply truck headed to the village from East Town was stuck in the tunnel.",
+        "memoText": "The supply truck headed to the village from East Town was stuck in the tunnel.",
+        "keywords": [
+          "supply",
+          "headed",
+          "village"
+        ]
+      },
+      {
+        "id": "H2",
+        "candidateId": "west-city",
+        "valence": "pro",
+        "weight": 1,
+        "text": "A massive fire has blocked the supply truck and all other traffic.",
+        "memoText": "A massive fire has blocked the supply truck and all other traffic.",
+        "keywords": [
+          "massive",
+          "blocked",
+          "supply"
+        ]
+      },
+      {
+        "id": "H3",
+        "candidateId": "west-city",
+        "valence": "pro",
+        "weight": 1,
+        "text": "The walking trails have been closed since last weekend due to fallen trees.",
+        "memoText": "The walking trails have been closed since last weekend due to fallen trees.",
+        "keywords": [
+          "walking",
+          "trails",
+          "closed"
+        ]
+      },
+      {
+        "id": "H4",
+        "candidateId": "north-hill",
+        "valence": "con",
+        "weight": 1,
+        "text": "A mudslide just occurred, covering the driveway to North Hill.",
+        "memoText": "A mudslide just occurred, covering the driveway to North Hill.",
+        "keywords": [
+          "mudslide",
+          "occurred",
+          "covering"
+        ]
+      }
+    ],
+    "agents": [
+      {
+        "id": "p1",
+        "name": "Participant 1",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p2",
+        "name": "Participant 2",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p3",
+        "name": "Participant 3",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p4",
+        "name": "Participant 4",
+        "role": "community member",
+        "style": "cooperative"
+      }
+    ],
+    "distribution": {
+      "p1": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "H1"
+      ],
+      "p2": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "H2"
+      ],
+      "p3": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "H3"
+      ],
+      "p4": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "H4"
+      ]
+    },
+    "decisionRule": "majority",
+    "validation": null,
+    "source": {
+      "kind": "paper",
+      "paper": "HiddenBench (Yassellee et al., 2025)",
+      "doiOrUrl": "https://github.com/yassellee/HiddenBench",
+      "fidelity": "verbatim",
+      "notes": "Converted from HiddenBench task data verbatim. Rationale: No rationale was supplied in the benchmark task. Design uses 3 candidates, 4 participants, 4 shared facts, and 4 hidden facts (8 total). No human-group result is reported in the supplied benchmark; approx. human result is not available. Valence inferred: H2: valence inferred: pro for 'West City'; option mentions=none | H3: valence inferred: pro for 'West City'; option mentions=none"
+    },
+    "parentId": null,
+    "createdAt": null
+  },
+  {
+    "id": "hiddenbench-toma-butera-2009",
+    "title": "HiddenBench: toma_butera_2009",
+    "brief": "You are participating in a study, acting as an investigator working on a traffic accident. The collision took place at the St. Georges intersection, on Monday at 7 p.m. The road is narrow and poorly lit. Two cars and one motorcycle are involved.\nYour Task:\nYou will discuss with other participants, who are also acting as investigators, to decide who to prosecute. You have four suspects:\n- Mr. X\n- Mr. X's son\n- Mrs. Y\n- Mr. Z\nThere is only one true perpetrator. After the discussion:\n- If you choose the correct person, you will earn $1.\n- If all other participants also choose the correct one, you will earn an additional $1 (for a total of $2).\nThis means that coordinating with others is critical to maximize your rewards. However, the exact time when the chat will end is unknown.",
+    "isSample": true,
+    "candidates": [
+      {
+        "id": "mr-x",
+        "name": "Mr. X",
+        "blurb": ""
+      },
+      {
+        "id": "mr-x-s-son",
+        "name": "Mr. X's son",
+        "blurb": ""
+      },
+      {
+        "id": "mrs-y",
+        "name": "Mrs. Y",
+        "blurb": ""
+      },
+      {
+        "id": "mr-z",
+        "name": "Mr. Z",
+        "blurb": ""
+      }
+    ],
+    "facts": [
+      {
+        "id": "S1",
+        "candidateId": "mr-x",
+        "valence": "pro",
+        "weight": 1,
+        "text": "In the first car, Mr. X\u2014who is 53 years old and has held a driving license for 30 years\u2014and his 17-year-old son return home. The father had just drunk several glasses of spirits during a dinner with his friends.",
+        "memoText": "In the first car, Mr. X\u2014who is 53 years old and has held a driving license for 30 years\u2014and his 17-year-old son return home. The father had just drunk several glasses of spirits during a dinner with his friends.",
+        "keywords": [
+          "driving",
+          "license",
+          "return"
+        ]
+      },
+      {
+        "id": "S2",
+        "candidateId": "mrs-y",
+        "valence": "pro",
+        "weight": 1,
+        "text": "In the second car, Mrs. Y, 27 years old and having held a driving license for only 1 year, is going shopping. Her car's lights are damaged.",
+        "memoText": "In the second car, Mrs. Y, 27 years old and having held a driving license for only 1 year, is going shopping. Her car's lights are damaged.",
+        "keywords": [
+          "second",
+          "having",
+          "driving"
+        ]
+      },
+      {
+        "id": "S3",
+        "candidateId": "mr-z",
+        "valence": "pro",
+        "weight": 1,
+        "text": "On the motorcycle, Mr. Z, 28 years old, who has held a driving license for 5 years, is going to meet his sick father who asked him to come rapidly. He is speeding on the N13 road.",
+        "memoText": "On the motorcycle, Mr. Z, 28 years old, who has held a driving license for 5 years, is going to meet his sick father who asked him to come rapidly. He is speeding on the N13 road.",
+        "keywords": [
+          "motorcycle",
+          "driving",
+          "license"
+        ]
+      },
+      {
+        "id": "H1",
+        "candidateId": "mr-x-s-son",
+        "valence": "pro",
+        "weight": 1,
+        "text": "The guilty person is driving a car. During police inspection, the guilty car owner was discovered to have a 1.5 level of alcohol. The guilty person admits that he was inattentive at the time of the collision.",
+        "memoText": "The guilty person is driving a car. During police inspection, the guilty car owner was discovered to have a 1.5 level of alcohol. The guilty person admits that he was inattentive at the time of the collision.",
+        "keywords": [
+          "guilty",
+          "person",
+          "driving"
+        ]
+      },
+      {
+        "id": "H2",
+        "candidateId": "mr-x-s-son",
+        "valence": "pro",
+        "weight": 1,
+        "text": "The guilty person is less than 30 years old. Due to inexperience, the guilty person wasn't able to avoid the collision. The guilty person claims that he or she did not see others approaching the intersection.",
+        "memoText": "The guilty person is less than 30 years old. Due to inexperience, the guilty person wasn't able to avoid the collision. The guilty person claims that he or she did not see others approaching the intersection.",
+        "keywords": [
+          "guilty",
+          "person",
+          "inexperience"
+        ]
+      },
+      {
+        "id": "H3",
+        "candidateId": "mr-x-s-son",
+        "valence": "pro",
+        "weight": 1,
+        "text": "The guilty person is a man. His father is indirectly responsible for the accident. The guilty person was driving at 110 km/h.",
+        "memoText": "The guilty person is a man. His father is indirectly responsible for the accident. The guilty person was driving at 110 km/h.",
+        "keywords": [
+          "guilty",
+          "person",
+          "father"
+        ]
+      }
+    ],
+    "agents": [
+      {
+        "id": "p1",
+        "name": "Participant 1",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p2",
+        "name": "Participant 2",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p3",
+        "name": "Participant 3",
+        "role": "community member",
+        "style": "cooperative"
+      }
+    ],
+    "distribution": {
+      "p1": [
+        "S1",
+        "S2",
+        "S3",
+        "H1"
+      ],
+      "p2": [
+        "S1",
+        "S2",
+        "S3",
+        "H2"
+      ],
+      "p3": [
+        "S1",
+        "S2",
+        "S3",
+        "H3"
+      ]
+    },
+    "decisionRule": "majority",
+    "validation": null,
+    "source": {
+      "kind": "paper",
+      "paper": "HiddenBench (Yassellee et al., 2025)",
+      "doiOrUrl": "https://github.com/yassellee/HiddenBench",
+      "fidelity": "verbatim",
+      "notes": "Converted from HiddenBench task data verbatim. Rationale: No rationale was supplied in the benchmark task. Design uses 4 candidates, 3 participants, 3 shared facts, and 3 hidden facts (6 total). No human-group result is reported in the supplied benchmark; approx. human result is not available. Valence inferred: H1: valence inferred: pro for \"Mr. X's son\"; option mentions=none | H2: valence inferred: pro for \"Mr. X's son\"; option mentions=none | H3: valence inferred: pro for \"Mr. X's son\"; option mentions=none"
+    },
+    "parentId": null,
+    "createdAt": null
+  },
+  {
+    "id": "hiddenbench-baker-2010",
+    "title": "HiddenBench: baker_2010",
+    "brief": "You are participating in a study and are on the search team for a new president of Higher Education University, a private liberal arts college in Georgia. Highlights fromthe job posting are provided below. Three candidates have applied and information that you have gathered from resumes, reference checks, candidate interviews, and presentations are provided on the pages that follow. Read through all of the material and then identify the candidate that you think should be offered the job.\n- Job Posting for President of Higher Education University:\nHigher Education University is a small (2,500 students), private liberal arts college in Georgia. The president of the university is ultimately responsible for the administration and operation of the university. The president oversees strategic planning, fund raising, and budgeting, ensures that university polices are followed, and builds relationships with the community, alumni, and other outside constituencies.\n- Desired Qualification:\nCandidates will be evaluated based on the following criteria:\n- Evidence of academic scholarship and teaching experience or relevant, extensive, professional credentials that demonstrate an ability to lead in an academic environment;\n- Evidence of leadership in an academic or comparable setting withthe following characteristics: (1) Integrity and commitment to the highest ethical standards; (2) Commitment to shared governance and full involvement of faculty, staff and students; (3) Commitment to a diverse faculty, staff, and student body with equal opportunities for all;\n- Ability to develop a vision for the university and provide the leadership and inspiration needed to make the vision a reality;\n- Commitment to creating a culture that values excellence in scholarship, teaching, and service;\n- Commitment to and evidence of successful fundraising;\n- Ability to promote the university to outside constituents and increase support for its mission and programs\n- Commitment to improving the quality of life for students, faculty, and staff\n- Support for developing and using new technologies to enhance learning, scholarship, and the dispersion of ideas.\nYour Task:\nYou will discuss with other participants, who are also acting as members of the personnel committee, to decide who to recruit. You have three candidates:\n- Stevens\n- Roberts\n- Jones\nThere is only one best candidate. In addition to highlights from each candidate's CV, you have lists of information drawn from interviews, references, personal observations, etc. After the discussion:\n- If you choose the correct person, you will earn $1.\n- If all other participants also choose the correct one, you will earn an additional $1 (for a total of $2).\nThis means that coordinating with others is critical to maximize your rewards. However, the exact time when the chat will end is unknown.",
+    "isSample": true,
+    "candidates": [
+      {
+        "id": "stevens",
+        "name": "Stevens",
+        "blurb": ""
+      },
+      {
+        "id": "roberts",
+        "name": "Roberts",
+        "blurb": ""
+      },
+      {
+        "id": "jones",
+        "name": "Jones",
+        "blurb": ""
+      }
+    ],
+    "facts": [
+      {
+        "id": "S1",
+        "candidateId": "stevens",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Stevens' CV highlights:\n- Currently the provost and executive vice president of a medium-sized university in Florida\n- Previous experience as business dean of a large Mississippi university and Chair of the Information and Technology department at a large Texas University\n- Was Dean in Mississippi when plans were drawn up for a new $25 million business school building and was provost in Florida whenthe business college received $15 million\n- Has the rank of full professor of Information Technology.",
+        "memoText": "Stevens' CV highlights:\n- Currently the provost and executive vice president of a medium-sized university in Florida\n- Previous experience as business dean of a large Mississippi university and Chair of the Information and Technology department at a large Texas University\n- Was Dean in Mississippi when plans were drawn up for a new $25 million business school building and was provost in Florida whenthe business college received $15 million\n- Has the rank of full professor of Information Technology.",
+        "keywords": [
+          "stevens",
+          "highlights",
+          "currently"
+        ]
+      },
+      {
+        "id": "S2",
+        "candidateId": "roberts",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Roberts' CV highlights:\n- Just completed a term as U.S. Senator for Georgia but chose not toseek a second term\n- Raised a significant amount of money in campaign for senator\n- Previous experience as Dean of the College of Arts and Sciences of a medium-sized university in Virginia and later of a large private university in Georgia\n- Had rank of full professor of public administration before becoming senator.",
+        "memoText": "Roberts' CV highlights:\n- Just completed a term as U.S. Senator for Georgia but chose not toseek a second term\n- Raised a significant amount of money in campaign for senator\n- Previous experience as Dean of the College of Arts and Sciences of a medium-sized university in Virginia and later of a large private university in Georgia\n- Had rank of full professor of public administration before becoming senator.",
+        "keywords": [
+          "roberts",
+          "highlights",
+          "completed"
+        ]
+      },
+      {
+        "id": "S3",
+        "candidateId": "jones",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Jones' CV highlights:\n- Currently the senior managing partner in a large law firm in Atlanta,Georgia\n- For the past 5 years has served on the Board of Trustees of Higher Education University, and is on the steering committee for the current $150 million capital campaign\n- Has expertise in employment law and has successfully argued infront of the Federal Supreme Court\n- Served as visiting professor of law at a major university in Georgia.",
+        "memoText": "Jones' CV highlights:\n- Currently the senior managing partner in a large law firm in Atlanta,Georgia\n- For the past 5 years has served on the Board of Trustees of Higher Education University, and is on the steering committee for the current $150 million capital campaign\n- Has expertise in employment law and has successfully argued infront of the Federal Supreme Court\n- Served as visiting professor of law at a major university in Georgia.",
+        "keywords": [
+          "jones",
+          "highlights",
+          "currently"
+        ]
+      },
+      {
+        "id": "S4",
+        "candidateId": "stevens",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Stevens' information:\n- Nationally recognized by academics for research in informationtechnology\n- Nationally recognized by business leaders for expertise in information technology\n- In an interview, Stevens emphasized the importance of collaboration with campus leaders and faculty\n- Demonstrated excellent oratory skills during presentation to faculty\n- Someone other than Stevens was primarily responsible for getting the $15 million in Florida.",
+        "memoText": "Stevens' information:\n- Nationally recognized by academics for research in informationtechnology\n- Nationally recognized by business leaders for expertise in information technology\n- In an interview, Stevens emphasized the importance of collaboration with campus leaders and faculty\n- Demonstrated excellent oratory skills during presentation to faculty\n- Someone other than Stevens was primarily responsible for getting the $15 million in Florida.",
+        "keywords": [
+          "stevens",
+          "information",
+          "nationally"
+        ]
+      },
+      {
+        "id": "S5",
+        "candidateId": "roberts",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Roberts' information:\n- Faculty feedback indicated that Roberts had come across as aloofduring the presentation portion of the selection process\n- Has not worked in higher education for past 6 years\n- Has a condo in Pensacola\n- Has little direct experience dealing with campus-student life issues\n- As a senator, was accused of changing positions on issues for political gain.",
+        "memoText": "Roberts' information:\n- Faculty feedback indicated that Roberts had come across as aloofduring the presentation portion of the selection process\n- Has not worked in higher education for past 6 years\n- Has a condo in Pensacola\n- Has little direct experience dealing with campus-student life issues\n- As a senator, was accused of changing positions on issues for political gain.",
+        "keywords": [
+          "roberts",
+          "information",
+          "faculty"
+        ]
+      },
+      {
+        "id": "S6",
+        "candidateId": "jones",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Jones' information:\n- Pleasant personality in social settings\n- Law partners say Jones is a strategic thinker with respect to the direction of the firm\n- Following the Supreme Court appearance, Jones success rate in litigating employment law cases fell\n- Has been one of the more active members of Higher Education University's Board of Trustees\n- Student enrollment and evaluations from classes indicate that Jonesis well-liked as a teacher.",
+        "memoText": "Jones' information:\n- Pleasant personality in social settings\n- Law partners say Jones is a strategic thinker with respect to the direction of the firm\n- Following the Supreme Court appearance, Jones success rate in litigating employment law cases fell\n- Has been one of the more active members of Higher Education University's Board of Trustees\n- Student enrollment and evaluations from classes indicate that Jonesis well-liked as a teacher.",
+        "keywords": [
+          "jones",
+          "information",
+          "pleasant"
+        ]
+      },
+      {
+        "id": "H1",
+        "candidateId": "stevens",
+        "valence": "con",
+        "weight": 1,
+        "text": "Stevens' information:\n- Stevens left the dean position at the Mississippi University beforeraising any funds for building campaign\n- As provost, Stevens teaches a class per year\n- Spouse has a PhD in Spanish and teaches a class or two at college level\nRoberts' information:\n- Has made numerous influential contacts as senator\n- Frequently volunteers for two highly respected nonprofit organiza-tions, one that provides affordable housing and another concernedwith advancing human rights\n- Is a vegetarian\n Jones' information\n- Already lives in the area\n- Is married with a grown child\n- Sources at the law firm attribute a high turnover rate at the firm toJones' somewhat abrasive leadership style",
+        "memoText": "Stevens' information:\n- Stevens left the dean position at the Mississippi University beforeraising any funds for building campaign\n- As provost, Stevens teaches a class per year\n- Spouse has a PhD in Spanish and teaches a class or two at college level\nRoberts' information:\n- Has made numerous influential contacts as senator\n- Frequently volunteers for two highly respected nonprofit organiza-tions, one that provides affordable housing and another concernedwith advancing human rights\n- Is a vegetarian\n Jones' information\n- Already lives in the area\n- Is married with a grown child\n- Sources at the law firm attribute a high turnover rate at the firm toJones' somewhat abrasive leadership style",
+        "keywords": [
+          "stevens",
+          "information",
+          "position"
+        ]
+      },
+      {
+        "id": "H2",
+        "candidateId": "stevens",
+        "valence": "con",
+        "weight": 1,
+        "text": "Stevens' information:\n- Comments from faculty in Florida and Mississippi indicate thatStevens tends to discourage new, innovative ideas\n- Has family in Atlanta\n- Is married with three children\nRoberts' information:\n- Previous faculty members describe Roberts as thoughtful leader andgood listener\n- Previous colleagues say Roberts uses a collaborative decision-making style\n- Enjoys golf and tennis\nJones' information\n- Has two dogs and two cats\n- Jones' spouse is a physician, specializing in internal medicine",
+        "memoText": "Stevens' information:\n- Comments from faculty in Florida and Mississippi indicate thatStevens tends to discourage new, innovative ideas\n- Has family in Atlanta\n- Is married with three children\nRoberts' information:\n- Previous faculty members describe Roberts as thoughtful leader andgood listener\n- Previous colleagues say Roberts uses a collaborative decision-making style\n- Enjoys golf and tennis\nJones' information\n- Has two dogs and two cats\n- Jones' spouse is a physician, specializing in internal medicine",
+        "keywords": [
+          "stevens",
+          "information",
+          "comments"
+        ]
+      },
+      {
+        "id": "H3",
+        "candidateId": "stevens",
+        "valence": "con",
+        "weight": 1,
+        "text": "Stevens' information:\n- Left the dean position at the Mississippi University before raisingany funds for the building campaign\n- Enjoys sports, goes to football, and basketball games\n- Stays fit by biking and running\n- Has been observed drinking heavily in public, including at univer-sity events\nRoberts' information:\n- Previous students and faculty say Roberts is an excellent teacher\n- Is divorced and remarried; has two children\n- Faculty research productivity increased while serving as dean in Georgia\nJones' information:\n- Sources at the law firm attribute a high turnover rate at the firm to Jones' somewhat abrasive leadership style\n- Plays bridge as a hobby\n- Enjoys traveling overseas on vacation\n- Feedback from other trustees indicates that there is tension between the current provost and Jones",
+        "memoText": "Stevens' information:\n- Left the dean position at the Mississippi University before raisingany funds for the building campaign\n- Enjoys sports, goes to football, and basketball games\n- Stays fit by biking and running\n- Has been observed drinking heavily in public, including at univer-sity events\nRoberts' information:\n- Previous students and faculty say Roberts is an excellent teacher\n- Is divorced and remarried; has two children\n- Faculty research productivity increased while serving as dean in Georgia\nJones' information:\n- Sources at the law firm attribute a high turnover rate at the firm to Jones' somewhat abrasive leadership style\n- Plays bridge as a hobby\n- Enjoys traveling overseas on vacation\n- Feedback from other trustees indicates that there is tension between the current provost and Jones",
+        "keywords": [
+          "stevens",
+          "information",
+          "position"
+        ]
+      },
+      {
+        "id": "H4",
+        "candidateId": "stevens",
+        "valence": "con",
+        "weight": 1,
+        "text": "Stevens' information:\n- Comments from faculty in Florida and Mississippi indicate thatStevens tends to discourage new, innovative ideas\n- Has been observed drinking heavily in public, including at univer-sity events\n- Does consulting work in IT\n- Likes to garden\nRoberts' information:\n- Enjoys golf and tennis\n- Is divorced and remarried; has two children\n- Increased the diversity of the faculty when dean in Georgia\n- Instrumental in securing a multimillion dollar federal grant for aGeorgia based nonprofit institution\nJones' information:\n- Feedback from other trustees indicates that there is tension betweenthe current provost and Jones\n- Law partners say Jones is a strategic thinker with respect to the direction of the firm\n- Reads mystery novels and biographies\n- Loves to cook",
+        "memoText": "Stevens' information:\n- Comments from faculty in Florida and Mississippi indicate thatStevens tends to discourage new, innovative ideas\n- Has been observed drinking heavily in public, including at univer-sity events\n- Does consulting work in IT\n- Likes to garden\nRoberts' information:\n- Enjoys golf and tennis\n- Is divorced and remarried; has two children\n- Increased the diversity of the faculty when dean in Georgia\n- Instrumental in securing a multimillion dollar federal grant for aGeorgia based nonprofit institution\nJones' information:\n- Feedback from other trustees indicates that there is tension betweenthe current provost and Jones\n- Law partners say Jones is a strategic thinker with respect to the direction of the firm\n- Reads mystery novels and biographies\n- Loves to cook",
+        "keywords": [
+          "stevens",
+          "information",
+          "comments"
+        ]
+      }
+    ],
+    "agents": [
+      {
+        "id": "p1",
+        "name": "Participant 1",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p2",
+        "name": "Participant 2",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p3",
+        "name": "Participant 3",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p4",
+        "name": "Participant 4",
+        "role": "community member",
+        "style": "cooperative"
+      }
+    ],
+    "distribution": {
+      "p1": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S5",
+        "S6",
+        "H1"
+      ],
+      "p2": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S5",
+        "S6",
+        "H2"
+      ],
+      "p3": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S5",
+        "S6",
+        "H3"
+      ],
+      "p4": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S5",
+        "S6",
+        "H4"
+      ]
+    },
+    "decisionRule": "majority",
+    "validation": null,
+    "source": {
+      "kind": "paper",
+      "paper": "HiddenBench (Yassellee et al., 2025)",
+      "doiOrUrl": "https://github.com/yassellee/HiddenBench",
+      "fidelity": "verbatim",
+      "notes": "Converted from HiddenBench task data verbatim. Rationale: No rationale was supplied in the benchmark task. Design uses 3 candidates, 4 participants, 6 shared facts, and 4 hidden facts (10 total). No human-group result is reported in the supplied benchmark; approx. human result is not available. Valence inferred: H1: valence inferred: con for 'Stevens'; option mentions=Stevens, Roberts, Jones | H2: valence inferred: con for 'Stevens'; option mentions=Stevens, Roberts, Jones | H3: valence inferred: con for 'Stevens'; option mentions=Stevens, Roberts, Jones | H4: valence inferred: con for 'Stevens'; option mentions=Stevens, Roberts, Jones WARNING: pooled arithmetic does not select the correct answer"
+    },
+    "parentId": null,
+    "createdAt": null
+  },
+  {
+    "id": "hiddenbench-schulz-hardt-mojzisch-2012",
+    "title": "HiddenBench: schulz_hardt_mojzisch_2012",
+    "brief": "You are participating in a study, acting as a personnel manager in an airline company that is looking to hire a new pilot for long-distance flights.\nYour Task:\nYou will discuss with other participants, who are also acting as personnel managers, to decide who to recruit. You have four candidates:\n- Candidate A\n- Candidate B\n- Candidate C\n- Candidate D\nThere is only one best candidate. You have lists of information drawn from interviews, references, personal observations, etc. After the discussion:\n- If you choose the correct person, you will earn $1.\n- If all other participants also choose the correct one, you will earn an additional $1 (for a total of $2).\nThis means that coordinating with others is critical to maximize your rewards. However, the exact time when the chat will end is unknown.",
+    "isSample": true,
+    "candidates": [
+      {
+        "id": "candidate-a",
+        "name": "Candidate A",
+        "blurb": ""
+      },
+      {
+        "id": "candidate-b",
+        "name": "Candidate B",
+        "blurb": ""
+      },
+      {
+        "id": "candidate-c",
+        "name": "Candidate C",
+        "blurb": ""
+      },
+      {
+        "id": "candidate-d",
+        "name": "Candidate D",
+        "blurb": ""
+      }
+    ],
+    "facts": [
+      {
+        "id": "S1",
+        "candidateId": "candidate-a",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Candidate A:\n- can anticipate dangerous situations\n- is able to see complex connections\n- has excellent spatial vision\n- has very good leadership qualities.",
+        "memoText": "Candidate A:\n- can anticipate dangerous situations\n- is able to see complex connections\n- has excellent spatial vision\n- has very good leadership qualities.",
+        "keywords": [
+          "candidate",
+          "anticipate",
+          "dangerous"
+        ]
+      },
+      {
+        "id": "S2",
+        "candidateId": "candidate-b",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Candidate B:\n- keeps calm in a crisis\n- known to be very reliable\n- good at assessing weather conditions\n- has excellent computer skills.",
+        "memoText": "Candidate B:\n- keeps calm in a crisis\n- known to be very reliable\n- good at assessing weather conditions\n- has excellent computer skills.",
+        "keywords": [
+          "candidate",
+          "crisis",
+          "reliable"
+        ]
+      },
+      {
+        "id": "S3",
+        "candidateId": "candidate-c",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Candidate C:\n- has difficulty communicating ideas\n- is regarded as egocentric\n- is not very willing to further his education.",
+        "memoText": "Candidate C:\n- has difficulty communicating ideas\n- is regarded as egocentric\n- is not very willing to further his education.",
+        "keywords": [
+          "candidate",
+          "difficulty",
+          "communicating"
+        ]
+      },
+      {
+        "id": "S4",
+        "candidateId": "candidate-d",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Candidate D:\n- responds to unexpected events adequately\n- can concentrate very well\n- solves problems extremely well\n- takes responsibility seriously.",
+        "memoText": "Candidate D:\n- responds to unexpected events adequately\n- can concentrate very well\n- solves problems extremely well\n- takes responsibility seriously.",
+        "keywords": [
+          "candidate",
+          "responds",
+          "unexpected"
+        ]
+      },
+      {
+        "id": "H1",
+        "candidateId": "candidate-a",
+        "valence": "con",
+        "weight": 1,
+        "text": "Candidate A:\n- is sometimes not good at taking criticism\n- can be unorganised\nCandidate B:\n- can be grumpy\n- can be uncooperative\nCandidate C:\n- can make correct decisions quickly\n- handles stress very well\nCandidate D:\n- is regarded as arrogant\n- has relatively weak leadership skills",
+        "memoText": "Candidate A:\n- is sometimes not good at taking criticism\n- can be unorganised\nCandidate B:\n- can be grumpy\n- can be uncooperative\nCandidate C:\n- can make correct decisions quickly\n- handles stress very well\nCandidate D:\n- is regarded as arrogant\n- has relatively weak leadership skills",
+        "keywords": [
+          "candidate",
+          "sometimes",
+          "taking"
+        ]
+      },
+      {
+        "id": "H2",
+        "candidateId": "candidate-a",
+        "valence": "con",
+        "weight": 1,
+        "text": "Candidate A:\n- is regarded as a show-off\n- is regarded as being not open to new ideas\nCandidate B:\n- has a relatively weak memory for numbers\n- makes nasty remarks about his colleagues\nCandidate C:\n- creates a positive atmosphere with his crew\n- is very conscientious\nCandidate D:\n- is regarded as a 'know-it-all'\n- has a hot temper",
+        "memoText": "Candidate A:\n- is regarded as a show-off\n- is regarded as being not open to new ideas\nCandidate B:\n- has a relatively weak memory for numbers\n- makes nasty remarks about his colleagues\nCandidate C:\n- creates a positive atmosphere with his crew\n- is very conscientious\nCandidate D:\n- is regarded as a 'know-it-all'\n- has a hot temper",
+        "keywords": [
+          "candidate",
+          "regarded",
+          "relatively"
+        ]
+      },
+      {
+        "id": "H3",
+        "candidateId": "candidate-a",
+        "valence": "con",
+        "weight": 1,
+        "text": "Candidate A:\n- is unfriendly\n- eats unhealthily\nCandidate B:\n- is regarded as pretentious\n- sometimes adopts the wrong tone when communicating\nCandidate C:\n- understands complicated technology\n- puts concern for others above everything\nhas excellent attention skills\nCandidate D:\n- is considered moody\n- is regarded as a loner",
+        "memoText": "Candidate A:\n- is unfriendly\n- eats unhealthily\nCandidate B:\n- is regarded as pretentious\n- sometimes adopts the wrong tone when communicating\nCandidate C:\n- understands complicated technology\n- puts concern for others above everything\nhas excellent attention skills\nCandidate D:\n- is considered moody\n- is regarded as a loner",
+        "keywords": [
+          "candidate",
+          "unfriendly",
+          "unhealthily"
+        ]
+      }
+    ],
+    "agents": [
+      {
+        "id": "p1",
+        "name": "Participant 1",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p2",
+        "name": "Participant 2",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p3",
+        "name": "Participant 3",
+        "role": "community member",
+        "style": "cooperative"
+      }
+    ],
+    "distribution": {
+      "p1": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "H1"
+      ],
+      "p2": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "H2"
+      ],
+      "p3": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "H3"
+      ]
+    },
+    "decisionRule": "majority",
+    "validation": null,
+    "source": {
+      "kind": "paper",
+      "paper": "HiddenBench (Yassellee et al., 2025)",
+      "doiOrUrl": "https://github.com/yassellee/HiddenBench",
+      "fidelity": "verbatim",
+      "notes": "Converted from HiddenBench task data verbatim. Rationale: No rationale was supplied in the benchmark task. Design uses 4 candidates, 3 participants, 4 shared facts, and 3 hidden facts (7 total). No human-group result is reported in the supplied benchmark; approx. human result is not available. Valence inferred: H1: valence inferred: con for 'Candidate A'; option mentions=Candidate A, Candidate B, Candidate C, Candidate D | H2: valence inferred: con for 'Candidate A'; option mentions=Candidate A, Candidate B, Candidate C, Candidate D | H3: valence inferred: con for 'Candidate A'; option mentions=Candidate A, Candidate B, Candidate C, Candidate D WARNING: pooled arithmetic does not select the correct answer"
+    },
+    "parentId": null,
+    "createdAt": null
+  },
+  {
+    "id": "hiddenbench-graetz-et-al-1998",
+    "title": "HiddenBench: graetz_et_al_1998",
+    "brief": "You are participating in a study, acting as a member of purchasing executives reviewing three proposals for a new airborne reconnaissance system that could gather sensor readings from beacons placed on the ground. The new system was to include two parts: an air vehicle and an on board computer. Please read the request for proposals (RFP) and a check-list of information taken from proposals submitted by three companies: Franklin Enterprises, Starlight Incorporated, and Cape Industries.\nThe RFP included a general description of the desired system and a set of 10 desired operational requirements or criteria. Three of the criteria pertained to the air vehicle. The vehicle was to (a) fit on a 2-ton capacity truck, (b) sweep the entire ground sensor field in 30 minutes or less, and (c) be recovered and redeployed within 90 minutes. The next four criteria dealt with the onboard computer. The computer was to (d) process data at 100 million instructional sets per second (MIPS), (e) be no longer than 40 cubic inches, (f) be no heavier than 10 pounds, and (g) average at least 1,000 operating hours between failures. Finally, (h) the air vehicle and computer should cost $7 million or less, (i) past performance and experience with the company should be positive, and (j) the company must have the manufacturing capacity to produce the system. You have received a checklist of criteria satisfied by each of the three proposals. Each checklist displayed the 10 criteria along with an indication that (1) the proposal met the criterion (indicated by a \u201cY\u201d), (2) the proposal failed to meet the criterion (indicated by an \u201cN\u201d) or (3) the participant had no information regarding whether the proposal met the criterion (indicated by a blank space).\nYour Task:\nYou will discuss the proposals with three other participants, who are also acting as purchasing executives, to decide which company should be awarded the contract. You have three options:\n- Franklin Enterprises\n- Starlight Incorporated\n- Cape Industries\nThere is only one best choice based on the criteria in the RFP. After the discussion:\n- If you choose the correct company, you will earn $1.\n- If all other participants also choose the correct company, you will earn an additional $1 (for a total of $2).\nThis means that coordinating with others is critical to maximize your rewards. However, the exact time when the chat will end is unknown.",
+    "isSample": true,
+    "candidates": [
+      {
+        "id": "franklin-enterprises",
+        "name": "Franklin Enterprises",
+        "blurb": ""
+      },
+      {
+        "id": "starlight-incorporated",
+        "name": "Starlight Incorporated",
+        "blurb": ""
+      },
+      {
+        "id": "cape-industries",
+        "name": "Cape Industries",
+        "blurb": ""
+      }
+    ],
+    "facts": [
+      {
+        "id": "S1",
+        "candidateId": "franklin-enterprises",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Franklin Enterprises:\n- (d) Y\n- (e) Y\n- (f) Y\n- (g) Y\n- (h) Y\n- (i) N\n- (j) N\n",
+        "memoText": "Franklin Enterprises:\n- (d) Y\n- (e) Y\n- (f) Y\n- (g) Y\n- (h) Y\n- (i) N\n- (j) N\n",
+        "keywords": [
+          "franklin",
+          "enterprises"
+        ]
+      },
+      {
+        "id": "S2",
+        "candidateId": "starlight-incorporated",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Starlight Incorporated:\n- (a) N\n- (c) N\n",
+        "memoText": "Starlight Incorporated:\n- (a) N\n- (c) N\n",
+        "keywords": [
+          "starlight",
+          "incorporated"
+        ]
+      },
+      {
+        "id": "S3",
+        "candidateId": "cape-industries",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Cape Industries:\n- (g) N",
+        "memoText": "Cape Industries:\n- (g) N",
+        "keywords": [
+          "industries",
+          "cape"
+        ]
+      },
+      {
+        "id": "H1",
+        "candidateId": "franklin-enterprises",
+        "valence": "con",
+        "weight": 1,
+        "text": "Franklin Enterprises:\n- (b) N\n- (c) N\nStarlight Incorporated:\n- (b) Y\n- (d) Y\nCape Industries:\n- (a) Y\n- (b) N\n- (d) Y\n- (e) Y\n- (f) N\n- (i) Y\n- (j) Y",
+        "memoText": "Franklin Enterprises:\n- (b) N\n- (c) N\nStarlight Incorporated:\n- (b) Y\n- (d) Y\nCape Industries:\n- (a) Y\n- (b) N\n- (d) Y\n- (e) Y\n- (f) N\n- (i) Y\n- (j) Y",
+        "keywords": [
+          "franklin",
+          "enterprises",
+          "starlight"
+        ]
+      },
+      {
+        "id": "H2",
+        "candidateId": "franklin-enterprises",
+        "valence": "con",
+        "weight": 1,
+        "text": "Franklin Enterprises:\n- (a) N\n- (c) N\nStarlight Incorporated:\n- (e) Y\n- (h) Y\nCape Industries:\n- (a) Y\n- (b) N\n- (c) Y\n- (f) N\n- (h) N\n- (j) Y",
+        "memoText": "Franklin Enterprises:\n- (a) N\n- (c) N\nStarlight Incorporated:\n- (e) Y\n- (h) Y\nCape Industries:\n- (a) Y\n- (b) N\n- (c) Y\n- (f) N\n- (h) N\n- (j) Y",
+        "keywords": [
+          "franklin",
+          "enterprises",
+          "starlight"
+        ]
+      },
+      {
+        "id": "H3",
+        "candidateId": "franklin-enterprises",
+        "valence": "con",
+        "weight": 1,
+        "text": "Franklin Enterprises:\n- (a) N\n- (c) N\nStarlight Incorporated:\n- (f) Y\n- (i) Y\nCape Industries:\n- (b) N\n- (c) Y\n- (d) Y\n- (f) N\n- (h) N\n- (i) Y",
+        "memoText": "Franklin Enterprises:\n- (a) N\n- (c) N\nStarlight Incorporated:\n- (f) Y\n- (i) Y\nCape Industries:\n- (b) N\n- (c) Y\n- (d) Y\n- (f) N\n- (h) N\n- (i) Y",
+        "keywords": [
+          "franklin",
+          "enterprises",
+          "starlight"
+        ]
+      },
+      {
+        "id": "H4",
+        "candidateId": "franklin-enterprises",
+        "valence": "con",
+        "weight": 1,
+        "text": "Franklin Enterprises:\n- (a) N\n- (b) N\nStarlight Incorporated:\n- (g) Y\n- (j) Y\nCape Industries:\n- (c) Y\n- (d) Y\n- (e) Y\n- (h) N\n- (i) Y\n- (j) Y",
+        "memoText": "Franklin Enterprises:\n- (a) N\n- (b) N\nStarlight Incorporated:\n- (g) Y\n- (j) Y\nCape Industries:\n- (c) Y\n- (d) Y\n- (e) Y\n- (h) N\n- (i) Y\n- (j) Y",
+        "keywords": [
+          "franklin",
+          "enterprises",
+          "starlight"
+        ]
+      }
+    ],
+    "agents": [
+      {
+        "id": "p1",
+        "name": "Participant 1",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p2",
+        "name": "Participant 2",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p3",
+        "name": "Participant 3",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p4",
+        "name": "Participant 4",
+        "role": "community member",
+        "style": "cooperative"
+      }
+    ],
+    "distribution": {
+      "p1": [
+        "S1",
+        "S2",
+        "S3",
+        "H1"
+      ],
+      "p2": [
+        "S1",
+        "S2",
+        "S3",
+        "H2"
+      ],
+      "p3": [
+        "S1",
+        "S2",
+        "S3",
+        "H3"
+      ],
+      "p4": [
+        "S1",
+        "S2",
+        "S3",
+        "H4"
+      ]
+    },
+    "decisionRule": "majority",
+    "validation": null,
+    "source": {
+      "kind": "paper",
+      "paper": "HiddenBench (Yassellee et al., 2025)",
+      "doiOrUrl": "https://github.com/yassellee/HiddenBench",
+      "fidelity": "verbatim",
+      "notes": "Converted from HiddenBench task data verbatim. Rationale: No rationale was supplied in the benchmark task. Design uses 3 candidates, 4 participants, 3 shared facts, and 4 hidden facts (7 total). No human-group result is reported in the supplied benchmark; approx. human result is not available. Valence inferred: H1: valence inferred: con for 'Franklin Enterprises'; option mentions=Franklin Enterprises, Starlight Incorporated, Cape Industries | H2: valence inferred: con for 'Franklin Enterprises'; option mentions=Franklin Enterprises, Starlight Incorporated, Cape Industries | H3: valence inferred: con for 'Franklin Enterprises'; option mentions=Franklin Enterprises, Starlight Incorporated, Cape Industries | H4: valence inferred: con for 'Franklin Enterprises'; option mentions=Franklin Enterprises, Starlight Incorporated, Cape Industries WARNING: pooled arithmetic does not select the correct answer"
+    },
+    "parentId": null,
+    "createdAt": null
+  },
+  {
+    "id": "hiddenbench-stasser-stewart-1992",
+    "title": "HiddenBench: Stasser_Stewart_1992",
+    "brief": "You are participating in a study, acting as an investigator in a murder case. Your goal is to figure out who killed Mr. Guion, a well-known car company owner.\nThe Incident:\nMr. Guion was found dead behind his house on a Saturday morning. It appears he was hit with a crowbar and then fell down the stairs. The autopsy shows he died from the fall sometime between 6:30 and 7:00 AM.\nYou will work with other investigators (other participants) to decide who to prosecute. There are three suspects:\n- Eddie Sullivan: A handyman who worked for Guion.\n- Billy Prentice: The yardman at Guion's estate.\n- Mickey Malone: A car parts supplier and Guion's golfing buddy.\nOnly one person committed the crime.\n- If you identify the correct person, you earn $1.\n- If everyone agrees on the correct person, you each earn $2 total.\n- You don't know when the discussion will end, so decide carefully.",
+    "isSample": true,
+    "candidates": [
+      {
+        "id": "eddie-sullivan",
+        "name": "Eddie Sullivan",
+        "blurb": ""
+      },
+      {
+        "id": "billy-prentice",
+        "name": "Billy Prentice",
+        "blurb": ""
+      },
+      {
+        "id": "mickey-malone",
+        "name": "Mickey Malone",
+        "blurb": ""
+      }
+    ],
+    "facts": [
+      {
+        "id": "S1",
+        "candidateId": "eddie-sullivan",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Eddie said he was dismantling a shed around Guion's house from 6:00 AM.",
+        "memoText": "Eddie said he was dismantling a shed around Guion's house from 6:00 AM.",
+        "keywords": [
+          "eddie",
+          "dismantling",
+          "around"
+        ]
+      },
+      {
+        "id": "S2",
+        "candidateId": "eddie-sullivan",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Eddie knew Guion left home for golf around 6:30 AM.",
+        "memoText": "Eddie knew Guion left home for golf around 6:30 AM.",
+        "keywords": [
+          "eddie",
+          "around"
+        ]
+      },
+      {
+        "id": "S3",
+        "candidateId": "eddie-sullivan",
+        "valence": "pro",
+        "weight": 1,
+        "text": "The crowbar belongs to Eddie, but Billy's fingerprints were partially on its handle.",
+        "memoText": "The crowbar belongs to Eddie, but Billy's fingerprints were partially on its handle.",
+        "keywords": [
+          "crowbar",
+          "belongs",
+          "eddie"
+        ]
+      },
+      {
+        "id": "S4",
+        "candidateId": "mickey-malone",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Mickey knew Guion's house well, as he often picked Guion up for golf.",
+        "memoText": "Mickey knew Guion's house well, as he often picked Guion up for golf.",
+        "keywords": [
+          "mickey",
+          "picked"
+        ]
+      },
+      {
+        "id": "S5",
+        "candidateId": "mickey-malone",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Mickey said he left his house to pick Guion up for golf, but turned down and went to a caf\u00e9 instead.",
+        "memoText": "Mickey said he left his house to pick Guion up for golf, but turned down and went to a caf\u00e9 instead.",
+        "keywords": [
+          "mickey",
+          "turned",
+          "instead"
+        ]
+      },
+      {
+        "id": "S6",
+        "candidateId": "mickey-malone",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Guion informed Mickey of his decision to possibly stop supporting Mickey's business the day before.",
+        "memoText": "Guion informed Mickey of his decision to possibly stop supporting Mickey's business the day before.",
+        "keywords": [
+          "informed",
+          "mickey",
+          "decision"
+        ]
+      },
+      {
+        "id": "S7",
+        "candidateId": "eddie-sullivan",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Eddie said he heard Billy's car leave Guion's house around 7:00 AM.",
+        "memoText": "Eddie said he heard Billy's car leave Guion's house around 7:00 AM.",
+        "keywords": [
+          "eddie",
+          "billy",
+          "around"
+        ]
+      },
+      {
+        "id": "S8",
+        "candidateId": "eddie-sullivan",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Billy said Eddie's tools were usually locked up, but the crowbar was oddly left out.",
+        "memoText": "Billy said Eddie's tools were usually locked up, but the crowbar was oddly left out.",
+        "keywords": [
+          "billy",
+          "eddie",
+          "usually"
+        ]
+      },
+      {
+        "id": "H1",
+        "candidateId": "billy-prentice",
+        "valence": "con",
+        "weight": 1,
+        "text": "Eddie is hard of hearing and never wears his hearing aid while working at Guion's. Security footage shows Mickey entering the caf\u00e9 at 6:30 and leaving at 6:45 AM. Billy admitted touching the crowbar when he found it.",
+        "memoText": "Eddie is hard of hearing and never wears his hearing aid while working at Guion's. Security footage shows Mickey entering the caf\u00e9 at 6:30 and leaving at 6:45 AM. Billy admitted touching the crowbar when he found it.",
+        "keywords": [
+          "eddie",
+          "hearing",
+          "working"
+        ]
+      },
+      {
+        "id": "H2",
+        "candidateId": "billy-prentice",
+        "valence": "con",
+        "weight": 1,
+        "text": "Billy borrowed some money from Guion two days before. Nobody actually witnessed Eddie working that morning. It takes more than 15 minutes to drive directly from the caf\u00e9 to the golf course, without passing by Guion's house., and Guion's house is actually in the opposite direction.",
+        "memoText": "Billy borrowed some money from Guion two days before. Nobody actually witnessed Eddie working that morning. It takes more than 15 minutes to drive directly from the caf\u00e9 to the golf course, without passing by Guion's house., and Guion's house is actually in the opposite direction.",
+        "keywords": [
+          "billy",
+          "borrowed",
+          "before"
+        ]
+      },
+      {
+        "id": "H3",
+        "candidateId": "billy-prentice",
+        "valence": "con",
+        "weight": 1,
+        "text": "Billy needed some money for some purposes a week before. A golfing friend remembered seeing Mickey at the golf course sometime after 7:00 AM. Guion had recently fired Eddie's daughter after insulting her, which left Eddie furious, according to another employee.",
+        "memoText": "Billy needed some money for some purposes a week before. A golfing friend remembered seeing Mickey at the golf course sometime after 7:00 AM. Guion had recently fired Eddie's daughter after insulting her, which left Eddie furious, according to another employee.",
+        "keywords": [
+          "billy",
+          "needed",
+          "purposes"
+        ]
+      }
+    ],
+    "agents": [
+      {
+        "id": "p1",
+        "name": "Participant 1",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p2",
+        "name": "Participant 2",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p3",
+        "name": "Participant 3",
+        "role": "community member",
+        "style": "cooperative"
+      }
+    ],
+    "distribution": {
+      "p1": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S5",
+        "S6",
+        "S7",
+        "S8",
+        "H1"
+      ],
+      "p2": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S5",
+        "S6",
+        "S7",
+        "S8",
+        "H2"
+      ],
+      "p3": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S5",
+        "S6",
+        "S7",
+        "S8",
+        "H3"
+      ]
+    },
+    "decisionRule": "majority",
+    "validation": null,
+    "source": {
+      "kind": "paper",
+      "paper": "HiddenBench (Yassellee et al., 2025)",
+      "doiOrUrl": "https://github.com/yassellee/HiddenBench",
+      "fidelity": "verbatim",
+      "notes": "Converted from HiddenBench task data verbatim. Rationale: No rationale was supplied in the benchmark task. Design uses 3 candidates, 3 participants, 8 shared facts, and 3 hidden facts (11 total). No human-group result is reported in the supplied benchmark; approx. human result is not available. Valence inferred: S3: valence inferred: pro for 'Eddie Sullivan'; shared option mentions=Eddie Sullivan, Billy Prentice | S7: valence inferred: pro for 'Eddie Sullivan'; shared option mentions=Eddie Sullivan, Billy Prentice | S8: valence inferred: pro for 'Eddie Sullivan'; shared option mentions=Eddie Sullivan, Billy Prentice | H1: valence inferred: con for 'Billy Prentice'; option mentions=Eddie Sullivan, Billy Prentice, Mickey Malone | H2: valence inferred: con for 'Billy Prentice'; option mentions=Eddie Sullivan, Billy Prentice | H3: valence inferred: con for 'Billy Prentice'; option mentions=Eddie Sullivan, Billy Prentice, Mickey Malone"
+    },
+    "parentId": null,
+    "createdAt": null
+  },
+  {
+    "id": "hiddenbench-critical-hospital-transfer",
+    "title": "HiddenBench: critical_hospital_transfer",
+    "brief": "You are on the hospital staff of a rural clinic. A young patient has collapsed with symptoms of a rare but treatable illness. The patient needs to be transferred immediately to a hospital with advanced ICU facilities. There are three hospitals within reach: Hospital A (north), Hospital B (east), and Hospital C (south). You have a single ambulance, and time is critical. Weather conditions are poor (intense rain), some roads may be blocked, and you have no radio contact with the hospitals. Each of you, as staff, have partial updates from local contacts, but you must pool your information to choose which hospital to send the ambulance to. Pick wrong, and the patient may not make it.",
+    "isSample": true,
+    "candidates": [
+      {
+        "id": "hospital-a",
+        "name": "Hospital A",
+        "blurb": ""
+      },
+      {
+        "id": "hospital-b",
+        "name": "Hospital B",
+        "blurb": ""
+      },
+      {
+        "id": "hospital-c",
+        "name": "Hospital C",
+        "blurb": ""
+      }
+    ],
+    "facts": [
+      {
+        "id": "S1",
+        "candidateId": "hospital-a",
+        "valence": "pro",
+        "weight": 1,
+        "text": "The main road to Hospital B has been recently repaired and is the most commonly used route. Hospital B is known for its large ICU and currently has at least one doctor on emergency shift.",
+        "memoText": "The main road to Hospital B has been recently repaired and is the most commonly used route. Hospital B is known for its large ICU and currently has at least one doctor on emergency shift.",
+        "keywords": [
+          "hospital",
+          "recently",
+          "repaired"
+        ]
+      },
+      {
+        "id": "S2",
+        "candidateId": "hospital-a",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Hospital A has a good reputation but is smaller and sometimes lacks staff at night. The northern mountain pass leading to Hospital A can become hazardous after heavy rain.",
+        "memoText": "Hospital A has a good reputation but is smaller and sometimes lacks staff at night. The northern mountain pass leading to Hospital A can become hazardous after heavy rain.",
+        "keywords": [
+          "hospital",
+          "reputation",
+          "smaller"
+        ]
+      },
+      {
+        "id": "S3",
+        "candidateId": "hospital-a",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Hospital C is the oldest hospital and has a history of equipment failures; it\u2019s reached by a secondary road that sometimes floods. However, its ICU was upgraded last year and their ambulance often helps transfer patients.",
+        "memoText": "Hospital C is the oldest hospital and has a history of equipment failures; it\u2019s reached by a secondary road that sometimes floods. However, its ICU was upgraded last year and their ambulance often helps transfer patients.",
+        "keywords": [
+          "hospital",
+          "oldest",
+          "history"
+        ]
+      },
+      {
+        "id": "H1",
+        "candidateId": "hospital-b",
+        "valence": "con",
+        "weight": 1,
+        "text": "Hospital C's recent ICU upgrade is incomplete: the oxygen supply system failed last night, and they have posted an urgent request for repairs\u2014no critical care available until fixed.",
+        "memoText": "Hospital C's recent ICU upgrade is incomplete: the oxygen supply system failed last night, and they have posted an urgent request for repairs\u2014no critical care available until fixed.",
+        "keywords": [
+          "hospital",
+          "recent",
+          "upgrade"
+        ]
+      },
+      {
+        "id": "H2",
+        "candidateId": "hospital-b",
+        "valence": "con",
+        "weight": 1,
+        "text": "A police alert reported a landslide blocking the last stretch of the main road to Hospital B this morning\u2014traffic is completely halted for at least 24 hours.",
+        "memoText": "A police alert reported a landslide blocking the last stretch of the main road to Hospital B this morning\u2014traffic is completely halted for at least 24 hours.",
+        "keywords": [
+          "police",
+          "reported",
+          "landslide"
+        ]
+      },
+      {
+        "id": "H3",
+        "candidateId": "hospital-b",
+        "valence": "con",
+        "weight": 1,
+        "text": "The northern mountain pass to Hospital A has been cleared and is confirmed safe for ambulance travel as of an hour ago.",
+        "memoText": "The northern mountain pass to Hospital A has been cleared and is confirmed safe for ambulance travel as of an hour ago.",
+        "keywords": [
+          "northern",
+          "mountain",
+          "hospital"
+        ]
+      },
+      {
+        "id": "H4",
+        "candidateId": "hospital-b",
+        "valence": "con",
+        "weight": 1,
+        "text": "Hospital B's emergency shift doctor is dealing with a multi-patient accident, and the hospital is temporarily out of critical care beds.",
+        "memoText": "Hospital B's emergency shift doctor is dealing with a multi-patient accident, and the hospital is temporarily out of critical care beds.",
+        "keywords": [
+          "hospital",
+          "emergency",
+          "doctor"
+        ]
+      }
+    ],
+    "agents": [
+      {
+        "id": "p1",
+        "name": "Participant 1",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p2",
+        "name": "Participant 2",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p3",
+        "name": "Participant 3",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p4",
+        "name": "Participant 4",
+        "role": "community member",
+        "style": "cooperative"
+      }
+    ],
+    "distribution": {
+      "p1": [
+        "S1",
+        "S2",
+        "S3",
+        "H1"
+      ],
+      "p2": [
+        "S1",
+        "S2",
+        "S3",
+        "H2"
+      ],
+      "p3": [
+        "S1",
+        "S2",
+        "S3",
+        "H3"
+      ],
+      "p4": [
+        "S1",
+        "S2",
+        "S3",
+        "H4"
+      ]
+    },
+    "decisionRule": "majority",
+    "validation": null,
+    "source": {
+      "kind": "paper",
+      "paper": "HiddenBench (Yassellee et al., 2025)",
+      "doiOrUrl": "https://github.com/yassellee/HiddenBench",
+      "fidelity": "verbatim",
+      "notes": "Converted from HiddenBench task data verbatim. Rationale: I designed this task to require four participants to pool their unique hidden facts to solve a logistics problem involving a critically ill patient needing urgent transfer to a hospital. The shared information points toward Hospital B as the clear (but incorrect) option: it appears both reachable and appropriately staffed for emergencies. However, each hidden fact rules out a route or resource at a different hospital or directly undermines the apparent suitability of Hospital B. No participant, with just their hidden fact plus the shared facts, could eliminate Hospital B\u2014so they'll likely converge on that choice. But pooling the hidden facts reveals that Hospital A is the only functional option, since Hospital B is inaccessible (due to a roadblock) and Hospital C doesn't actually have a functional ICU or rapid ambulance. Each hidden item eliminates at least one option. Leaving out any single hidden fact means the group can\u2019t definitively rule out the decoy. The structure ensures deep collaboration is required for the group to succeed. Design uses 3 candidates, 4 participants, 3 shared facts, and 4 hidden facts (7 total). No human-group result is reported in the supplied benchmark; approx. human result is not available. Valence inferred: S1: valence inferred: pro for 'Hospital A'; shared option mentions=Hospital A, Hospital B, Hospital C | S2: valence inferred: pro for 'Hospital A'; shared option mentions=Hospital A, Hospital B, Hospital C | S3: valence inferred: pro for 'Hospital A'; shared option mentions=Hospital A, Hospital B, Hospital C | H1: valence inferred: con for 'Hospital B'; option mentions=Hospital A, Hospital B, Hospital C | H2: valence inferred: con for 'Hospital B'; option mentions=Hospital A, Hospital B, Hospital C | H3: valence inferred: con for 'Hospital B'; option mentions=Hospital A, Hospital B, Hospital C | H4: valence inferred: con for 'Hospital B'; option mentions=Hospital A, Hospital B, Hospital C"
+    },
+    "parentId": null,
+    "createdAt": null
+  },
+  {
+    "id": "hiddenbench-laboratory-theft-deduction",
+    "title": "HiddenBench: Laboratory Theft Deduction",
+    "brief": "You are members of a security review panel at a major university, investigating the theft of a prototype device from a tightly controlled building. The theft took place during a two-hour window last night, and records show only three labs had access to the secure vault. University leadership wants you to identify the lab responsible for the theft before pressing charges. You have limited time to reach a consensus based on access records and witness reports. If you choose correctly, the investigation can proceed with minimal fallout. A wrong accusation will damage innocent reputations. After discussing with the three other panel members, you must jointly decide which lab committed the theft. You must be sure, as each lab head has powerful legal representation and will dispute any shaky accusations.",
+    "isSample": true,
+    "candidates": [
+      {
+        "id": "lab-alpha",
+        "name": "Lab Alpha",
+        "blurb": ""
+      },
+      {
+        "id": "lab-beta",
+        "name": "Lab Beta",
+        "blurb": ""
+      },
+      {
+        "id": "lab-gamma",
+        "name": "Lab Gamma",
+        "blurb": ""
+      }
+    ],
+    "facts": [
+      {
+        "id": "S1",
+        "candidateId": "lab-alpha",
+        "valence": "pro",
+        "weight": 1,
+        "text": "The theft could only have occurred using a specialized code machine. Only Lab Alpha is openly recorded as having this tool.",
+        "memoText": "The theft could only have occurred using a specialized code machine. Only Lab Alpha is openly recorded as having this tool.",
+        "keywords": [
+          "occurred",
+          "specialized",
+          "machine"
+        ]
+      },
+      {
+        "id": "S2",
+        "candidateId": "lab-gamma",
+        "valence": "pro",
+        "weight": 1,
+        "text": "All labs reported their staff were present on site during the night, and security footage showed movement in all three corridors during the time of the theft.",
+        "memoText": "All labs reported their staff were present on site during the night, and security footage showed movement in all three corridors during the time of the theft.",
+        "keywords": [
+          "reported",
+          "present",
+          "during"
+        ]
+      },
+      {
+        "id": "S3",
+        "candidateId": "lab-alpha",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Lab Alpha has a history of security violations, including code access issues in the past month.",
+        "memoText": "Lab Alpha has a history of security violations, including code access issues in the past month.",
+        "keywords": [
+          "alpha",
+          "history",
+          "security"
+        ]
+      },
+      {
+        "id": "H1",
+        "candidateId": "lab-alpha",
+        "valence": "con",
+        "weight": 1,
+        "text": "Security camera logs show Lab Alpha\u2019s code machine was checked in and never left their lab during the two-hour window.",
+        "memoText": "Security camera logs show Lab Alpha\u2019s code machine was checked in and never left their lab during the two-hour window.",
+        "keywords": [
+          "security",
+          "camera",
+          "alpha"
+        ]
+      },
+      {
+        "id": "H2",
+        "candidateId": "lab-beta",
+        "valence": "con",
+        "weight": 1,
+        "text": "A technician\u2019s badge from Lab Beta was used to enter the building, but building entry and exit logs show no one from Beta ever left until the morning shift change\u2014so they could not have moved the item outside.",
+        "memoText": "A technician\u2019s badge from Lab Beta was used to enter the building, but building entry and exit logs show no one from Beta ever left until the morning shift change\u2014so they could not have moved the item outside.",
+        "keywords": [
+          "technician",
+          "building",
+          "morning"
+        ]
+      },
+      {
+        "id": "H3",
+        "candidateId": "lab-gamma",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Lab Gamma\u2019s staff reported one person missing from headcount, but building security specifically reports only three badge entries for Gamma during the time window\u2014matching authorized access for device maintenance at the vault.",
+        "memoText": "Lab Gamma\u2019s staff reported one person missing from headcount, but building security specifically reports only three badge entries for Gamma during the time window\u2014matching authorized access for device maintenance at the vault.",
+        "keywords": [
+          "gamma",
+          "reported",
+          "person"
+        ]
+      },
+      {
+        "id": "H4",
+        "candidateId": "lab-alpha",
+        "valence": "con",
+        "weight": 1,
+        "text": "A janitor\u2019s log shows all staff from Lab Alpha, including the lead technician, were visible in their break room for the entire two-hour period, and the break room is in a different building than the secure vault.",
+        "memoText": "A janitor\u2019s log shows all staff from Lab Alpha, including the lead technician, were visible in their break room for the entire two-hour period, and the break room is in a different building than the secure vault.",
+        "keywords": [
+          "janitor",
+          "alpha",
+          "including"
+        ]
+      }
+    ],
+    "agents": [
+      {
+        "id": "p1",
+        "name": "Participant 1",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p2",
+        "name": "Participant 2",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p3",
+        "name": "Participant 3",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p4",
+        "name": "Participant 4",
+        "role": "community member",
+        "style": "cooperative"
+      }
+    ],
+    "distribution": {
+      "p1": [
+        "S1",
+        "S2",
+        "S3",
+        "H1"
+      ],
+      "p2": [
+        "S1",
+        "S2",
+        "S3",
+        "H2"
+      ],
+      "p3": [
+        "S1",
+        "S2",
+        "S3",
+        "H3"
+      ],
+      "p4": [
+        "S1",
+        "S2",
+        "S3",
+        "H4"
+      ]
+    },
+    "decisionRule": "majority",
+    "validation": null,
+    "source": {
+      "kind": "paper",
+      "paper": "HiddenBench (Yassellee et al., 2025)",
+      "doiOrUrl": "https://github.com/yassellee/HiddenBench",
+      "fidelity": "verbatim",
+      "notes": "Converted from HiddenBench task data verbatim. Rationale: Step-by-step reasoning: I chose a scenario with four participants (so four pieces of hidden info). The options are three research labs where an important piece of evidence is located. The shared information suggests Lab Alpha is the prime suspect due to its unique equipment and suspicious timing\u2014making it a strong decoy. The hidden facts disqualify Lab Alpha from four different, non-overlapping angles (security records, timelines, access logs, and a missing staffer). None of the hidden facts alone is sufficient: each, paired with the shared info, still leaves Alpha looking likely. Only when all hidden facts are pooled do they eliminate every lab except the true culprit (Lab Gamma), which alone fits all details without contradiction. If any hidden item is missing, either Lab Alpha or Beta could still be plausible, hence all are essential. This design forces information sharing and collaboration for the group to succeed. Design uses 3 candidates, 4 participants, 3 shared facts, and 4 hidden facts (7 total). No human-group result is reported in the supplied benchmark; approx. human result is not available. Valence inferred: S2: valence inferred: pro for 'Lab Gamma'; shared option mentions=none | H3: valence inferred: pro for 'Lab Gamma'; option mentions=Lab Gamma"
+    },
+    "parentId": null,
+    "createdAt": null
+  },
+  {
+    "id": "hiddenbench-the-lead-investor-decision",
+    "title": "HiddenBench: the_lead_investor_decision",
+    "brief": "You are co-founders of a startup that just received three offers from venture capital firms to lead your Series B funding round. Time is tight\u2014you must select a lead investor within 12 hours to avoid losing all momentum. There are three possible firms: Peak Capital, Skylake Ventures, and Northstar Partners. Each seems attractive in its own way, but you only have partial information about their offers and constraints. The correct answer is the one that can definitely close the deal, on time, without unmanageable risk or hidden issues. Your task: discuss all available information to decide which investor you can reliably choose as your lead.",
+    "isSample": true,
+    "candidates": [
+      {
+        "id": "peak-capital",
+        "name": "Peak Capital",
+        "blurb": ""
+      },
+      {
+        "id": "skylake-ventures",
+        "name": "Skylake Ventures",
+        "blurb": ""
+      },
+      {
+        "id": "northstar-partners",
+        "name": "Northstar Partners",
+        "blurb": ""
+      }
+    ],
+    "facts": [
+      {
+        "id": "S1",
+        "candidateId": "peak-capital",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Peak Capital is known for closing deals quickly; a partner says they can transfer funds within 3 days if terms are met.",
+        "memoText": "Peak Capital is known for closing deals quickly; a partner says they can transfer funds within 3 days if terms are met.",
+        "keywords": [
+          "capital",
+          "closing",
+          "quickly"
+        ]
+      },
+      {
+        "id": "S2",
+        "candidateId": "skylake-ventures",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Skylake Ventures requires at least one reputable co-investor to participate in a round before they can commit any funds.",
+        "memoText": "Skylake Ventures requires at least one reputable co-investor to participate in a round before they can commit any funds.",
+        "keywords": [
+          "skylake",
+          "ventures",
+          "requires"
+        ]
+      },
+      {
+        "id": "S3",
+        "candidateId": "northstar-partners",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Northstar Partners prefers to lead deals where the company has strong IP protection, and they've sometimes pulled out late after legal hiccups.",
+        "memoText": "Northstar Partners prefers to lead deals where the company has strong IP protection, and they've sometimes pulled out late after legal hiccups.",
+        "keywords": [
+          "northstar",
+          "partners",
+          "prefers"
+        ]
+      },
+      {
+        "id": "H1",
+        "candidateId": "peak-capital",
+        "valence": "con",
+        "weight": 1,
+        "text": "Peak Capital is being investigated for regulatory issues; their deal execution is currently on hold at the bank, and no new investments have been processed this month.",
+        "memoText": "Peak Capital is being investigated for regulatory issues; their deal execution is currently on hold at the bank, and no new investments have been processed this month.",
+        "keywords": [
+          "capital",
+          "investigated",
+          "regulatory"
+        ]
+      },
+      {
+        "id": "H2",
+        "candidateId": "northstar-partners",
+        "valence": "con",
+        "weight": 1,
+        "text": "Skylake Ventures just finalized a co-investor partnership with a well-known angel group yesterday, meeting their usual requirements for a deal of this size.",
+        "memoText": "Skylake Ventures just finalized a co-investor partnership with a well-known angel group yesterday, meeting their usual requirements for a deal of this size.",
+        "keywords": [
+          "skylake",
+          "ventures",
+          "finalized"
+        ]
+      },
+      {
+        "id": "H3",
+        "candidateId": "northstar-partners",
+        "valence": "con",
+        "weight": 1,
+        "text": "Northstar Partners internally reduced their investment committee meeting schedule to once per month due to staff shortage; their next meeting is in three weeks.",
+        "memoText": "Northstar Partners internally reduced their investment committee meeting schedule to once per month due to staff shortage; their next meeting is in three weeks.",
+        "keywords": [
+          "northstar",
+          "partners",
+          "internally"
+        ]
+      }
+    ],
+    "agents": [
+      {
+        "id": "p1",
+        "name": "Participant 1",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p2",
+        "name": "Participant 2",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p3",
+        "name": "Participant 3",
+        "role": "community member",
+        "style": "cooperative"
+      }
+    ],
+    "distribution": {
+      "p1": [
+        "S1",
+        "S2",
+        "S3",
+        "H1"
+      ],
+      "p2": [
+        "S1",
+        "S2",
+        "S3",
+        "H2"
+      ],
+      "p3": [
+        "S1",
+        "S2",
+        "S3",
+        "H3"
+      ]
+    },
+    "decisionRule": "majority",
+    "validation": null,
+    "source": {
+      "kind": "paper",
+      "paper": "HiddenBench (Yassellee et al., 2025)",
+      "doiOrUrl": "https://github.com/yassellee/HiddenBench",
+      "fidelity": "verbatim",
+      "notes": "Converted from HiddenBench task data verbatim. Rationale: I started by choosing 3 participants and 3 possible answers centered around a tech company picking a lead investor for their next round. The shared information was crafted so the group initially leans heavily toward 'Peak Capital' (decoy), since it appears best positioned in terms of speed and reliability. Each hidden clue, distributed uniquely, weakens one aspect of this decoy (Peak) or the third option (Northstar), but never enough to force a different choice on its own. Only by combining all hidden information does it become clear that Peak cannot deliver the necessary funding, Northstar is riskier than it appears, and Skylake is the only realistic fit. Each clue is essential\u2014removing any would leave multiple options viable. This ensures that correct group decision depends on full information sharing. Design uses 3 candidates, 3 participants, 3 shared facts, and 3 hidden facts (6 total). No human-group result is reported in the supplied benchmark; approx. human result is not available. Valence inferred: H2: valence inferred: con for 'Northstar Partners'; option mentions=Skylake Ventures, Northstar Partners"
+    },
+    "parentId": null,
+    "createdAt": null
+  },
+  {
+    "id": "hiddenbench-company-acquisition-decision",
+    "title": "HiddenBench: company_acquisition_decision",
+    "brief": "Your investment firm must choose one of three technology startups to acquire. Each has shown interest in the deal, and you have only 24 hours before a competitor starts bidding. The acquisition is a major commitment: making the wrong choice could risk millions and damage your firm\u2019s reputation. Each team member has confidential research, but only through discussion can the full picture emerge.\n\nOptions:\n- Option A: A biomedical startup with several patents and ongoing clinical trials.\n- Option B: An AI hardware startup recently featured in major news outlets for its rapid growth.\n- Option C: A logistics software company led by experienced founders with a history of scaling companies.\n\nYou must choose which company to acquire. Your bonus depends on a correct group decision.",
+    "isSample": true,
+    "candidates": [
+      {
+        "id": "option-a-biomedical-startup",
+        "name": "Option A: Biomedical startup",
+        "blurb": ""
+      },
+      {
+        "id": "option-b-ai-hardware-startup",
+        "name": "Option B: AI hardware startup",
+        "blurb": ""
+      },
+      {
+        "id": "option-c-logistics-software-company",
+        "name": "Option C: Logistics software company",
+        "blurb": ""
+      }
+    ],
+    "facts": [
+      {
+        "id": "S1",
+        "candidateId": "option-c-logistics-software-company",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Industry analysts say Option B has a stable revenue base and recently announced strong sales growth.",
+        "memoText": "Industry analysts say Option B has a stable revenue base and recently announced strong sales growth.",
+        "keywords": [
+          "industry",
+          "analysts",
+          "option"
+        ]
+      },
+      {
+        "id": "S2",
+        "candidateId": "option-c-logistics-software-company",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Option C just lost one of its major customers, dropping its current revenues.",
+        "memoText": "Option C just lost one of its major customers, dropping its current revenues.",
+        "keywords": [
+          "option",
+          "customers",
+          "dropping"
+        ]
+      },
+      {
+        "id": "S3",
+        "candidateId": "option-c-logistics-software-company",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Option A is rumored to have unresolved legal disputes over intellectual property, making it controversial.",
+        "memoText": "Option A is rumored to have unresolved legal disputes over intellectual property, making it controversial.",
+        "keywords": [
+          "option",
+          "rumored",
+          "unresolved"
+        ]
+      },
+      {
+        "id": "S4",
+        "candidateId": "option-c-logistics-software-company",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Venture capitalists are especially interested in B's sector and predict strong growth in the coming years.",
+        "memoText": "Venture capitalists are especially interested in B's sector and predict strong growth in the coming years.",
+        "keywords": [
+          "venture",
+          "capitalists",
+          "especially"
+        ]
+      },
+      {
+        "id": "H1",
+        "candidateId": "option-c-logistics-software-company",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Option B's chief engineer, responsible for the core product, will resign immediately after any acquisition, and she is not under a non-compete agreement.",
+        "memoText": "Option B's chief engineer, responsible for the core product, will resign immediately after any acquisition, and she is not under a non-compete agreement.",
+        "keywords": [
+          "option",
+          "engineer",
+          "responsible"
+        ]
+      },
+      {
+        "id": "H2",
+        "candidateId": "option-c-logistics-software-company",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Option C's lost customer had already announced a plan to return if the founders remain on board post-acquisition.",
+        "memoText": "Option C's lost customer had already announced a plan to return if the founders remain on board post-acquisition.",
+        "keywords": [
+          "option",
+          "customer",
+          "already"
+        ]
+      },
+      {
+        "id": "H3",
+        "candidateId": "option-c-logistics-software-company",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Option A's key patent, responsible for most of its value, expires next year and cannot be renewed.",
+        "memoText": "Option A's key patent, responsible for most of its value, expires next year and cannot be renewed.",
+        "keywords": [
+          "option",
+          "patent",
+          "responsible"
+        ]
+      },
+      {
+        "id": "H4",
+        "candidateId": "option-c-logistics-software-company",
+        "valence": "pro",
+        "weight": 1,
+        "text": "Option B's largest clients have contracts that cannot be transferred if the company changes ownership, and the sales team is not able to renegotiate them.",
+        "memoText": "Option B's largest clients have contracts that cannot be transferred if the company changes ownership, and the sales team is not able to renegotiate them.",
+        "keywords": [
+          "option",
+          "largest",
+          "clients"
+        ]
+      }
+    ],
+    "agents": [
+      {
+        "id": "p1",
+        "name": "Participant 1",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p2",
+        "name": "Participant 2",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p3",
+        "name": "Participant 3",
+        "role": "community member",
+        "style": "cooperative"
+      },
+      {
+        "id": "p4",
+        "name": "Participant 4",
+        "role": "community member",
+        "style": "cooperative"
+      }
+    ],
+    "distribution": {
+      "p1": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "H1"
+      ],
+      "p2": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "H2"
+      ],
+      "p3": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "H3"
+      ],
+      "p4": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "H4"
+      ]
+    },
+    "decisionRule": "majority",
+    "validation": null,
+    "source": {
+      "kind": "paper",
+      "paper": "HiddenBench (Yassellee et al., 2025)",
+      "doiOrUrl": "https://github.com/yassellee/HiddenBench",
+      "fidelity": "verbatim",
+      "notes": "Converted from HiddenBench task data verbatim. Rationale: I started by choosing 4 participants and 3 possible company acquisition targets. Option B is the decoy toward which shared information steers the group: it seems financially stable and poised for growth. The shared facts all support this decoy (Option B), making it look safer than A (high risk) or C (doubtful leadership).\n\nEach hidden fact looks plausible but is insufficient alone: Each one rules out a different option or provides a critical constraint only when combined with the others. For example, knowing that Option A's key patents are expiring soon makes it seem risky, but with only that hidden fact, Option B still looks best. Another hidden fact reveals Option B is about to lose its chief engineer (likely hurting its prospects), which alone isn\u2019t enough to disqualify it totally, but together with a third hidden piece showing client commitments can\u2019t transfer, it decides the case.\n\nWhen all four hidden pieces are pooled, Option B's growth projections are exposed as hollow (engineer leaving, client contracts non-transferable), Option A is shown as near bankruptcy (key patent expiring soon and legal disputes unresolved), and Option C is revealed to have hidden strengths (experienced founders can stabilize it, remaining key clients, better resilience). Thus, C stands out as the only logical acquisition. Each hidden item is vital; without any one, you can't uniquely identify C as the only correct answer\u2014the decoy B remains plausible in all partial views.\n\nThe design enforces information sharing; no individual can solve it alone, but pooling facts makes the answer clear. The shared info and each hidden item mislead toward B unless all are combined, fitting all the given requirements for the group decision task. Design uses 3 candidates, 4 participants, 4 shared facts, and 4 hidden facts (8 total). No human-group result is reported in the supplied benchmark; approx. human result is not available. Valence inferred: S1: valence inferred: pro for 'Option C: Logistics software company'; shared option mentions=none | S2: valence inferred: pro for 'Option C: Logistics software company'; shared option mentions=none | S3: valence inferred: pro for 'Option C: Logistics software company'; shared option mentions=none | S4: valence inferred: pro for 'Option C: Logistics software company'; shared option mentions=none | H1: valence inferred: pro for 'Option C: Logistics software company'; option mentions=none | H2: valence inferred: pro for 'Option C: Logistics software company'; option mentions=none | H3: valence inferred: pro for 'Option C: Logistics software company'; option mentions=none | H4: valence inferred: pro for 'Option C: Logistics software company'; option mentions=Option C: Logistics software company"
+    },
+    "parentId": null,
+    "createdAt": null
+  }
+]
