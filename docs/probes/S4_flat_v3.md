@@ -4,9 +4,11 @@ Model `claude-haiku-4-5`, memo fact style, single-agent ballots via `scripts/gat
 (v3) and `scripts/gate_null.py` (v3 twin null), seeds 0–7, one sample per seed (n = 8 per
 cell). Raw outputs: `docs/probes/data/s4/`. Total spend ≈ $0.85 across 9 runs (8 kept).
 
-Verdict: **naive prompt PASSES the certificate; default prompt FAILS on one agent
-(priya 6/8 = 75% < 80%)**. The v3 twin null is position-balanced at the agent level but the
-pooled reviewer keeps a residual Sally lean (75–88%) that is *not* position.
+Verdict: **FAILS THE NULL GATE.** The gate order is (1) twin null within 35–65% Sally for
+alone AND pooled under both orders, then (2) alone→John / pooled→Sally. The v3 twin null's
+pooled cell reads 75–88% Sally (naive) with John listed first, so v3's pooled→Sally 8/8 is
+uninterpretable and the naive alone/pooled "pass" in §3 cannot be claimed. §6 locates the
+lean. No further item tweaks were made (priya tweak declined).
 
 ## 1. Design
 
@@ -157,3 +159,34 @@ candidates — plus position.
   cell 75–88% Sally under balanced order.
 - Not changed: frontend default scenario, `Scenario.source`, `backend/app/scenarios/papers/`,
   prod seeding.
+
+## 6. Where the pooled-null lean comes from (≈ $0.09)
+
+`scripts/probe/s4_null_ablate.py`: pooled reviewer, v3 twin null, **John listed first**
+(`order=fixed`), seeds 0–7, drop-one-type ablations. Sally votes / 8, Wilson 95% CI.
+
+| condition | items | naive | default |
+|---|---|---|---|
+| baseline | 70 | 7/8 [0.53,0.98] | 1/8 [0.02,0.47] |
+| drop behavioural twins | 48 | 5/8 [0.31,0.86] | 0/8 [0.00,0.32] |
+| drop rigour twins | 52 | 3/8 [0.14,0.69] | 0/8 [0.00,0.32] |
+| drop all cons | 50 | 4/8 [0.22,0.78] | 3/8 [0.14,0.69] |
+| drop unique-twins | 56 | 5/8 [0.31,0.86] | 4/8 [0.22,0.78] |
+
+Byte-level check: every v3 twin pair is word-identical after the pronoun/name swap (35/35
+pairs; keywords, weights, valence equal); John's and Sally's memo blocks are 2172 vs 2174
+chars. So there is no item-content asymmetry.
+
+The non-mirrored thing is **memo assembly + prompt**: `_memo_lines` emits one paragraph per
+candidate in candidate order, so with John first Sally's paragraph is always the *last*
+block before the ballot instruction. The two prompts read it in opposite directions on
+identical evidence: naive votes the **last-listed** candidate (Sally 7/8), default votes the
+**first-listed** (John 7/8). Neither is an item effect — no single type removal takes
+naive below ~3/8 or lifts default above ~4/8, and every ablation moves toward the middle
+mainly by shortening the memo. Under `alternate` these two opposite biases average to the
+6–7/8 pooled Sally seen in §2, which is why balancing order does not fix the pooled null.
+
+Implication for re-selection: item re-selection alone will not pass the pooled null. The
+memo assembly needs a position-neutral form (e.g. interleave the two candidates' notes in
+one shuffled list, or put the ballot instruction before the notes) before any v3 gate can be
+read; that is a `prompts.py` change and out of this PR's item-selection scope.
