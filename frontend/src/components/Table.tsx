@@ -8,12 +8,12 @@ import { CHIP_H, CHIP_W, candidateColor, chipColors } from './FactChip'
 export { CANDIDATE_COLORS, candidateColor } from './FactChip'
 
 export const W = 820
-export const H = 600
 const CX = W / 2
-const CY = H / 2 + 6
 const R = 225
 const CHIP_GAP = 3
-const HAND_COLS = 6
+const TB_COLS = 8
+const HAND_OFF_TOP = 40
+const HAND_OFF_BOTTOM = 66
 const CENTER_W = 250
 const CENTER_COLS = 8
 
@@ -22,35 +22,48 @@ type Popover =
   | { kind: 'agent'; agentId: string }
   | { kind: 'fact'; agentId: string; factId: string; x: number; y: number }
 
-function seats(scenario: Scenario): Seat[] {
+function tableHeight(scenario: Scenario): number {
+  const maxRows = Math.max(...scenario.agents.map((agent) => Math.ceil((scenario.distribution[agent.id]?.length ?? 0) / TB_COLS)), 1)
+  const gridH = maxRows * (CHIP_H + CHIP_GAP)
+  return 2 * (R + HAND_OFF_BOTTOM + gridH + 8)
+}
+
+function seats(scenario: Scenario, cy: number): Seat[] {
   const n = scenario.agents.length
   return scenario.agents.map((a, i) => {
     const angle = -Math.PI / 2 + (i * 2 * Math.PI) / n
-    return { agentId: a.id, x: CX + R * Math.cos(angle), y: CY + R * Math.sin(angle), angle }
+    return { agentId: a.id, x: CX + R * Math.cos(angle), y: cy + R * Math.sin(angle), angle }
   })
 }
 
-function handOrigin(seat: Seat, count: number): { x: number; y: number } {
-  const rows = Math.ceil(count / HAND_COLS)
-  const gridW = HAND_COLS * (CHIP_W + CHIP_GAP)
-  const gridH = rows * (CHIP_H + CHIP_GAP)
+type HandLayout = { x: number; y: number; cols: number }
+
+function handLayout(seat: Seat, count: number, height: number): HandLayout {
   const dx = Math.cos(seat.angle)
   const dy = Math.sin(seat.angle)
-  const cx = seat.x + dx * (36 + gridW / 2) * Math.abs(dx) + dx * 10
-  const cy = seat.y + dy * (40 + gridH / 2)
-  const gx = Math.min(Math.max(cx - gridW / 2, 4), W - gridW - 4)
-  const gy = Math.min(Math.max(cy - gridH / 2, 4), H - gridH - 4)
-  return { x: gx, y: gy }
+  const cols = Math.abs(dx) < 0.5 ? TB_COLS : Math.max(2, Math.floor(((dx < 0 ? seat.x : W - seat.x) - 40 - 4) / (CHIP_W + CHIP_GAP)))
+  const rows = Math.ceil(count / cols)
+  const gridW = cols * (CHIP_W + CHIP_GAP)
+  const gridH = rows * (CHIP_H + CHIP_GAP)
+  if (Math.abs(dx) < 0.5) {
+    const x = Math.min(Math.max(seat.x - gridW / 2, 4), W - gridW - 4)
+    const y = dy < 0 ? seat.y - HAND_OFF_TOP - gridH : seat.y + HAND_OFF_BOTTOM
+    return { x, y, cols }
+  }
+  const x = dx < 0 ? seat.x - 40 - gridW : seat.x + 40
+  const cy = seat.y + dy * (gridH / 2)
+  const y = Math.min(Math.max(cy - gridH / 2, 4), height - gridH - 4)
+  return { x, y, cols }
 }
 
 type ChipPos = { key: string; factId: string; agentId: string; x: number; y: number; inCenter: boolean; dim: boolean }
 
-function placeNear(anchorX: number, anchorY: number, w: number, h: number, preferRight: boolean): { left: number; top: number } {
+function placeNear(anchorX: number, anchorY: number, w: number, h: number, preferRight: boolean, height: number): { left: number; top: number } {
   const left = preferRight ? anchorX + 14 : anchorX - w - 14
   const top = anchorY - 20
   return {
     left: Math.min(Math.max(left, 4), W - w - 4),
-    top: Math.min(Math.max(top, 4), H - h - 4),
+    top: Math.min(Math.max(top, 4), height - h - 4),
   }
 }
 
@@ -69,7 +82,9 @@ export function Table({ scenario, config, derived, status, round, live }: Props)
   const byId = useMemo(() => factsById(scenario), [scenario])
   const shared = useMemo(() => sharedFactIds(scenario), [scenario])
   const decisive = useMemo(() => decisiveFactIds(scenario), [scenario])
-  const seatList = useMemo(() => seats(scenario), [scenario])
+  const height = useMemo(() => tableHeight(scenario), [scenario])
+  const cy = height / 2 + 6
+  const seatList = useMemo(() => seats(scenario, cy), [scenario, cy])
   const { commonGround, citedBy, currentTurn, latestVotes, finished } = derived
 
   const centerOrder = useMemo(() => {
@@ -78,14 +93,14 @@ export function Table({ scenario, config, derived, status, round, live }: Props)
     return order
   }, [derived.revealedTurns])
 
-  const centerTop = CY + 28
+  const centerTop = cy + 28
   const centerGridX = CX - (CENTER_COLS * (CHIP_W + CHIP_GAP)) / 2
 
   const chips: ChipPos[] = useMemo(() => {
     const out: ChipPos[] = []
     for (const seat of seatList) {
       const hand = scenario.distribution[seat.agentId] ?? []
-      const origin = handOrigin(seat, hand.length)
+      const layout = handLayout(seat, hand.length, height)
       hand.forEach((factId, i) => {
         const owner = citedBy.get(factId)
         const inCenter = owner === seat.agentId
@@ -105,8 +120,8 @@ export function Table({ scenario, config, derived, status, round, live }: Props)
             key: `${seat.agentId}:${factId}`,
             factId,
             agentId: seat.agentId,
-            x: origin.x + (i % HAND_COLS) * (CHIP_W + CHIP_GAP),
-            y: origin.y + Math.floor(i / HAND_COLS) * (CHIP_H + CHIP_GAP),
+            x: layout.x + (i % layout.cols) * (CHIP_W + CHIP_GAP),
+            y: layout.y + Math.floor(i / layout.cols) * (CHIP_H + CHIP_GAP),
             inCenter: false,
             dim: commonGround.has(factId),
           })
@@ -114,7 +129,7 @@ export function Table({ scenario, config, derived, status, round, live }: Props)
       })
     }
     return out
-  }, [seatList, scenario, citedBy, centerOrder, commonGround, centerGridX, centerTop])
+  }, [seatList, scenario, citedBy, centerOrder, commonGround, centerGridX, centerTop, height])
 
   const voteTally = tally([...latestVotes.values()].map((v) => v.choice), scenario)
   const hasVotes = latestVotes.size > 0
@@ -162,9 +177,9 @@ export function Table({ scenario, config, derived, status, round, live }: Props)
   }
 
   return (
-    <div className="table-wrap" style={{ width: W, height: H }}>
-      <svg className="table-svg" width={W} height={H}>
-        <circle cx={CX} cy={CY} r={R - 62} className="table-felt" />
+    <div className="table-wrap" style={{ width: W, height }}>
+      <svg className="table-svg" width={W} height={height}>
+        <circle cx={CX} cy={cy} r={R - 62} className="table-felt" />
         {seatList.map((s) => {
           const agent = scenario.agents.find((a) => a.id === s.agentId)!
           const speaking = currentTurn?.agentId === s.agentId && status === 'playing'
@@ -215,7 +230,7 @@ export function Table({ scenario, config, derived, status, round, live }: Props)
         })}
       </svg>
 
-      <div className="center-box" style={{ left: CX - CENTER_W / 2, top: CY - 72, width: CENTER_W }}>
+      <div className="center-box" style={{ left: CX - CENTER_W / 2, top: cy - 72, width: CENTER_W }}>
         <div className="center-round">
           {config ? (status === 'idle' ? 'Ready' : `Round ${round} / ${config.rounds}`) : 'Ready'}
           {hasVotes && (
@@ -272,12 +287,12 @@ export function Table({ scenario, config, derived, status, round, live }: Props)
       </div>
 
       {currentTurn && status !== 'idle' && (
-        <SpeechBubble turn={currentTurn} seat={seatList.find((s) => s.agentId === currentTurn.agentId)!} scenario={scenario} />
+        <SpeechBubble turn={currentTurn} seat={seatList.find((s) => s.agentId === currentTurn.agentId)!} scenario={scenario} height={height} />
       )}
 
       {inspectedAgent && (() => {
         const seat = seatList.find((s) => s.agentId === inspectedAgent.id)!
-        const position = placeNear(seat.x, seat.y, 340, 280, seat.x <= CX)
+        const position = placeNear(seat.x, seat.y, 340, 280, seat.x <= CX, height)
         return (
           <div
             className="popover hand-popover"
@@ -325,7 +340,7 @@ export function Table({ scenario, config, derived, status, round, live }: Props)
       })()}
       {inspectedFact?.fact && (() => {
         const fact = inspectedFact.fact
-        const position = placeNear(inspectedFact.x, inspectedFact.y, 280, 150, inspectedFact.x - CHIP_W / 2 <= CX)
+        const position = placeNear(inspectedFact.x, inspectedFact.y, 280, 150, inspectedFact.x - CHIP_W / 2 <= CX, height)
         const holders = scenario.agents.filter((agent) => (scenario.distribution[agent.id] ?? []).includes(fact.id))
         return (
           <div
@@ -392,23 +407,25 @@ function Chip({ fact, scenario, shared, x, y, inCenter, dim, pulse, fresh, hl, o
   )
 }
 
-function SpeechBubble({ turn, seat, scenario }: { turn: Turn; seat: Seat; scenario: Scenario }) {
+function SpeechBubble({ turn, seat, scenario, height }: { turn: Turn; seat: Seat; scenario: Scenario; height: number }) {
   const width = 250
   const dx = Math.cos(seat.angle)
   const dy = Math.sin(seat.angle)
   let left: number
-  let top: number
+  let top: number | undefined
+  let bottom: number | undefined
   if (Math.abs(dx) < 0.5) {
     left = seat.x + (dx >= 0 ? 60 : -60 - width)
     top = seat.y - 30
   } else {
     left = Math.min(Math.max(seat.x - width / 2, 4), W - width - 4)
-    top = dy < 0 ? seat.y + 70 : seat.y - 130
+    if (dy > 0) bottom = height - (seat.y - 70)
+    else top = seat.y + 70
   }
   left = Math.min(Math.max(left, 4), W - width - 4)
   const shared = sharedFactIds(scenario)
   return (
-    <div className="bubble" style={{ left, top, width }} key={turn.seq}>
+    <div className="bubble" style={{ left, width, ...(top === undefined ? { bottom } : { top }) }} key={turn.seq}>
       <div className="bubble-text">{turn.sentences.length ? turn.sentences.join(' ') : <em>(said nothing)</em>}</div>
       <div className="bubble-meta">
         {turn.cited.map((id) => (
