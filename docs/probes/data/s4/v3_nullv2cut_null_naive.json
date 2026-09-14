@@ -1,0 +1,232 @@
+{
+ "scenario": "hiring-panel-flat-v3-null",
+ "prompt": "naive",
+ "k": 2,
+ "samples": 10,
+ "seeds": 2,
+ "lo": 0.35,
+ "hi": 0.65,
+ "cells": {
+  "pooled": {
+   "n": 20,
+   "counts": {
+    "sally": 5,
+    "john": 15
+   },
+   "per_seed": [
+    {
+     "sally": 2,
+     "john": 8
+    },
+    {
+     "john": 7,
+     "sally": 3
+    }
+   ],
+   "rates": {
+    "john": {
+     "rate": 0.75,
+     "ci": [
+      0.5312949900419365,
+      0.888139947210597
+     ]
+    },
+    "sally": {
+     "rate": 0.25,
+     "ci": [
+      0.11186005278940309,
+      0.4687050099580636
+     ]
+    }
+   },
+   "by_first_listed": {
+    "john": {
+     "sally": 2,
+     "john": 8
+    },
+    "sally": {
+     "john": 7,
+     "sally": 3
+    }
+   },
+   "pass": false
+  },
+  "dana": {
+   "n": 20,
+   "counts": {
+    "john": 9,
+    "sally": 11
+   },
+   "per_seed": [
+    {
+     "john": 5,
+     "sally": 5
+    },
+    {
+     "sally": 6,
+     "john": 4
+    }
+   ],
+   "rates": {
+    "john": {
+     "rate": 0.45,
+     "ci": [
+      0.25819502085709295,
+      0.6579179916924003
+     ]
+    },
+    "sally": {
+     "rate": 0.55,
+     "ci": [
+      0.3420820083075997,
+      0.7418049791429071
+     ]
+    }
+   },
+   "by_first_listed": {
+    "john": {
+     "john": 5,
+     "sally": 5
+    },
+    "sally": {
+     "john": 4,
+     "sally": 6
+    }
+   },
+   "pass": true
+  },
+  "marcus": {
+   "n": 20,
+   "counts": {
+    "sally": 15,
+    "john": 5
+   },
+   "per_seed": [
+    {
+     "sally": 7,
+     "john": 3
+    },
+    {
+     "sally": 8,
+     "john": 2
+    }
+   ],
+   "rates": {
+    "john": {
+     "rate": 0.25,
+     "ci": [
+      0.11186005278940309,
+      0.4687050099580636
+     ]
+    },
+    "sally": {
+     "rate": 0.75,
+     "ci": [
+      0.5312949900419365,
+      0.888139947210597
+     ]
+    }
+   },
+   "by_first_listed": {
+    "john": {
+     "sally": 7,
+     "john": 3
+    },
+    "sally": {
+     "john": 2,
+     "sally": 8
+    }
+   },
+   "pass": false
+  },
+  "priya": {
+   "n": 20,
+   "counts": {
+    "sally": 14,
+    "john": 6
+   },
+   "per_seed": [
+    {
+     "sally": 7,
+     "john": 3
+    },
+    {
+     "sally": 7,
+     "john": 3
+    }
+   ],
+   "rates": {
+    "john": {
+     "rate": 0.3,
+     "ci": [
+      0.14547527396899385,
+      0.5189767762289793
+     ]
+    },
+    "sally": {
+     "rate": 0.7,
+     "ci": [
+      0.4810232237710206,
+      0.854524726031006
+     ]
+    }
+   },
+   "by_first_listed": {
+    "john": {
+     "sally": 8,
+     "john": 2
+    },
+    "sally": {
+     "sally": 6,
+     "john": 4
+    }
+   },
+   "pass": false
+  },
+  "tom": {
+   "n": 20,
+   "counts": {
+    "sally": 9,
+    "john": 11
+   },
+   "per_seed": [
+    {
+     "sally": 6,
+     "john": 4
+    },
+    {
+     "sally": 3,
+     "john": 7
+    }
+   ],
+   "rates": {
+    "john": {
+     "rate": 0.55,
+     "ci": [
+      0.3420820083075997,
+      0.7418049791429071
+     ]
+    },
+    "sally": {
+     "rate": 0.45,
+     "ci": [
+      0.25819502085709295,
+      0.6579179916924003
+     ]
+    }
+   },
+   "by_first_listed": {
+    "john": {
+     "sally": 7,
+     "john": 3
+    },
+    "sally": {
+     "john": 8,
+     "sally": 2
+    }
+   },
+   "pass": true
+  }
+ },
+ "pass": false
+}
