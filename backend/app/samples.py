@@ -898,22 +898,23 @@ HIRING_PANEL_FLAT_V2 = Scenario.model_validate(
             "priya": FLAT_V2_SHARED_IDS + ["F1", "F3", "F5", "F6", "G8"],
             "tom": FLAT_V2_SHARED_IDS + ["F2", "F8", "F10", "F14"],
         },
-        # Gate results from docs/probes/S1_report.md §5 (claude-haiku-4-5, 10
-        # trials, default prompt): pooled reviewer Sally 10/10; each agent alone
-        # picks the shared-only candidate John 10/10. Naive prompt also passes
-        # (pooled 10/10; alone all >=8/10).
+        # gate_pool.py, 4-panelist hands, balanced candidate order, default
+        # prompt, 10 trials: pooled reviewer Sally 10/10; alone->John dana 10,
+        # marcus 8, priya 5, tom 10. Naive prompt: alone dana 5, marcus 0,
+        # priya 0, tom 4. Not a passing hidden profile under balanced order;
+        # hiring-panel-flat-v3 is the designed profile.
         "validation": {
             "claude-haiku-4-5": {
                 "aloneWrongRate": {
                     "dana": 1.0,
-                    "marcus": 1.0,
-                    "priya": 1.0,
+                    "marcus": 0.8,
+                    "priya": 0.5,
                     "tom": 1.0,
                 },
                 "pooledRightRate": 1.0,
                 "trials": 10,
                 "date": "2026-09-14",
-                "passed": True,
+                "passed": False,
             }
         },
     }
