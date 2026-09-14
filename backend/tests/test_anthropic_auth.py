@@ -114,6 +114,9 @@ class _StubProvider:
     def token(self) -> str:
         return self._token
 
+    def invalidate(self) -> None:
+        return None
+
 
 def test_client_wif_mode(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)

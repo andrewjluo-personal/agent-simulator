@@ -40,6 +40,12 @@ class LLMResponse:
     model: str
 
 
+class TokenProvider(Protocol):
+    def token(self) -> str: ...
+
+    def invalidate(self) -> None: ...
+
+
 class LLMClient(Protocol):
     provider: str
 
@@ -52,16 +58,16 @@ class AnthropicClient:
     def __init__(
         self,
         api_key: str | None = None,
-        token_provider: WIFTokenProvider | None = None,
+        token_provider: TokenProvider | None = None,
     ) -> None:
         key = api_key or os.getenv("ANTHROPIC_API_KEY")
         self._key: str | None = None
-        self._token_provider: WIFTokenProvider | None = None
+        self._token_provider: TokenProvider | None = None
         if key:
             self._key = key
             self.auth_mode = "api_key"
         else:
-            provider = token_provider
+            provider: TokenProvider | None = token_provider
             config = WIFConfig.from_env()
             if provider is None and config is not None:
                 provider = WIFTokenProvider(config)
