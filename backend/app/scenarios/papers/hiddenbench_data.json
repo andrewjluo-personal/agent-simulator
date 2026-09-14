@@ -1703,7 +1703,7 @@
     "facts": [
       {
         "id": "S1",
-        "candidateId": "option-c-logistics-software-company",
+        "candidateId": "option-b-ai-hardware-startup",
         "valence": "pro",
         "weight": 1,
         "text": "Industry analysts say Option B has a stable revenue base and recently announced strong sales growth.",
@@ -1717,7 +1717,7 @@
       {
         "id": "S2",
         "candidateId": "option-c-logistics-software-company",
-        "valence": "pro",
+        "valence": "con",
         "weight": 1,
         "text": "Option C just lost one of its major customers, dropping its current revenues.",
         "memoText": "Option C just lost one of its major customers, dropping its current revenues.",
@@ -1729,8 +1729,8 @@
       },
       {
         "id": "S3",
-        "candidateId": "option-c-logistics-software-company",
-        "valence": "pro",
+        "candidateId": "option-a-biomedical-startup",
+        "valence": "con",
         "weight": 1,
         "text": "Option A is rumored to have unresolved legal disputes over intellectual property, making it controversial.",
         "memoText": "Option A is rumored to have unresolved legal disputes over intellectual property, making it controversial.",
@@ -1742,7 +1742,7 @@
       },
       {
         "id": "S4",
-        "candidateId": "option-c-logistics-software-company",
+        "candidateId": "option-b-ai-hardware-startup",
         "valence": "pro",
         "weight": 1,
         "text": "Venture capitalists are especially interested in B's sector and predict strong growth in the coming years.",
@@ -1755,9 +1755,9 @@
       },
       {
         "id": "H1",
-        "candidateId": "option-c-logistics-software-company",
-        "valence": "pro",
-        "weight": 1,
+        "candidateId": "option-b-ai-hardware-startup",
+        "valence": "con",
+        "weight": 2,
         "text": "Option B's chief engineer, responsible for the core product, will resign immediately after any acquisition, and she is not under a non-compete agreement.",
         "memoText": "Option B's chief engineer, responsible for the core product, will resign immediately after any acquisition, and she is not under a non-compete agreement.",
         "keywords": [
@@ -1770,7 +1770,7 @@
         "id": "H2",
         "candidateId": "option-c-logistics-software-company",
         "valence": "pro",
-        "weight": 1,
+        "weight": 2,
         "text": "Option C's lost customer had already announced a plan to return if the founders remain on board post-acquisition.",
         "memoText": "Option C's lost customer had already announced a plan to return if the founders remain on board post-acquisition.",
         "keywords": [
@@ -1781,9 +1781,9 @@
       },
       {
         "id": "H3",
-        "candidateId": "option-c-logistics-software-company",
-        "valence": "pro",
-        "weight": 1,
+        "candidateId": "option-a-biomedical-startup",
+        "valence": "con",
+        "weight": 2,
         "text": "Option A's key patent, responsible for most of its value, expires next year and cannot be renewed.",
         "memoText": "Option A's key patent, responsible for most of its value, expires next year and cannot be renewed.",
         "keywords": [
@@ -1794,9 +1794,9 @@
       },
       {
         "id": "H4",
-        "candidateId": "option-c-logistics-software-company",
-        "valence": "pro",
-        "weight": 1,
+        "candidateId": "option-b-ai-hardware-startup",
+        "valence": "con",
+        "weight": 2,
         "text": "Option B's largest clients have contracts that cannot be transferred if the company changes ownership, and the sales team is not able to renegotiate them.",
         "memoText": "Option B's largest clients have contracts that cannot be transferred if the company changes ownership, and the sales team is not able to renegotiate them.",
         "keywords": [
@@ -1869,7 +1869,7 @@
       "paper": "HiddenBench (Yassellee et al., 2025)",
       "doiOrUrl": "https://github.com/yassellee/HiddenBench",
       "fidelity": "verbatim",
-      "notes": "Converted from HiddenBench task data verbatim. Rationale: I started by choosing 4 participants and 3 possible company acquisition targets. Option B is the decoy toward which shared information steers the group: it seems financially stable and poised for growth. The shared facts all support this decoy (Option B), making it look safer than A (high risk) or C (doubtful leadership).\n\nEach hidden fact looks plausible but is insufficient alone: Each one rules out a different option or provides a critical constraint only when combined with the others. For example, knowing that Option A's key patents are expiring soon makes it seem risky, but with only that hidden fact, Option B still looks best. Another hidden fact reveals Option B is about to lose its chief engineer (likely hurting its prospects), which alone isn\u2019t enough to disqualify it totally, but together with a third hidden piece showing client commitments can\u2019t transfer, it decides the case.\n\nWhen all four hidden pieces are pooled, Option B's growth projections are exposed as hollow (engineer leaving, client contracts non-transferable), Option A is shown as near bankruptcy (key patent expiring soon and legal disputes unresolved), and Option C is revealed to have hidden strengths (experienced founders can stabilize it, remaining key clients, better resilience). Thus, C stands out as the only logical acquisition. Each hidden item is vital; without any one, you can't uniquely identify C as the only correct answer\u2014the decoy B remains plausible in all partial views.\n\nThe design enforces information sharing; no individual can solve it alone, but pooling facts makes the answer clear. The shared info and each hidden item mislead toward B unless all are combined, fitting all the given requirements for the group decision task. Design uses 3 candidates, 4 participants, 4 shared facts, and 4 hidden facts (8 total). No human-group result is reported in the supplied benchmark; approx. human result is not available. Valence inferred: S1: valence inferred: pro for 'Option C: Logistics software company'; shared option mentions=none | S2: valence inferred: pro for 'Option C: Logistics software company'; shared option mentions=none | S3: valence inferred: pro for 'Option C: Logistics software company'; shared option mentions=none | S4: valence inferred: pro for 'Option C: Logistics software company'; shared option mentions=none | H1: valence inferred: pro for 'Option C: Logistics software company'; option mentions=none | H2: valence inferred: pro for 'Option C: Logistics software company'; option mentions=none | H3: valence inferred: pro for 'Option C: Logistics software company'; option mentions=none | H4: valence inferred: pro for 'Option C: Logistics software company'; option mentions=Option C: Logistics software company"
+      "notes": "Converted from HiddenBench task data verbatim. Rationale: I started by choosing 4 participants and 3 possible company acquisition targets. Option B is the decoy toward which shared information steers the group: it seems financially stable and poised for growth. The shared facts all support this decoy (Option B), making it look safer than A (high risk) or C (doubtful leadership).\n\nEach hidden fact looks plausible but is insufficient alone: Each one rules out a different option or provides a critical constraint only when combined with the others. For example, knowing that Option A's key patents are expiring soon makes it seem risky, but with only that hidden fact, Option B still looks best. Another hidden fact reveals Option B is about to lose its chief engineer (likely hurting its prospects), which alone isn\u2019t enough to disqualify it totally, but together with a third hidden piece showing client commitments can\u2019t transfer, it decides the case.\n\nWhen all four hidden pieces are pooled, Option B's growth projections are exposed as hollow (engineer leaving, client contracts non-transferable), Option A is shown as near bankruptcy (key patent expiring soon and legal disputes unresolved), and Option C is revealed to have hidden strengths (experienced founders can stabilize it, remaining key clients, better resilience). Thus, C stands out as the only logical acquisition. Each hidden item is vital; without any one, you can't uniquely identify C as the only correct answer\u2014the decoy B remains plausible in all partial views.\n\nThe design enforces information sharing; no individual can solve it alone, but pooling facts makes the answer clear. The shared info and each hidden item mislead toward B unless all are combined, fitting all the given requirements for the group decision task. Design uses 3 candidates, 4 participants, 4 shared facts, and 4 hidden facts (8 total). No human-group result is reported in the supplied benchmark; approx. human result is not available. Fact tags hand-corrected: the importer could not resolve letter-only option mentions (\"Option B\"), so shared facts are tagged pro B / con A / con C as written and hidden facts weighted 2 so that each participant alone leans to the decoy B while the pooled facts point to C."
     },
     "parentId": null,
     "createdAt": null
