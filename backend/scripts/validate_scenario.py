@@ -2,7 +2,7 @@
 optionally, real free_discussion simulation runs.
 
 Usage:
-  .venv/bin/python scripts/validate_scenario.py hiring-panel-v1 \
+  .venv/bin/python scripts/validate_scenario.py hiring-panel-flat-v2 \
       [--model claude-haiku-4-5] [--trials 10] [--provider anthropic|fake] \
       [--discussion-runs 10] [--no-save]
 """

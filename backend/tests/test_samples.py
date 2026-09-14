@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+from collections import Counter
 
 import pytest
 
-from app import truth, validator
+from app import prompts, truth, validator
 from app.llm import FakeClient
-from app.models import Scenario
-from app.samples import HIRING_PANEL_NULL, SAMPLE_SCENARIOS, ensure_samples
+from app.models import RunConfig, Scenario
+from app.samples import HIRING_PANEL_FLAT_V2, HIRING_PANEL_NULL, SAMPLE_SCENARIOS, ensure_samples
 from app.scenarios.papers import PAPER_SCENARIOS
 
 # hiring-panel-null is a zero-margin bias control, deliberately not a hidden profile.
@@ -40,7 +41,7 @@ def test_sample_is_hidden_profile_and_each_hand_favors_shared_verdict(scenario: 
 
 def test_sample_ids_are_unique() -> None:
     assert len({scenario.id for scenario in SAMPLE_SCENARIOS}) == len(SAMPLE_SCENARIOS)
-    assert SAMPLE_SCENARIOS[0].id == "hiring-panel-v1"
+    assert SAMPLE_SCENARIOS[0].id == "hiring-panel-flat-v2"
 
 
 @pytest.mark.parametrize("scenario", SAMPLE_SCENARIOS, ids=lambda scenario: scenario.id)
@@ -80,6 +81,10 @@ class _StubStore:
         self._scenarios[scenario.id] = scenario
         self.upserted.append(scenario.id)
 
+    def delete_scenario(self, scenario_id: str) -> bool:
+        scenario = self._scenarios.pop(scenario_id, None)
+        return scenario is not None
+
 
 def test_ensure_samples_inserts_missing() -> None:
     store = _StubStore()
@@ -103,6 +108,23 @@ def test_ensure_samples_overwrites_stale_rows() -> None:
     assert store.upserted == [stale.id]
     assert store.get_scenario(stale.id) == SAMPLE_SCENARIOS[0]
     assert store.get_scenario("custom-1") == custom
+
+
+def test_hiring_panel_samples_have_four_panelists() -> None:
+    for s in (HIRING_PANEL_FLAT_V2, HIRING_PANEL_NULL):
+        assert [a.id for a in s.agents] == ["dana", "marcus", "priya", "tom"]
+        cfg = RunConfig()  # balanced candidate order, seed 0
+        split = Counter(
+            prompts.resolve_candidate_order(s, cfg, a) for a in s.agents
+        )
+        assert split == Counter({"fixed": 2, "reversed": 2})
+        assert prompts.resolve_candidate_order(s, cfg, None) == "fixed"
+    assert truth.shared_only_verdict(HIRING_PANEL_FLAT_V2) == "john"
+    assert truth.pooled_verdict(HIRING_PANEL_FLAT_V2) == "sally"
+    assert all(
+        truth.verdict(HIRING_PANEL_FLAT_V2, hand) == "john"
+        for hand in HIRING_PANEL_FLAT_V2.distribution.values()
+    )
 
 
 def test_null_pool_candidates_symmetric() -> None:

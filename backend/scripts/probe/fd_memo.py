@@ -12,7 +12,7 @@ from app.store import MemoryStore
 
 RUNS = int(sys.argv[1])
 STYLE = sys.argv[2] if len(sys.argv) > 2 else "memo"
-scenario = SAMPLES_BY_ID["hiring-panel-v1"]
+scenario = SAMPLES_BY_ID["hiring-panel-flat-v2"]
 
 
 async def one(client: CountingClient, seed: int, sem: asyncio.Semaphore) -> bool:

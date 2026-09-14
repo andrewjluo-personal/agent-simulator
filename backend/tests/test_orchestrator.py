@@ -150,9 +150,9 @@ def test_compute_metrics_arithmetic() -> None:
     assert m.correct
     assert m.decisive_surfaced_count == 2
     assert abs(m.decisive_surfaced - 2 / len(decisive)) < 1e-9
-    assert m.agreement == 0.8
-    assert m.hallucination_count == 5
-    assert m.vote_trajectory == [{"sally": 4, "john": 1}]
+    assert m.agreement == 0.75
+    assert m.hallucination_count == 4
+    assert m.vote_trajectory == [{"sally": 3, "john": 1}]
 
 
 def test_pre_discussion_ballot_has_no_transcript() -> None:
@@ -230,11 +230,7 @@ def _tie_client(monkeypatch: pytest.MonkeyPatch, agent_ids: list[str]) -> FakeCl
         idx = agent_ids.index(meta["agent_id"])
         return json.dumps(
             {
-                "vote": (
-                    "undecided"
-                    if idx == len(agent_ids) - 1
-                    else ("john" if idx % 2 == 0 else "sally")
-                ),
+                "vote": ("undecided" if idx >= 2 else ("john" if idx % 2 == 0 else "sally")),
                 "confidence": 0.6,
                 "reason": "fixed",
             }
@@ -269,7 +265,7 @@ def test_tie_break_none_stops_on_tie(monkeypatch: pytest.MonkeyPatch) -> None:
         assert len(final.votes) == (run.config.rounds + 1) * n
         assert final.metrics is not None
         assert final.metrics.majority_candidate_id == "undecided"
-        assert final.metrics.agreement == 0.4
+        assert final.metrics.agreement == 0.25
 
     asyncio.run(go())
 
@@ -298,8 +294,8 @@ def test_votes_record_candidate_order() -> None:
         assert all(v.candidate_order in ("fixed", "reversed") for v in final.votes)
         pre = [v for v in final.votes if v.round == -1]
         split = Counter(v.candidate_order for v in pre)
-        # default balanced order, seed 0: agents 0,2,4 fixed, 1,3 reversed
-        assert split == Counter({"fixed": 3, "reversed": 2})
+        # default balanced order, seed 0: agents 0,2 fixed, 1,3 reversed
+        assert split == Counter({"fixed": 2, "reversed": 2})
         assert all(t.candidate_order in ("fixed", "reversed") for t in final.turns)
 
     asyncio.run(go())
