@@ -6,7 +6,7 @@ from app.paradigms import get_paradigm
 from app.samples import HIRING_PANEL_V1
 
 SCENARIO = HIRING_PANEL_V1
-CFG = RunConfig(seed=7, fact_style="labelled")
+CFG = RunConfig(seed=7, fact_style="labelled", prompt_style="default")
 DANA = next(a for a in SCENARIO.agents if a.id == "dana")
 HAND = SCENARIO.distribution["dana"]
 PARADIGM = get_paradigm("free_discussion")
@@ -86,7 +86,7 @@ def test_labelled_schema_has_items_referenced() -> None:
 
 
 def test_memo_prompt_has_no_labels() -> None:
-    cfg = RunConfig(seed=7, fact_style="memo")
+    cfg = RunConfig(seed=7, fact_style="memo", prompt_style="default")
     sp = prompts.system_prompt(SCENARIO, cfg, DANA, HAND, PARADIGM)
     tm = prompts.turn_message(SCENARIO, cfg, 1, HEARD, PARADIGM, cfg.rounds)
     for text in (sp, tm):
@@ -117,7 +117,7 @@ def test_memo_shuffle_deterministic_per_agent() -> None:
 
 
 def test_consensus_line() -> None:
-    cfg = RunConfig(seed=7, fact_style="memo")
+    cfg = RunConfig(seed=7, fact_style="memo", prompt_style="default")
     assert "consensus" not in prompts.system_prompt(SCENARIO, cfg, DANA, HAND, PARADIGM)
     consensus = SCENARIO.model_copy(update={"decision_rule": "consensus"})
     sp = prompts.system_prompt(consensus, cfg, DANA, HAND, PARADIGM)
@@ -141,7 +141,7 @@ def test_default_cfg_matches_explicit_defaults() -> None:
     explicit = RunConfig(
         seed=7,
         fact_style="memo",
-        prompt_style="default",
+        prompt_style="naive",
         transcript_visibility="full",
     )
     for a, b in (
@@ -160,8 +160,8 @@ def test_default_cfg_matches_explicit_defaults() -> None:
     ):
         assert a == b
     sp = prompts.system_prompt(SCENARIO, implicit, DANA, HAND, PARADIGM)
-    assert "RULES" in sp
-    assert "state evidence" in sp
+    assert "RULES" not in sp
+    assert "state evidence" not in sp
 
 
 def test_naive_prompt_shape() -> None:

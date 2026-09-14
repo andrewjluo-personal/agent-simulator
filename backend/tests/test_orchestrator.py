@@ -178,7 +178,9 @@ def test_pre_discussion_ballot_has_no_transcript() -> None:
 
 def test_ballot_sees_transcript_and_own_lean() -> None:
     async def go() -> None:
-        store, client, run = _run(RunConfig(rounds=1, fact_style="labelled"))
+        store, client, run = _run(
+            RunConfig(rounds=1, fact_style="labelled", prompt_style="default")
+        )
         rec = RecordingClient(client)
         await orchestrator.run_to_completion(store, rec, run.id)
         round0_votes = [
@@ -211,7 +213,9 @@ def test_hidden_transcript_naive_run_completes() -> None:
 
 def test_memo_mode_run_yields_cited() -> None:
     async def go() -> None:
-        store, client, run = _run(RunConfig(fact_style="memo", rounds=2))
+        store, client, run = _run(
+            RunConfig(fact_style="memo", rounds=2, prompt_style="default")
+        )
         rec = RecordingClient(client)
         final = await orchestrator.run_to_completion(store, rec, run.id)
         assert final.status == "done"

@@ -84,8 +84,8 @@ with `vercel env pull` if you want to exercise queues outside Vercel.
 ## Demo runs & engine version
 
 Every run is stamped with `ENGINE_VERSION` (`backend/app/engine_version.py`) — the first 12 hex of
-sha256 over `app/prompts.py`, `app/orchestrator.py`, `app/truth.py`, `app/paradigms.py`, and
-`app/samples.py`. The landing page is live-first: it auto-starts a real run on load (once per
+sha256 over `app/prompts.py`, `app/orchestrator.py`, `app/truth.py`, `app/paradigms.py`,
+`app/models.py`, and `app/samples.py`. The landing page is live-first: it auto-starts a real run on load (once per
 browser session, unless `AUTO_RUN_ON_LOAD=0`), and `/api/demo` lists the most recent *finished*
 runs — demo or live — stamped with the current version. Any deploy touching those files makes
 older runs disappear from the recent list until new ones finish.

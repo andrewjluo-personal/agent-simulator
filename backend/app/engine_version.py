@@ -1,6 +1,6 @@
 """Engine version stamps for runs. ENGINE_VERSION is the first 12 hex chars of a
 sha256 over the engine-affecting source files; any change to prompts,
-orchestrator, truth, or paradigms bumps it. Runs are stamped per scenario with
+orchestrator, truth, paradigms, or models bumps it. Runs are stamped per scenario with
 scenario_engine_version() — the engine hash combined with that scenario's
 definition — and /api/demo only serves runs stamped with the scenario's current
 version, so editing a sample pool invalidates only that scenario's demos."""
@@ -18,6 +18,7 @@ _STAMPED_FILES = (
     "orchestrator.py",
     "truth.py",
     "paradigms.py",
+    "models.py",
 )
 
 

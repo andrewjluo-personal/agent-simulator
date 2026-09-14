@@ -21,7 +21,9 @@ def test_prompt_style_default_unchanged() -> None:
     spec = get_paradigm("free_discussion")
     agent = HIRING_PANEL_V1.agents[0]
     hand = list(HIRING_PANEL_V1.distribution[agent.id])
-    default = prompts.system_prompt(HIRING_PANEL_V1, RunConfig(), agent, hand, spec)
+    default = prompts.system_prompt(
+        HIRING_PANEL_V1, RunConfig(prompt_style="default"), agent, hand, spec
+    )
     naive = prompts.system_prompt(
         HIRING_PANEL_V1, RunConfig(prompt_style="naive"), agent, hand, spec
     )

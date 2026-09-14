@@ -121,7 +121,7 @@ class RunConfig(Model):
     candidate_order: CandidateOrder = "balanced"
     tie_break: TieBreak = "runoff"
     fact_style: FactStyle = "memo"
-    prompt_style: PromptStyle = "default"
+    prompt_style: PromptStyle = "naive"
     transcript_visibility: TranscriptVisibility = "full"
     model: str = "claude-haiku-4-5"
     seed: int = 0
