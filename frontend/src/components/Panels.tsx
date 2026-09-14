@@ -31,6 +31,7 @@ export type ControlsProps = {
   onChange: (c: RunConfig) => void
   scenarios: Scenario[]
   onSelectScenario: (id: string) => void
+  onOpenLab: () => void
   onResetScenario: () => void
   paradigms: { id: Paradigm; label: string }[]
   n: number
@@ -57,11 +58,12 @@ export function Controls(p: ControlsProps) {
         <select value={p.config.scenarioId} onChange={(e) => p.onSelectScenario(e.target.value)}>
           {p.scenarios.map((s) => (
             <option key={s.id} value={s.id}>
-              {s.title}
+              {s.title} [{s.source?.kind ?? 'sample'}]
             </option>
           ))}
         </select>
       </label>
+      <button type="button" onClick={p.onOpenLab}>Scenario Lab</button>
       {selected?.isSample && (
         <button className="link" onClick={p.onResetScenario} title="Restore this sample scenario to its original state">
           Reset scenario
