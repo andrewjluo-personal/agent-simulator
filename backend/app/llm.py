@@ -14,6 +14,7 @@ from typing import Any, Protocol
 
 import httpx
 
+from .anthropic_auth import WIFConfig, WIFTokenProvider
 from .telemetry import emit
 from .truth import UNDECIDED
 
@@ -48,11 +49,37 @@ class LLMClient(Protocol):
 class AnthropicClient:
     provider = "anthropic"
 
-    def __init__(self, api_key: str | None = None) -> None:
+    def __init__(
+        self,
+        api_key: str | None = None,
+        token_provider: WIFTokenProvider | None = None,
+    ) -> None:
         key = api_key or os.getenv("ANTHROPIC_API_KEY")
-        if not key:
-            raise RuntimeError("ANTHROPIC_API_KEY is not set")
-        self._key = key
+        self._key: str | None = None
+        self._token_provider: WIFTokenProvider | None = None
+        if key:
+            self._key = key
+            self.auth_mode = "api_key"
+        else:
+            provider = token_provider
+            config = WIFConfig.from_env()
+            if provider is None and config is not None:
+                provider = WIFTokenProvider(config)
+            if provider is None:
+                raise RuntimeError(
+                    "ANTHROPIC_API_KEY is not set (set it for deployed/Vercel use) "
+                    "and Devin workload identity federation is not enabled "
+                    "(ANTHROPIC_AUTH=wif plus ANTHROPIC_FEDERATION_RULE_ID/"
+                    "ANTHROPIC_ORGANIZATION_ID/ANTHROPIC_SERVICE_ACCOUNT_ID)"
+                )
+            self._token_provider = provider
+            self.auth_mode = "wif"
+
+    def _auth_headers(self) -> dict[str, str]:
+        if self._token_provider is not None:
+            return {"Authorization": f"Bearer {self._token_provider.token()}"}
+        assert self._key is not None
+        return {"x-api-key": self._key}
 
     async def complete(self, req: LLMRequest) -> LLMResponse:
         body = {
@@ -62,13 +89,14 @@ class AnthropicClient:
             "messages": [{"role": "user", "content": req.user}],
             "temperature": 1.0,
         }
-        headers = {
-            "x-api-key": self._key,
-            "anthropic-version": API_VERSION,
-            "content-type": "application/json",
-        }
         last_exc: Exception | None = None
+        saw_401 = False
         for attempt in range(3):
+            headers = {
+                **await asyncio.to_thread(self._auth_headers),
+                "anthropic-version": API_VERSION,
+                "content-type": "application/json",
+            }
             started = time.perf_counter()
             try:
                 async with httpx.AsyncClient(timeout=60) as client:
@@ -111,6 +139,15 @@ class AnthropicClient:
                     exc.response.status_code == 429 or exc.response.status_code >= 500
                 )
                 if not isinstance(exc, httpx.HTTPStatusError):
+                    retryable = True
+                if (
+                    isinstance(exc, httpx.HTTPStatusError)
+                    and exc.response.status_code == 401
+                    and self._token_provider is not None
+                    and not saw_401
+                ):
+                    saw_401 = True
+                    self._token_provider.invalidate()
                     retryable = True
                 if not retryable or attempt == 2:
                     raise
@@ -240,13 +277,17 @@ def get_client() -> LLMClient:
     provider = os.getenv("LLM_PROVIDER")
     if provider == "fake":
         _client = FakeClient()
-    elif provider == "anthropic" or (provider is None and os.getenv("ANTHROPIC_API_KEY")):
+    elif provider == "anthropic" or (
+        provider is None
+        and (os.getenv("ANTHROPIC_API_KEY") or WIFConfig.from_env() is not None)
+    ):
         _client = AnthropicClient()
     elif provider is None:
         _client = FakeClient()
     else:
         raise RuntimeError(f"unknown LLM_PROVIDER {provider!r}")
-    emit("info", "llm.provider", provider=_client.provider)
+    auth_mode = _client.auth_mode if isinstance(_client, AnthropicClient) else None
+    emit("info", "llm.provider", provider=_client.provider, authMode=auth_mode)
     return _client
 
 

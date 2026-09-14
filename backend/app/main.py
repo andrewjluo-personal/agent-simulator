@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from . import db, llm, orchestrator, queues, truth, validation_jobs
+from .anthropic_auth import vercel_oidc_context
 from .engine_version import ENGINE_VERSION
 from .models import (
     BatchState,
@@ -35,6 +36,7 @@ from .telemetry import emit, request_logger, server_timing
 app = FastAPI(title="agent-simulator api")
 app.middleware("http")(request_logger)
 app.middleware("http")(server_timing)
+app.middleware("http")(vercel_oidc_context)
 
 allowed_origins = [
     origin.strip()
