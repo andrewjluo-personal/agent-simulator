@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import importlib
+import json
 
 from app import orchestrator
 from app.engine_version import ENGINE_VERSION, scenario_engine_version
-from app.models import RunConfig, ValidationResult
+from app.models import RunConfig, Scenario, ValidationResult
 from app.samples import SAMPLE_SCENARIOS, SAMPLES_BY_ID
 from app.store import MemoryStore
 
@@ -43,6 +44,16 @@ def test_scenario_engine_version_tracks_scenario_content() -> None:
 
     other = next(s for s in SAMPLE_SCENARIOS if s.id != SID)
     assert scenario_engine_version(other) != scenario_engine_version(scenario)
+
+
+def test_scenario_engine_version_ignores_dict_key_order() -> None:
+    scenario = SAMPLES_BY_ID[SID]
+    payload = json.loads(scenario.model_dump_json(by_alias=True))
+    payload["distribution"] = dict(reversed(list(payload["distribution"].items())))
+    reordered = Scenario.model_validate(payload)
+    assert list(reordered.distribution) != list(scenario.distribution)
+    assert reordered.model_dump_json() != scenario.model_dump_json()
+    assert scenario_engine_version(reordered) == scenario_engine_version(scenario)
 
 
 def test_new_run_stamps_scenario_engine_version() -> None:

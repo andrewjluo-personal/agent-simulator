@@ -8,6 +8,7 @@ version, so editing a sample pool invalidates only that scenario's demos."""
 from __future__ import annotations
 
 import hashlib
+import json
 from pathlib import Path
 
 from .models import Scenario
@@ -35,10 +36,11 @@ def scenario_engine_version(scenario: Scenario) -> str:
     """Per-scenario run stamp: engine hash plus the scenario definition.
 
     Fields that don't affect run validity (validation results, provenance) are
-    excluded, so recording a validation doesn't orphan seeded demo runs."""
+    excluded, so recording a validation doesn't orphan seeded demo runs. The
+    JSON is canonicalised (sorted keys) so a scenario round-tripped through
+    Postgres jsonb, which reorders object keys, stamps identically."""
     h = hashlib.sha256()
     h.update(ENGINE_VERSION.encode())
-    h.update(
-        scenario.model_dump_json(exclude={"validation", "created_at", "is_sample"}).encode()
-    )
+    payload = scenario.model_dump(mode="json", exclude={"validation", "created_at", "is_sample"})
+    h.update(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode())
     return h.hexdigest()[:12]
