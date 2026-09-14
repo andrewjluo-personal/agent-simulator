@@ -26,7 +26,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent))
 
 from gate_pool import CountingClient
-from probe_lib import cost_usd, echo_by_round, load_scenario_arg, spoken_verdict, wilson
+from probe_lib import (
+    cost_usd,
+    echo_by_round,
+    load_scenario_arg,
+    order_for_sample,
+    spoken_verdict,
+    wilson,
+)
 
 from app import orchestrator, truth
 from app.llm import AnthropicClient
@@ -120,6 +127,7 @@ def run_row(final: RunState, scenario: Scenario, plants: tuple[Plant, ...]) -> d
         "scenario": scenario.id,
         "prompt_style": final.config.prompt_style,
         "turn_order": final.config.turn_order,
+        "candidate_order": final.config.candidate_order,
         "planted": [p.__dict__ for p in plants],
         "correct_candidate": truth.pooled_verdict(scenario),
         "pre_votes": pre,
@@ -160,6 +168,8 @@ async def one(
     seed: int,
     prompt: PromptStyle,
     order: TurnOrder,
+    cand_order: str,
+    run_idx: int,
     rounds: int,
     plants: tuple[Plant, ...],
     sem: asyncio.Semaphore,
@@ -177,6 +187,7 @@ async def one(
             turn_order=order,
             prompt_style=prompt,
             model=MODEL,
+            candidate_order=order_for_sample(cand_order, run_idx),
         ),
         provider="anthropic",
     )
@@ -194,10 +205,18 @@ async def main() -> int:
     ap.add_argument("--dump-dir")
     ap.add_argument("--plant")
     ap.add_argument("--order", choices=["clockwise", "random"], default="random")
+    ap.add_argument(
+        "--candidate-order",
+        choices=["balanced", "random", "fixed"],
+        default="balanced",
+        help="candidate listing order; 'balanced' alternates per run (--runs must be even)",
+    )
     ap.add_argument("--rounds", type=int, default=3)
     ap.add_argument("--concurrency", type=int, default=4)
     ap.add_argument("--cell", choices=sorted(P1_CELLS))
     args = ap.parse_args()
+    if args.candidate_order == "balanced" and args.runs % 2:
+        ap.error("--runs must be even for balanced candidate order")
 
     scenario = load_scenario_arg(args.scenario)
     plants = load_plants(args.plant)
@@ -212,7 +231,18 @@ async def main() -> int:
     seeds = range(args.seed_start, args.seed_start + args.runs)
     finals = await asyncio.gather(
         *(
-            one(client, scenario, s, args.prompt, args.order, args.rounds, plants, sem)
+            one(
+                client,
+                scenario,
+                s,
+                args.prompt,
+                args.order,
+                args.candidate_order,
+                s - args.seed_start,
+                args.rounds,
+                plants,
+                sem,
+            )
             for s in seeds
         )
     )

@@ -30,7 +30,7 @@ async def _alone_votes(
     cfg = RunConfig(scenario_id=scenario.id)
     spec = get_paradigm("free_discussion")
     system = prompts.system_prompt(scenario, cfg, agent, hand, spec)
-    user = prompts.alone_vote_message(scenario, cfg)
+    user = prompts.alone_vote_message(scenario, cfg, agent)
     candidate_ids = {c.id for c in scenario.candidates}
 
     async def one(trial: int) -> str:

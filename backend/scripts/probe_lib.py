@@ -11,10 +11,17 @@ from pathlib import Path
 from typing import Any
 
 from app import truth
-from app.models import Scenario
+from app.models import CandidateOrder, Scenario
 
 HAIKU_USD_PER_M_IN = 0.8
 HAIKU_USD_PER_M_OUT = 4.0
+
+
+def order_for_sample(order_mode: str, j: int) -> CandidateOrder:
+    """Candidate order for sample index j; `balanced` alternates fixed/reversed."""
+    if order_mode == "balanced":
+        return "fixed" if j % 2 == 0 else "reversed"
+    return order_mode  # type: ignore[return-value]
 
 
 def cost_usd(input_tokens: int, output_tokens: int) -> float:

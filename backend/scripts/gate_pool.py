@@ -21,7 +21,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent))
 
-from probe_lib import cost_usd, load_scenario_arg
+from probe_lib import cost_usd, load_scenario_arg, order_for_sample
 
 from app import prompts, truth, validate
 from app.llm import AnthropicClient, LLMClient, LLMRequest, LLMResponse
@@ -54,9 +54,6 @@ POOLED = AgentPersona(
 )
 
 
-REASONS: dict[str, list[dict[str, Any]]] = {}
-
-
 async def votes(
     client: LLMClient,
     scenario: Scenario,
@@ -64,21 +61,19 @@ async def votes(
     hand: list[str],
     cfg: RunConfig,
     samples: int,
+    order: str = "balanced",
 ) -> Counter[str]:
     spec = get_paradigm(cfg.paradigm)
     ids = {c.id for c in scenario.candidates}
 
-    async def one(seed: int) -> tuple[str, str]:
-        # one seed per sample so memo shuffle, candidate order + run nonce vary as in real runs
-        cell_cfg = cfg.model_copy(update={"seed": seed})
+    async def one(seed: int) -> tuple[str, str, str]:
+        # one seed per sample so memo shuffle + run nonce vary as they do in real runs
+        shown = order_for_sample(order, seed % samples)
+        cell_cfg = cfg.model_copy(update={"seed": seed, "candidate_order": shown})
         system = prompts.system_prompt(scenario, cell_cfg, agent, hand, spec)
+        user = prompts.alone_vote_message(scenario, cell_cfg, agent)
         resp = await client.complete(
-            LLMRequest(
-                system=system,
-                user=prompts.alone_vote_message(scenario, cell_cfg),
-                model=MODEL,
-                max_tokens=200,
-            )
+            LLMRequest(system=system, user=user, model=MODEL, max_tokens=200)
         )
         raw = validate.parse_json_object(resp.text) or {}
         v = raw.get("vote")
@@ -86,13 +81,18 @@ async def votes(
         return (
             v if isinstance(v, str) and v in ids else truth.UNDECIDED,
             reason if isinstance(reason, str) else "",
+            prompts.ordered_candidates(scenario, cell_cfg, agent)[0].id,
         )
 
     results = await asyncio.gather(*(one(i) for i in range(samples)))
-    REASONS.setdefault(agent.id, []).extend(
-        {"seed": i, "vote": v, "reason": r} for i, (v, r) in enumerate(results)
-    )
-    return Counter(v for v, _ in results)
+    REASONS[agent.id] = [
+        {"seed": i, "first": first, "vote": v, "reason": r}
+        for i, (v, r, first) in enumerate(results)
+    ]
+    return Counter(v for v, _, _ in results)
+
+
+REASONS: dict[str, list[dict[str, Any]]] = {}
 
 
 async def gate(
@@ -101,49 +101,46 @@ async def gate(
     style: PromptStyle,
     samples: int,
     fact_style: str,
-    order: str = "fixed",
+    order: str = "balanced",
 ) -> dict[str, Any]:
     REASONS.clear()
-    cfg = RunConfig(
-        prompt_style=style,
-        fact_style=fact_style,  # type: ignore[arg-type]
-        seed=0,
-        candidate_order=order,  # type: ignore[arg-type]
-    )
+    cfg = RunConfig(prompt_style=style, fact_style=fact_style, seed=0, candidate_order="fixed")  # type: ignore[arg-type]
     correct = truth.verdict(scenario, truth.pooled_fact_ids(scenario))
     shared_v = truth.verdict(scenario, truth.shared_fact_ids(scenario))
     pooled = await votes(
-        client, scenario, POOLED, sorted(truth.pooled_fact_ids(scenario)), cfg, samples
+        client,
+        scenario,
+        POOLED,
+        sorted(truth.pooled_fact_ids(scenario)),
+        cfg,
+        samples,
+        order,
     )
     alone = {
-        a.id: await votes(client, scenario, a, list(scenario.distribution[a.id]), cfg, samples)
+        a.id: await votes(
+            client, scenario, a, list(scenario.distribution[a.id]), cfg, samples, order
+        )
         for a in scenario.agents
     }
     pooled_right = pooled[correct] / samples
     alone_wrong = {a: c[shared_v] / samples for a, c in alone.items()}
-    # alone->shared-verdict split by which candidate was listed first (even seeds keep
-    # scenario order, odd seeds reverse it under "alternate")
     by_order = {
         a: {
-            "first_listed_" + scenario.candidates[0].id: sum(
-                r["vote"] == shared_v for r in REASONS[a] if r["seed"] % 2 == 0
-            ),
-            "first_listed_" + scenario.candidates[1].id: sum(
-                r["vote"] == shared_v for r in REASONS[a] if r["seed"] % 2 == 1
-            ),
+            "first_" + c.id: sum(r["vote"] == shared_v for r in REASONS[a] if r["first"] == c.id)
+            for c in scenario.candidates
         }
         for a in alone
     }
     return {
         "scenario": scenario.id,
         "prompt": style,
+        "order": order,
         "correct": correct,
         "shared_verdict": shared_v,
         "pooled": dict(pooled),
         "pooled_right": pooled_right,
         "alone": {a: dict(c) for a, c in alone.items()},
         "alone_wrong": alone_wrong,
-        "order": order,
         "alone_wrong_by_order": by_order,
         "reasons": dict(REASONS),
         "pass": pooled_right >= 0.8 and all(v >= 0.8 for v in alone_wrong.values()),
@@ -156,9 +153,16 @@ async def main() -> int:
     parser.add_argument("--prompt", nargs="+", default=["naive", "default"])
     parser.add_argument("--samples", type=int, default=10)
     parser.add_argument("--fact-style", default="memo")
-    parser.add_argument("--order", choices=["random", "fixed", "alternate"], default="fixed")
+    parser.add_argument(
+        "--order",
+        choices=["balanced", "random", "fixed"],
+        default="balanced",
+        help="candidate order; 'balanced' alternates per sample (--samples must be even)",
+    )
     parser.add_argument("--out", default="scripts/probe/out/gate")
     args = parser.parse_args()
+    if args.order == "balanced" and args.samples % 2:
+        parser.error("--samples must be even for balanced order")
     client = CountingClient(AnthropicClient())
     scenario = load_scenario_arg(args.scenario)
     out_dir = Path(args.out)

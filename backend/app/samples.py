@@ -1328,7 +1328,7 @@ HIRING_PANEL_FLAT_V3 = Scenario.model_validate(
             "tom": FLAT_V3_SHARED_IDS + ["VU4"],
             "omar": FLAT_V3_SHARED_IDS + ["VU5", "VU7"],
         },
-        # gate_pool.py, seeds 0-7, order=alternate (4 John-first / 4 Sally-first per cell),
+        # gate_pool.py, seeds 0-7, order=balanced (4 John-first / 4 Sally-first per cell),
         # default prompt. naive passed (dana 1.0, marcus .875, priya 1.0, tom 1.0, omar 1.0);
         # default fails on priya (6/8). See docs/probes/S4_flat_v3.md.
         "validation": {
