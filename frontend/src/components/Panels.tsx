@@ -66,17 +66,13 @@ export type ControlsProps = {
   onOpenLab: () => void
   onResetScenario: () => void
   paradigms: { id: Paradigm; label: string }[]
-  n: number
-  onChangeN: (n: number) => void
   status: 'idle' | 'playing' | 'paused' | 'finished'
   hasCached: boolean
   onPlayCached: () => void
   onPlayLive: () => void
-  onRunBatch: () => void
   onPause: () => void
   onResume: () => void
   onSkip: () => void
-  busy: boolean
   apiDown: boolean
 }
 
@@ -176,15 +172,9 @@ export function Controls(p: ControlsProps) {
         </button>
       )}
       {p.status === 'playing' && <button onClick={p.onSkip}>⏭ Skip</button>}
-      <button onClick={p.onPlayLive} disabled={p.busy || p.apiDown} title="Start a new run with live LLM agents">
+      <button onClick={p.onPlayLive} disabled={p.apiDown} title="Start a new run with live LLM agents">
         ⚡ Run live
       </button>
-      <span className="batch">
-        <button onClick={p.onRunBatch} disabled={p.busy || p.apiDown}>
-          Run ×
-        </button>
-        <input type="number" min={1} max={25} value={p.n} onChange={(e) => p.onChangeN(Number(e.target.value))} />
-      </span>
     </div>
   )
 }
@@ -259,23 +249,16 @@ export function ResultsStrip({
   rows,
   activeRunId,
   onPick,
-  pending,
 }: {
   rows: StripRow[]
   activeRunId: string | null
   onPick: (id: string) => void
-  pending: { done: number; total: number } | null
 }) {
   return (
     <div className="strip">
       <div className="strip-head">
         <h3>Recent runs</h3>
         <span className="muted">one dot per run · green = panel chose the correct candidate · click a dot to replay</span>
-        {pending && pending.done < pending.total && (
-          <span className="progress">
-            running {pending.done}/{pending.total}
-          </span>
-        )}
       </div>
       {rows.map((row) => {
         const done = row.runs.filter((r) => r.status === 'done' && r.metrics)
@@ -313,7 +296,7 @@ export function ResultsStrip({
           </div>
         )
       })}
-      {rows.length === 0 && <p className="muted">No runs yet — press Run ×N.</p>}
+      {rows.length === 0 && <p className="muted">No runs yet — press ⚡ Run live.</p>}
     </div>
   )
 }
