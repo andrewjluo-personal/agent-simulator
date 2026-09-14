@@ -1,96 +1,115 @@
-# Do LLM panels reproduce the hidden-profile effect? A simulation bench and what it found
+# Do LLM panels reproduce the hidden-profile effect?
 
-*Research brief — agent-simulator, September 2026. Model under test throughout: `claude-haiku-4-5` ("Haiku"). All numbers below are our own measurements unless attributed to a paper.*
+*Research brief — agent-simulator, September 2026. Model under test: `claude-haiku-4-5` ("Haiku"). All numbers are our own measurements unless attributed to a paper.*
 
-## 1. Motivation
+## 1. The question
 
-Stasser & Titus (1985, 1987) showed that human groups systematically fail **hidden-profile** tasks: when the facts favouring the best option are spread thinly across members while the facts favouring an inferior option are shared by everyone, discussion tends to rehearse the shared facts and the group picks the inferior option — even though pooling everyone's notes would identify the best one. Two recent lines of work asked whether LLM groups behave the same way. HiddenBench (Li et al., arXiv 2505.11556) built 65 hidden-profile tasks and reported that multi-agent LLM groups also fall well short of their own full-information ceiling (best post-discussion accuracy 0.671 for Gemini-2.5-Pro, versus 0.435–0.981 when a single model sees everything). Both literatures leave open questions we wanted to work on directly: *why* groups fail (is it the information structure, the discussion protocol, or a prior baked into the prompt?), which interventions help, and whether the effect survives careful controls.
+In a **hidden-profile** task the facts favouring the best option are spread thinly across group members, while the facts favouring an inferior option are known to everyone. Stasser & Titus (1985, 1987) showed that human groups fail these tasks: discussion rehearses the shared facts and the group picks the inferior option, even though pooling everyone's notes would reveal the best one. HiddenBench (Li et al., arXiv 2505.11556) built 65 such tasks for multi-agent LLMs and found that LLM groups also fall well short of a single model that sees everything.
+
+We wanted to know three things: does an LLM panel fail the way humans do, *why* (information structure, discussion protocol, or a prior hidden in the prompt), and what changes the outcome.
+
+Short answer: yes, but only under the papers' own conditions. Haiku panels reproduce Stasser's group failure outright, and reproduce HiddenBench's failure only when given the paper-style prompt *and* the paper's lossy memory. Give the agents either an evidence-oriented prompt or a full transcript and they are too good: they pool and solve the task.
 
 ## 2. What we built
 
-A live, inspectable simulation bench (React + FastAPI + Postgres, Anthropic via workload-identity auth, no static keys) that runs the actual experimental designs of these papers rather than summarising them:
+A live simulation bench that runs the papers' designs rather than summarising them:
 
-- **Scenario model** — candidates, a fact library with per-candidate valence, a distribution matrix (which agent holds which fact), and derived ground truth: what the shared-only view implies, what each hand implies, what the pool implies. Scenario Lab lets you fork a scenario, redistribute facts, and see designed-vs-measured lean.
-- **Paper library** — Stasser & Titus 1985 (3 candidates × 4 members, hidden and shared-control variants), Stasser 1992 variants, and 10 HiddenBench tasks converted verbatim.
-- **Run engine with the knobs the literature argues about** — `paradigm` (`free_discussion`, `share_first`), `rounds`, `prompt_style` (`default` with evidence rules, `naive` HiddenBench-style), `fact_style` (memo vs labelled list), `transcript_visibility` (`full`, `last_round`, `none`), `candidate_order` (fixed/reversed/random/`balanced`), planted turns, seeds, pre-discussion private ballots.
-- **Observability** — an information-flow timeline showing which fact was voiced when and by whom, per-round trace metrics (coverage of unique facts, echo of shared ones), Run×N comparisons, and a seeded demo set so the bench loads with real transcripts.
-- **Certification harness** — scripts that decide whether a scenario *is* a hidden profile for the model under test (Section 3.1), a twin-null generator, a candidate-order gate, and probe runners with Wilson intervals.
+- **Scenarios** — candidates, a fact library with per-candidate valence, and a distribution matrix saying which agent holds which fact. From this the bench derives what the shared facts imply, what each hand implies, and what the full pool implies.
+- **Paper library** — the reconstructed Stasser & Titus 1985 task (3 candidates × 4 members) and HiddenBench tasks converted verbatim.
+- **Run engine** with the knobs the literature argues about: discussion paradigm (`free_discussion`, `share_first`), rounds, prompt style (`naive` = the paper-style prompt, `default` = adds evidence rules and a per-turn lean), transcript memory (`full` = every agent sees the whole transcript, `last_round` = only the previous round, as in HiddenBench), candidate order, seeds, and private pre-discussion ballots. The bench defaults are the paper conditions: `naive` prompt, `last_round` memory.
+- **Observability** — an information-flow timeline (which fact was voiced when, by whom), per-round vote trajectories, and seeded demo runs so the bench opens on real transcripts.
+- **Certification harness** — scripts that decide whether a scenario *is* a hidden profile for the model under test (§3.1).
 
 ## 3. Findings
 
-### 3.1 "Hidden profile" has to be certified against the model, not the arithmetic
+### 3.1 A scenario has to be certified against the model, not the arithmetic
 
-Our first pools were designed by counting facts: shared facts favour John, uniques favour Sally, pooled margin Sally +4. Haiku did not read them that way. Asking Haiku for the *perceived* valence of each item showed `hiring-panel-flat` was actually John +1.4 pooled — not a hidden profile at all — and every early "group beats individuals" result on it had to be withdrawn. Worse, per-item valence turned out not to be additive: item *type* (behavioural stories, incident reviews, "wrote no tests") dominates credentials regardless of per-item ratings, so a pool whose items each rate ≈0 can still vote 90% one way.
+Our first hand-built pools were designed by counting facts (shared facts favour John, uniques favour Sally). Haiku did not read them that way: item *type* (behavioural stories, "wrote no tests") outweighs credentials regardless of how each item rates on its own, so a pool whose items each rate ≈0 can still vote 90% one way. Every early "group beats individuals" result on those pools had to be withdrawn.
 
-We therefore adopted a three-gate certificate, run under the real prompt with balanced candidate order over seeds:
+We now certify each scenario with three gates, run under balanced candidate order over seeds:
 
-- **G1** every agent alone, with its full hand, picks the shared-favoured (wrong) option ≥80%;
-- **G2** a pooled reviewer holding every fact picks the correct option ≥80%;
-- **G0** the scenario's *twin null* — every fact mirrored to every candidate, symmetric blurbs — reads ≈uniform alone and pooled.
+- **G1** — every agent alone, with its full hand, picks the shared-favoured (wrong) option ≥80%.
+- **G2** — a pooled reviewer holding every fact picks the correct option ≥80%.
+- **G0** — the scenario's *twin null* (every fact mirrored to every candidate, symmetric blurbs) reads ≈uniform alone and pooled.
 
-Running this on all 25 scenarios the bench served (both prompts, 6–8 samples per cell, rotated candidate order): **only three passed G1+G2** — `stasser-1985-hidden`, `hiddenbench-laboratory-theft-deduction`, `hiddenbench-company-acquisition-decision`. The entire hand-built hiring-panel family, Stasser-1992 variants and seven HiddenBench tasks failed G1: Haiku agents solve them alone (e.g. hiring-panel-v1 alone-wrong rates 12/0/38/0/50% across five agents under the naive prompt). Three others failed G2 (pooled reviewer 0–50% correct). A side finding: our HiddenBench converter mis-tags item candidate/valence in places, so static margins for those tasks are unreliable in both directions. The bench now hides everything that fails.
+Of 25 scenarios the bench served, **only three passed G1+G2**: `stasser-1985-hidden`, `hiddenbench-laboratory-theft-deduction`, `hiddenbench-company-acquisition-decision`. The rest either were solved by agents alone (G1 fail — the whole hiring-panel family, Stasser-1992 variants, seven HiddenBench tasks) or could not be solved even with everything pooled (G2 fail). The bench hides everything that fails.
 
 ### 3.2 Candidate order is a ~95% prior on close ballots
 
-The cleanest "null" we could build (64 mirrored items, neutral brief, symmetric blurbs) still voted one way ~95% of the time. The cause is position: whichever candidate is listed first wins — John-first 10/10 John, Sally-first 9/10 Sally, "Candidate A"-first 10/10 A. Names, gender and persona text contributed nothing measurable. Splitting the prompt showed the effect is carried mainly by the **order of the memo paragraphs** (memo-only reversal → ~97% for the newly-first candidate; list/ballot-option reversal alone → ~90%). Before this, every "agents alone pick John" pass in our earlier work had John listed first, so part of each pass was primacy rather than evidence.
+A null pool built to be perfectly symmetric still voted one way ~95% of the time. The cause is position: whichever candidate is listed first in the prompt wins (John-first → John 10/10; Sally-first → Sally 9/10; "Candidate A"-first → A 10/10). Names, gender and persona text contributed nothing measurable; the order of the memo paragraphs carries most of it. Every result on the bench is now run with an exact even split of candidate orders and reported per order. Counterbalancing cancels the prior in aggregate but not on any single ballot.
 
-The engine now defaults to `candidate_order="balanced"` (exact even split of orders across samples and across agents within a run, per-vote order recorded), and every result is reported split by first-listed candidate. Counterbalancing cancels the prior in aggregate; it does not remove it from any individual ballot, which matters for close calls.
-
-We also found a second, subtler leak: a brief that domain-matched one candidate's blurb ("payments team" vs "team lead at a payments company") gave that candidate 100% on *empty* hands. Brief and blurbs must be symmetric.
+A second leak: a brief that domain-matched one candidate's blurb gave that candidate 100% on *empty* hands. Brief and blurbs must be symmetric.
 
 ### 3.3 Stasser & Titus 1985: reproduced
 
-The reconstructed 1985 task (3 candidates, 4 members) passes G1 (100% alone→wrong for all four members, both prompts) and G2 (100% naive / 83% default pooled→correct), holds under every candidate-order rotation, and in **10 seeded Haiku groups (5 free discussion, 5 share-first) 0/10 chose the correct candidate** — the Stasser group failure. Caveat: its twin null is marginally out of band pooled (candidate "a" 50–56%, band ≤48%), so a mild label/position prior toward "a" remains and n=10; we call it a promising reproduction, not a certified one.
+The reconstructed 1985 task passes G1 (100% alone→wrong for all four members) and G2 (100% naive / 83% default pooled→correct), holds under every candidate order, and **0/10 seeded Haiku groups choose the correct candidate** (5 free discussion, 5 share-first, `naive` prompt). Only about a third to a half of the 12 decisive unique facts are ever voiced. This is the Stasser mechanism: the group fails because facts never get pooled. The result is robust to the knobs that matter elsewhere (§3.4): it holds with full-transcript memory and with last-round-only memory over 8 rounds (0/10 each).
 
-### 3.4 HiddenBench: one task reproduced, one not — and the difference is protocol
+Caveat: the twin null is marginally out of band pooled (candidate "a" 50–56%), so a small residual prior toward "a" remains, and n=10.
 
-HiddenBench never tested a Claude model (its 15 models are GPT, Gemini, Qwen3 and Llama-4), and the paper reports only means across 65 tasks; we recomputed per-task numbers from its released run data.
+### 3.4 HiddenBench: lab-theft fails only under the paper's prompt *and* the paper's memory
 
-- **Company acquisition** — HiddenBench groups: Gemini-2.5-Pro/Flash 1.0, GPT-5-medium 0.73, GPT-4.1 0.6 post-discussion, and pre-discussion accuracy 0.3–0.5 (above the paper's own ≤20% validity threshold, i.e. a weak decoy). Our Haiku groups 10/10 correct. **Consistent with the paper.**
-- **Laboratory theft** — HiddenBench groups: GPT-4.1 0.1, Gemini-Flash 0.0, GPT-5-medium 0.03, best Gemini-Pro 0.6. Our Haiku groups **10/10 correct**. **A genuine departure.**
+HiddenBench never tested a Claude model, and the paper reports only means over 65 tasks, so we recomputed per-task numbers from its released run data.
 
-Both tasks pass our alone/pooled gates, so the divergence is not the information structure. Our first hypothesis was discussion protocol: HiddenBench agents speak for 15 sequential rounds but see **only the previous round's messages**, whereas our agents keep the full transcript. We tested it directly by replicating the paper's protocol on Haiku (private pre-vote, one turn per agent per round, last-round-only visibility, balanced order, 10 groups per cell):
+- **Company acquisition** — paper: Gemini-2.5-Pro/Flash 1.0, GPT-5 0.73, GPT-4.1 0.6; pre-discussion accuracy 0.3–0.5 (a weak decoy by the paper's own threshold). Our Haiku groups 9/10 correct. Consistent with the paper.
+- **Laboratory theft** — paper: GPT-4.1 0.1, Gemini-Flash 0.0, GPT-5 0.03, best Gemini-Pro 0.6. Our first Haiku groups (full memory, 3 rounds) were **10/10 correct** under either prompt — a departure that needed explaining.
 
-| lab-theft cell | groups correct (majority) |
-|---|---|
-| full transcript, 8 rounds | 10/10 |
-| last round only, 3 rounds | 9/10 |
-| last round only, 15 rounds (paper protocol) | 9/10 |
+Both tasks pass G1 and G2, so the divergence is not the information structure. Two things differ between our original runs and the paper's protocol: the prompt (`default` adds rules and a per-turn lean; the paper's is closer to `naive`) and memory (we gave agents the full transcript; the paper's agents see only the previous round, for 15 rounds). We varied both on lab-theft, 10 groups per cell, balanced order:
 
-Pre-discussion individual accuracy was 0/10 for every agent in every cell — the hidden profile binds alone — but all 4 unique facts surfaced in round 1 of every group and Haiku integrated them even with a one-round memory window. **Memory and length are not the cause.** Remaining candidates: the model itself (no Claude in the paper), our structured turn/vote JSON prompting, or the residual prior toward the correct lab that the twin null revealed (γ 61% pooled under the default prompt), which would hand the group the right answer for partly wrong reasons. Stasser's failure, by contrast, survived the lossy protocol (0/6 groups; only ~5 of 12 unique facts voiced per group): it fails because facts never get pooled, not because of memory.
+| prompt | memory | rounds | groups correct |
+|---|---|---|---:|
+| default | full | 3 | 10/10 |
+| default | full | 8 | 10/10 |
+| default | last round only | 3 | 9/10 |
+| default | last round only | 15 (paper protocol) | 9/10 |
+| naive | full | 3 | 10/10 (seeded demos) |
+| **naive** | **last round only** | **15 (paper protocol)** | **5/10** |
 
-### 3.5 What discussion does in our runs
+The pattern is an interaction, not a single cause:
 
-From the ablation series on the hiring-panel pools (before they were invalidated as hidden profiles, so directional only): groups flipped *against* the spoken-evidence tally in 46/60 runs; the flip is carried by *hearing* (no-transcript ballots 1/5 flipped) rather than by speaking; it needs ≥2 rounds; and Sonnet-4.5 flipped with near-zero echo, so shared-fact repetition is not necessary. On the one hand-built pool that does pass G1/G2 (`hiring-panel-flat-v3`, 4 panelists, every unique a hidden Sally pro), group accuracy is 50–60% and tracks how many unique facts were actually voiced (≥5 cited → correct 8/9; ≤3 → wrong 5/5) — the partial-pooling mechanism Stasser described.
+- **Under `default`, nothing breaks the group.** Lossy memory and 15 rounds leave it at 9/10. In every cell every agent votes wrong before discussion, and all four unique facts surface in round 1 — the group pools and integrates them regardless of memory.
+- **Under `naive` with full memory, the group is still too good** (10/10). The paper-style prompt alone does not reproduce the failure.
+- **Only `naive` + last-round memory reproduces it**: 5/10, in line with the paper's best model (Gemini-Pro 0.6) and no longer a departure. All four unique facts still surface, so this is not a pooling failure like Stasser's; the wrong groups eliminate the shared suspect and then converge unanimously on the *other* salient one. It is an integration failure. Whether the 15 rounds contribute on their own, separately from the one-round memory window, is untested (the `naive` full-memory cell ran 3 rounds).
+
+Why the two knobs interact: `default` tells agents to "only assert things in your own notes … state evidence, not vibes", caps turns at two sentences, forces a `current_lean` every turn, and reminds them to vote consistently with what they said. Each turn therefore restates concrete facts and each agent is anchored to its own reasoning, so it does not matter that the transcript is forgotten — the evidence is re-voiced every round. Under `naive`, agents pass on *conclusions* ("Alpha is cleared; Beta looks likely"). With full memory the original fact is still in the transcript and gets integrated; with last-round memory the fact drops out of the window and the last speaker's endorsement carries the group.
+
+Two consequences. First, `default` is not a neutral prompt — it is a structured-discussion intervention, on a par with `share_first`, and the same is true of unlimited transcript memory. To reproduce the papers the bench now defaults to `naive` and `last_round`, and the survivors' seeded demos are being re-recorded under those defaults. Second, the remaining gap to the paper's 0.0–0.1 for GPT-4.1 / Gemini-Flash is most plausibly model capability (the paper has no Claude model); one cell with a non-Claude model through this engine would settle model vs harness.
+
+### 3.5 What discussion does
+
+Two distinct failure mechanisms appear across the certified scenarios. On Stasser-1985 the group fails because unique facts are **never voiced** (partial pooling). On lab-theft under paper conditions the facts are voiced but **not integrated**: each agent carries a conclusion forward and the fact behind it is lost when the transcript window closes. Prompts and memory that keep evidence rather than conclusions in circulation cure the second but not the first.
+
+The same pooling mechanism shows on the one hand-built pool that passes G1/G2 (`hiring-panel-flat-v3`, 4 panelists): group accuracy is 50–60% and tracks how many unique facts were actually voiced (≥5 cited → correct 8/9; ≤3 → wrong 5/5). Earlier ablations on the invalidated pools (directional only) showed the group flip is carried by *hearing* rather than speaking, needs ≥2 rounds, and does not require shared-fact repetition.
 
 ### 3.6 Method lessons
 
-1. Validate hands, not items: whole-hand ballots over seeds are the certificate; per-item ratings are a design aid.
-2. Ship every pool with its twin null; a scenario is only interpretable if the twin reads ≈uniform under the same prompt.
-3. Balance candidate order exactly and report per order; even n only.
-4. Symmetric brief and blurbs; no domain match to either candidate.
-5. Version and stamp runs per scenario so tuning one pool does not invalidate another's evidence (engine + scenario hash, canonical JSON).
+1. Validate whole hands over seeds, not per-item ratings.
+2. Ship every pool with its twin null.
+3. Balance candidate order exactly; report per order; even n only.
+4. Symmetric brief and blurbs.
+5. Treat the prompt and transcript memory as experimental factors: report both for every result, and run the papers' conditions before calling a result a non-replication.
+6. Stamp runs per scenario (engine + scenario hash) so tuning one pool does not invalidate another's evidence.
 
 ## 4. Future work
 
-**Unmerged: structured paradigms (PR #10).** A complete, CI-green implementation of three additional discussion protocols — `exchange_then_decide` (fixed fact-exchange rounds before any decision), `elicitation_moderator` (a non-voting moderator who polls each panelist for facts not yet mentioned), and `message_board` (asynchronous posting) — with a paradigm hook layer, moderator turns, a board view and `/api/paradigms`. It was parked when the scenario-validity problems in §3.1 surfaced, because its demo results (13–14/14 decisive facts surfaced, groups converging on the designed answer) were obtained on pools that turned out not to be hidden profiles. HiddenBench's own Exchange-then-Decide intervention improved every model family it tested, so this is the first thing to rebase and re-run on the certified scenarios and on the lossy-memory protocol.
+**Structured paradigms (unmerged PR #10).** A CI-green implementation of `exchange_then_decide`, `elicitation_moderator` (a non-voting moderator who polls for facts not yet mentioned) and `message_board`. It was parked when its demo results turned out to be on pools that were not hidden profiles. HiddenBench's own Exchange-then-Decide improved every model it tested, so this is the first thing to rebase and re-run on the certified scenarios under `naive`.
 
-**Protocol as a variable.** Make transcript memory, round count and speaking order first-class experimental factors; replicate HiddenBench's T and N ablations on Haiku; add its Reveal-All and passive-summarisation interventions as paradigms.
+**Prompt scaffolding and memory as the intervention.** §3.4 shows the `default` rules/lean scaffold turns a 5/10 failure into 9/10, and full memory does the same under `naive`. Decompose the scaffold — evidence-only rule, sentence cap, per-turn lean, vote-consistency reminder — to find which ingredient carries the effect; separate memory window from round count (a `naive` / full / 15-round cell); and test the winners on Stasser, where the failure is pooling rather than integration.
 
-**Ballot design against primacy.** Test side-by-side or topic-interleaved presentation, signed-scalar ballots, and ask-twice-in-both-orders (disagreement = undecided) on the twin null; adopt whichever brings per-order results nearest 50/50.
+**Models.** Repeat the certificate and group runs on Sonnet and on a non-Anthropic model to separate model capability from harness effects.
 
-**Certify the Stasser reproduction.** Shrink the residual "a" prior, run 24+ groups per paradigm, and add the 1987 manipulations (unshared-critical vs unshared-consensus).
+**Ballot design against primacy.** Test side-by-side presentation, signed-scalar ballots, and ask-twice-in-both-orders on the twin null; adopt whichever brings per-order results nearest 50/50.
 
-**Fix the HiddenBench import.** Re-derive item candidate/valence tags from the source data so static margins can again be used as a pre-screen, then re-audit the seven tasks that failed G1.
+**Certify the Stasser reproduction.** Shrink the residual "a" prior, run 24+ groups per paradigm, and add the 1987 unshared-critical vs unshared-consensus manipulation.
 
-**Models.** Repeat the certificate and group runs on Sonnet and a non-Anthropic model to see whether position primacy and the full-transcript pooling result are Haiku-specific.
+**Fix the HiddenBench import.** Item candidate/valence tags are mis-derived in places; re-derive them from the source data and re-audit the seven tasks that failed G1.
 
 ## Appendix: bench scenarios currently served
 
-| scenario | G1 alone→wrong | G2 pooled→correct (naive \| default) | G0 twin null | Haiku groups correct |
+Seeded-demo column: `naive` prompt, 3 rounds, full memory (the pre-`last_round` default; being re-recorded under `last_round`).
+
+| scenario | G1 alone→wrong | G2 pooled→correct (naive \| default) | G0 twin null | seeded Haiku groups correct |
 |---|---|---|---|---|
 | stasser-1985-hidden | 100% ×4, both prompts | 100 \| 83 | pooled "a" 50–56% (mild fail) | 0/10 |
-| hiddenbench-laboratory-theft | 83–100% | 83 \| 83 | fail (γ 61% pooled default) | 10/10 |
-| hiddenbench-company-acquisition | 83–100% | 100 \| 100 | fail (C 67 / B 61%) | 10/10 |
-| hiring-panel-flat-v3 | 85–100% ×4 | 100 \| 100 (20/20) | pass (0.50/0.45) | 5–6/10 |
-| hiring-panel-null-v2 (control) | — | — | in band | — |
+| hiddenbench-laboratory-theft | 83–100% | 83 \| 83 | fail (γ 61% pooled, default) | 10/10 (5/10 under paper protocol, §3.4) |
+| hiddenbench-company-acquisition | 83–100% | 100 \| 100 | fail (C 67 / B 61%) | 9/10 |
+| hiring-panel-flat-v3 | 85–100% ×4 | 100 \| 100 | pass (0.50/0.45) | 5–6/10 |
