@@ -38,6 +38,20 @@ function seats(scenario: Scenario, cy: number): Seat[] {
 
 type HandLayout = { x: number; y: number; cols: number }
 
+const BADGE_MAX_CHARS = 12
+
+/** Short vote label: drops "Candidate "/"Option " prefixes and anything after a colon, then truncates. */
+function badgeLabel(scenario: Scenario, choice: string): string {
+  if (choice === 'undecided') return '?'
+  const full = candidateName(scenario, choice)
+  const short = full.replace(/^(candidate|option)\s+/i, '').split(':')[0].trim() || full
+  return short.length > BADGE_MAX_CHARS ? `${short.slice(0, BADGE_MAX_CHARS - 1)}…` : short
+}
+
+function badgeWidth(label: string): number {
+  return Math.max(22, Math.round(label.length * 6.5) + 12)
+}
+
 function handLayout(seat: Seat, count: number, height: number): HandLayout {
   const dx = Math.cos(seat.angle)
   const dy = Math.sin(seat.angle)
@@ -214,14 +228,21 @@ export function Table({ scenario, config, derived, status, round, live }: Props)
                   key={vote.round}
                   className={`lean-badge ${vote.saidLean !== 'undecided' && vote.saidLean !== vote.choice ? 'lean-diverge' : ''}`}
                 >
-                  {vote.saidLean !== 'undecided' && vote.saidLean !== vote.choice && (
-                    <title>
-                      said {candidateName(scenario, vote.saidLean)}, voted {candidateName(scenario, vote.choice)}
-                    </title>
-                  )}
-                  <rect x={s.x + 12} y={s.y - 34} width={34} height={16} rx={8} fill={candidateColor(scenario, vote.choice)} />
-                  <text x={s.x + 29} y={s.y - 22} textAnchor="middle">
-                    {vote.choice === 'undecided' ? '?' : candidateName(scenario, vote.choice)}
+                  <title>
+                    {vote.saidLean !== 'undecided' && vote.saidLean !== vote.choice
+                      ? `said ${candidateName(scenario, vote.saidLean)}, voted ${candidateName(scenario, vote.choice)}`
+                      : `voted ${vote.choice === 'undecided' ? 'undecided' : candidateName(scenario, vote.choice)}`}
+                  </title>
+                  <rect
+                    x={s.x + 12}
+                    y={s.y - 34}
+                    width={badgeWidth(badgeLabel(scenario, vote.choice))}
+                    height={16}
+                    rx={8}
+                    fill={candidateColor(scenario, vote.choice)}
+                  />
+                  <text x={s.x + 12 + badgeWidth(badgeLabel(scenario, vote.choice)) / 2} y={s.y - 22} textAnchor="middle">
+                    {badgeLabel(scenario, vote.choice)}
                   </text>
                 </g>
               )}
