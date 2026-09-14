@@ -1,6 +1,6 @@
 """Verify a sample scenario's hidden-profile arithmetic.
 
-Usage: .venv/bin/python scripts/verify_scenario.py [--id hiring-panel-v1]
+Usage: .venv/bin/python scripts/verify_scenario.py [--id hiring-panel-flat-v2]
 """
 
 from __future__ import annotations

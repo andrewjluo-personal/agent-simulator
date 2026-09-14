@@ -801,7 +801,25 @@ HIRING_PANEL_FLAT_V2 = Scenario.model_validate(
             "tom": FLAT_V2_SHARED_IDS + ["F8", "F12", "F13", "G7"],
             "omar": FLAT_V2_SHARED_IDS + ["F14", "F15", "G8"],
         },
-        "validation": {},
+        # Gate results from docs/probes/S1_report.md §5 (claude-haiku-4-5, 10
+        # trials, default prompt): pooled reviewer Sally 10/10; each agent alone
+        # picks the shared-only candidate John 10/10. Naive prompt also passes
+        # (pooled 10/10; alone 10, 10, 10, 8, 10).
+        "validation": {
+            "claude-haiku-4-5": {
+                "aloneWrongRate": {
+                    "dana": 1.0,
+                    "marcus": 1.0,
+                    "priya": 1.0,
+                    "tom": 1.0,
+                    "omar": 1.0,
+                },
+                "pooledRightRate": 1.0,
+                "trials": 10,
+                "date": "2026-09-14",
+                "passed": True,
+            }
+        },
     }
 )
 

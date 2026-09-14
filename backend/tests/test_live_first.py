@@ -54,7 +54,7 @@ def test_demo_lists_recent_finished_runs() -> None:
     for r in (done, running, stale):
         store.create_run(r)
 
-    resp = client.get("/api/demo?scenarioId=hiring-panel-v1")
+    resp = client.get("/api/demo?scenarioId=hiring-panel-flat-v2")
     assert resp.status_code == 200
     ids = {r["id"] for r in resp.json()["runs"]}
     assert done.id in ids
@@ -65,6 +65,6 @@ def test_demo_lists_recent_finished_runs() -> None:
 
 def test_auto_run_on_load_flags(monkeypatch: pytest.MonkeyPatch) -> None:
     assert client.get("/api/health").json()["autoRunOnLoad"] is True
-    assert client.get("/api/demo?scenarioId=hiring-panel-v1").json()["autoRunOnLoad"] is True
+    assert client.get("/api/demo?scenarioId=hiring-panel-flat-v2").json()["autoRunOnLoad"] is True
     monkeypatch.setattr(main, "AUTO_RUN_ON_LOAD", False)
     assert client.get("/api/health").json()["autoRunOnLoad"] is False
