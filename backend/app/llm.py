@@ -40,16 +40,16 @@ class LLMResponse:
     model: str
 
 
-class TokenProvider(Protocol):
-    def token(self) -> str: ...
-
-    def invalidate(self) -> None: ...
-
-
 class LLMClient(Protocol):
     provider: str
 
     async def complete(self, req: LLMRequest) -> LLMResponse: ...
+
+
+class TokenProvider(Protocol):
+    def token(self) -> str: ...
+
+    def invalidate(self) -> None: ...
 
 
 class AnthropicClient:

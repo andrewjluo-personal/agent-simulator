@@ -115,7 +115,7 @@ class _StubProvider:
         return self._token
 
     def invalidate(self) -> None:
-        return None
+        pass
 
 
 def test_client_wif_mode(monkeypatch: pytest.MonkeyPatch) -> None:
