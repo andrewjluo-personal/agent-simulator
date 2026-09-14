@@ -7,12 +7,28 @@ import pytest
 from app import truth, validator
 from app.llm import FakeClient
 from app.models import Scenario
-from app.samples import SAMPLE_SCENARIOS, ensure_samples
+from app.samples import HIRING_PANEL_NULL, SAMPLE_SCENARIOS, ensure_samples
 from app.scenarios.papers import PAPER_SCENARIOS
 
+# hiring-panel-null is a zero-margin bias control, deliberately not a hidden profile.
 NON_PAPER_SAMPLE_SCENARIOS = [
-    scenario for scenario in SAMPLE_SCENARIOS if scenario.id not in {s.id for s in PAPER_SCENARIOS}
+    scenario
+    for scenario in SAMPLE_SCENARIOS
+    if scenario.id not in {s.id for s in PAPER_SCENARIOS} and scenario is not HIRING_PANEL_NULL
 ]
+
+
+def test_null_pool_is_symmetric() -> None:
+    s = HIRING_PANEL_NULL
+    assert truth.scores(s, truth.pooled_fact_ids(s)) == {"john": 0, "sally": 0}
+    by_cand = {
+        c.id: sorted(f.memo_text or f.text for f in s.facts if f.candidate_id == c.id)
+        for c in s.candidates
+    }
+    assert len(by_cand["john"]) == len(by_cand["sally"]) == len(s.facts) // 2
+    for hand in s.distribution.values():
+        assert truth.scores(s, hand) == {"john": 0, "sally": 0}
+        assert sum(s.fact(i).candidate_id == "john" for i in hand) == len(hand) // 2
 
 
 @pytest.mark.parametrize("scenario", NON_PAPER_SAMPLE_SCENARIOS, ids=lambda scenario: scenario.id)

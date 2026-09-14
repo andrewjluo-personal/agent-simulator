@@ -8,6 +8,7 @@ favours the right one by a modest margin. Valence/weight never appear in prompts
 
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING, Any
 
 from . import scenario_gen
@@ -783,6 +784,89 @@ FLAT_V2_UNIQUE: list[dict[str, Any]] = [
             ["concurrency model", "could not explain", "take-home"],
         ),
     ]
+)
+
+_NULL_SWAP = {
+    "John": "Sally",
+    "Sally": "John",
+    "John's": "Sally's",
+    "Sally's": "John's",
+    "his": "her",
+    "her": "his",
+    "he": "she",
+    "she": "he",
+    "him": "her",
+    "His": "Her",
+    "Her": "His",
+    "He": "She",
+    "She": "He",
+}
+_NULL_SWAP_PAT = re.compile(r"\b(" + "|".join(re.escape(k) for k in _NULL_SWAP) + r")\b")
+# Domain-specific items whose twin would contradict the other candidate's profile
+# (Go / payments / language background).
+_NULL_EXCLUDE = {"J2", "J4", "J6", "S2", "S5", "S11", "F8"}
+
+
+def _null_swap(s: str) -> str:
+    return _NULL_SWAP_PAT.sub(lambda m: _NULL_SWAP[m.group(1)], s)
+
+
+def _null_twin(fact: dict[str, Any]) -> dict[str, Any]:
+    other = "sally" if fact["candidateId"] == "john" else "john"
+    return {
+        **fact,
+        "id": fact["id"] + "x",
+        "candidateId": other,
+        "valence": "neutral",
+        "text": _null_swap(fact["text"]),
+        "memoText": _null_swap(fact["memoText"]),
+    }
+
+
+def _null_pool(facts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Every coherent item appears once for each candidate (pronouns swapped), all
+    valences neutral: designed and perceived margins are 0 by construction, so the
+    Sally rate on this pool is the raw prompt/name/order bias."""
+    out: list[dict[str, Any]] = []
+    for fact in facts:
+        if fact["id"] in _NULL_EXCLUDE:
+            continue
+        out.append({**fact, "valence": "neutral"})
+        out.append(_null_twin(fact))
+    return out
+
+
+NULL_SHARED = _null_pool(FLAT_V2_SHARED)
+NULL_UNIQUE = _null_pool(FLAT_V2_UNIQUE)
+NULL_SHARED_IDS = [fact["id"] for fact in NULL_SHARED]
+
+
+def _null_hand(ids: list[str]) -> list[str]:
+    return (
+        NULL_SHARED_IDS
+        + [i for i in ids if i not in _NULL_EXCLUDE]
+        + [i + "x" for i in ids if i not in _NULL_EXCLUDE]
+    )
+
+
+HIRING_PANEL_NULL = Scenario.model_validate(
+    {
+        "id": "hiring-panel-null",
+        "title": "Hiring panel (null: symmetric items, zero margin)",
+        "brief": HIRING_PANEL_V1.brief,
+        "isSample": True,
+        "candidates": HIRING_PANEL_CANDIDATES,
+        "agents": HIRING_PANEL_AGENTS,
+        "facts": NULL_SHARED + NULL_UNIQUE,
+        "distribution": {
+            "dana": _null_hand(["F1", "F5", "F9", "G1"]),
+            "marcus": _null_hand(["F2", "F6", "F10", "G4"]),
+            "priya": _null_hand(["F3", "F7", "F11", "G5"]),
+            "tom": _null_hand(["F12", "F13", "G7"]),
+            "omar": _null_hand(["F14", "F15", "G8"]),
+        },
+        "validation": {},
+    }
 )
 
 HIRING_PANEL_FLAT_V2 = Scenario.model_validate(
@@ -1867,6 +1951,7 @@ SAMPLE_SCENARIOS: list[Scenario] = [
     HIRING_ADVERSARIAL_V1,
     HIRING_PANEL_FLAT,
     HIRING_PANEL_FLAT_V2,
+    HIRING_PANEL_NULL,
     *PAPER_SCENARIOS,
 ]
 
