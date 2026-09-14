@@ -280,3 +280,11 @@ def test_candidate_order_fixed_is_unchanged() -> None:
         SCENARIO, base, DANA, HAND, PARADIGM
     )
     assert prompts.alone_vote_message(SCENARIO, cfg) == prompts.alone_vote_message(SCENARIO)
+
+
+def test_candidate_order_reversed_reverses_lines_and_options() -> None:
+    cfg = RunConfig(candidate_order="reversed", seed=3)
+    lines = prompts._candidate_lines(SCENARIO, cfg).splitlines()
+    assert lines[0].startswith("- sally") and lines[1].startswith("- john")
+    assert prompts._lean_options(SCENARIO, cfg) == "sally|john|undecided"
+    assert '"vote": "sally|john"' in prompts.alone_vote_message(SCENARIO, cfg)

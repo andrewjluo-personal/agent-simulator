@@ -16,7 +16,7 @@ class Model(BaseModel):
 Valence = Literal["pro", "con", "neutral"]
 Paradigm = Literal["free_discussion", "share_first"]
 TurnOrder = Literal["clockwise", "random"]
-CandidateOrder = Literal["fixed", "random"]
+CandidateOrder = Literal["fixed", "reversed", "random"]
 TieBreak = Literal["none", "runoff", "chair"]
 FactStyle = Literal["memo", "labelled"]
 PromptStyle = Literal["default", "naive", "naive_no_repeat", "naive_consensus"]

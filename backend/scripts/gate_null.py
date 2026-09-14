@@ -34,21 +34,33 @@ def within(rate: float, lo: float, hi: float) -> bool:
     return lo <= rate <= hi
 
 
+def order_for_sample(order_mode: str, j: int) -> CandidateOrder:
+    """Candidate order for sample index j; `balanced` alternates fixed/reversed."""
+    if order_mode == "balanced":
+        return "fixed" if j % 2 == 0 else "reversed"
+    return order_mode  # type: ignore[return-value]
+
+
 async def cell_votes(
     client: LLMClient,
     scenario: Scenario,
     agent: AgentPersona,
     hand: list[str],
     cfg: RunConfig,
+    order_mode: str,
     seeds: int,
     samples: int,
-) -> list[Counter[str]]:
-    """One Counter per seed; each Counter holds `samples` ballots at distinct seeds."""
+) -> tuple[list[Counter[str]], dict[str, Counter[str]]]:
+    """One Counter per seed plus a per-order tally; each seed holds `samples` ballots."""
     spec = get_paradigm(cfg.paradigm)
     ids = {c.id for c in scenario.candidates}
 
-    async def one(seed: int) -> str:
-        cell_cfg = cfg.model_copy(update={"seed": seed})
+    async def one(seed: int, j: int) -> tuple[str, str]:
+        eff = order_for_sample(order_mode, j)
+        cell_cfg = cfg.model_copy(update={"seed": seed, "candidate_order": eff})
+        key = (
+            prompts.ordered_candidates(scenario, cell_cfg)[0].id if order_mode == "random" else eff
+        )
         system = prompts.system_prompt(scenario, cell_cfg, agent, hand, spec)
         user = prompts.alone_vote_message(scenario, cell_cfg)
         resp = await client.complete(
@@ -56,23 +68,29 @@ async def cell_votes(
         )
         raw = validate.parse_json_object(resp.text) or {}
         v = raw.get("vote")
-        return v if isinstance(v, str) and v in ids else truth.UNDECIDED
+        return key, v if isinstance(v, str) and v in ids else truth.UNDECIDED
 
-    votes = await asyncio.gather(*(one(s * 1000 + j) for s in range(seeds) for j in range(samples)))
-    return [Counter(votes[s * samples : (s + 1) * samples]) for s in range(seeds)]
+    pairs = await asyncio.gather(
+        *(one(s * 1000 + j, j) for s in range(seeds) for j in range(samples))
+    )
+    per_seed = [Counter(v for _, v in pairs[s * samples : (s + 1) * samples]) for s in range(seeds)]
+    by_order: dict[str, Counter[str]] = {}
+    for eff, v in pairs:
+        by_order.setdefault(eff, Counter())[v] += 1
+    return per_seed, by_order
 
 
 async def gate(
     client: LLMClient,
     scenario: Scenario,
     style: PromptStyle,
-    order: CandidateOrder,
+    order: str,
     samples: int,
     seeds: int,
     lo: float,
     hi: float,
 ) -> dict[str, Any]:
-    cfg = RunConfig(prompt_style=style, candidate_order=order, fact_style="memo", seed=0)
+    cfg = RunConfig(prompt_style=style, candidate_order="fixed", fact_style="memo", seed=0)
     target = scenario.candidates[1].id
     cells: dict[str, tuple[AgentPersona, list[str]]] = {
         "pooled": (POOLED, sorted(truth.pooled_fact_ids(scenario)))
@@ -82,7 +100,9 @@ async def gate(
 
     result_cells: dict[str, Any] = {}
     for cell_id, (agent, hand) in cells.items():
-        per_seed = await cell_votes(client, scenario, agent, hand, cfg, seeds, samples)
+        per_seed, by_order = await cell_votes(
+            client, scenario, agent, hand, cfg, order, seeds, samples
+        )
         n = seeds * samples
         k = sum(c[target] for c in per_seed)
         rate, ci_lo, ci_hi = wilson(k, n)
@@ -90,6 +110,7 @@ async def gate(
             "n": n,
             "counts": dict(sum(per_seed, Counter())),
             "per_seed": [dict(c) for c in per_seed],
+            "by_order": {k: dict(c) for k, c in by_order.items()},
             "rate": rate,
             "ci": [ci_lo, ci_hi],
             "pass": within(rate, lo, hi),
@@ -112,7 +133,7 @@ async def main() -> int:
     parser.add_argument("--prompt", nargs="+", default=["naive", "default"])
     parser.add_argument("--samples", type=int, default=10)
     parser.add_argument("--seeds", type=int, default=2)
-    parser.add_argument("--order", choices=["random", "fixed"], default="random")
+    parser.add_argument("--order", choices=["balanced", "random", "fixed"], default="balanced")
     parser.add_argument("--lo", type=float, default=0.35)
     parser.add_argument("--hi", type=float, default=0.65)
     parser.add_argument("--out", default="scripts/probe/out/gate_null")
@@ -130,10 +151,12 @@ async def main() -> int:
         print(f"[{style} order={args.order}] target={res['target']} band=[{args.lo},{args.hi}]")
         for cell_id, cell in res["cells"].items():
             seeds_str = " ".join(str(s) for s in cell["per_seed"])
+            orders_str = " ".join(f"{k}={v}" for k, v in cell["by_order"].items())
             status = "ok" if cell["pass"] else "FAIL"
             print(
                 f"  {cell_id:<8} n={cell['n']:<3} {res['target']}_rate={cell['rate']:.2f} "
-                f"[{cell['ci'][0]:.2f},{cell['ci'][1]:.2f}] seeds={seeds_str} {status}"
+                f"[{cell['ci'][0]:.2f},{cell['ci'][1]:.2f}] seeds={seeds_str} "
+                f"by_order={orders_str} {status}"
             )
         print(f"  -> {'PASS' if res['pass'] else 'FAIL'}")
         ok = ok and res["pass"]

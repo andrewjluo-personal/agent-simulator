@@ -11,7 +11,9 @@ from .truth import UNDECIDED
 
 def ordered_candidates(scenario: Scenario, cfg: RunConfig | None) -> list[Candidate]:
     cands = list(scenario.candidates)
-    if cfg is not None and cfg.candidate_order == "random":
+    if cfg is not None and cfg.candidate_order == "reversed":
+        cands.reverse()
+    elif cfg is not None and cfg.candidate_order == "random":
         Random(f"{cfg.seed}:candidate_order").shuffle(cands)
     return cands
 
