@@ -699,67 +699,6 @@ header h1 {
   background: #fef9c3;
 }
 
-.convergence {
-  margin-top: 14px;
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-  align-items: flex-start;
-}
-.convergence-head {
-  max-width: 320px;
-}
-.convergence-head h4 {
-  font-size: 13px;
-  margin: 0 0 4px;
-  color: var(--text-h);
-}
-.legend {
-  display: block;
-  font-size: 11.5px;
-  color: var(--muted);
-  line-height: 1.5;
-}
-.legend .sw {
-  display: inline-block;
-  width: 14px;
-  height: 3px;
-  vertical-align: middle;
-  margin: 0 6px 0 0;
-  border-radius: 2px;
-}
-.legend .sw.acc {
-  margin-left: 10px;
-}
-.sw.agree,
-.line.agree {
-  background: #64748b;
-  stroke: #64748b;
-}
-.sw.acc,
-.line.acc {
-  background: #10b981;
-  stroke: #10b981;
-}
-.convergence-svg .grid {
-  stroke: var(--border);
-  stroke-dasharray: 2 3;
-}
-.convergence-svg .tick {
-  font-size: 10px;
-  fill: var(--muted);
-}
-.convergence-svg .line {
-  fill: none;
-  stroke-width: 2;
-}
-.convergence-svg .dot.agree {
-  fill: #64748b;
-}
-.convergence-svg .dot.acc {
-  fill: #10b981;
-}
-
 .header-link {
   font-size: 13px;
   font-weight: 400;
