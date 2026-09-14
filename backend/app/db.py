@@ -403,6 +403,13 @@ class PgStore:
             ).fetchone()
         return row is not None
 
+    def release_round(self, run_id: str) -> None:
+        with connection() as conn:
+            conn.execute(
+                "update runs set lease_until = null, updated_at = now() where id = %s",
+                (run_id,),
+            )
+
     def get_run_since(self, run_id: str, since_seq: int) -> RunState | None:
         with connection() as conn:
             row = conn.execute("select * from runs where id = %s", (run_id,)).fetchone()

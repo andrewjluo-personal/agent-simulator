@@ -33,6 +33,7 @@ class Store(Protocol):
     def create_run(self, run: RunState) -> None: ...
     def get_run(self, run_id: str) -> RunState | None: ...
     def claim_round(self, run_id: str, round_idx: int, lease_s: int) -> bool: ...
+    def release_round(self, run_id: str) -> None: ...
     def get_run_since(self, run_id: str, since_seq: int) -> RunState | None: ...
     def demo_snapshot(self, scenario_id: str) -> tuple[Scenario, list[RunSummary]] | None: ...
     def list_runs(
@@ -111,17 +112,16 @@ class MemoryStore:
 
     def claim_round(self, run_id: str, round_idx: int, lease_s: int) -> bool:
         run = self._runs.get(run_id)
-        if (
-            run is None
-            or run.status not in ("queued", "running")
-            or run.current_round != round_idx
-        ):
+        if run is None or run.status not in ("queued", "running") or run.current_round != round_idx:
             return False
         lease = self._leases.get(run_id)
         if lease is not None and lease[0] == round_idx and lease[1] > time.monotonic():
             return False
         self._leases[run_id] = (round_idx, time.monotonic() + lease_s)
         return True
+
+    def release_round(self, run_id: str) -> None:
+        self._leases.pop(run_id, None)
 
     def get_run(self, run_id: str) -> RunState | None:
         return self._runs.get(run_id)

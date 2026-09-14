@@ -63,7 +63,8 @@ FORK_RATE_LIMIT_PER_HOUR = int(os.getenv("FORK_RATE_LIMIT_PER_HOUR", "10"))
 VALIDATION_JOB_STALE_MIN = int(os.getenv("VALIDATION_JOB_STALE_MIN", "30"))
 CUSTOM_SCENARIOS_LISTED = int(os.getenv("CUSTOM_SCENARIOS_LISTED", "20"))
 AUTO_RUN_ON_LOAD = os.getenv("AUTO_RUN_ON_LOAD", "1") not in ("0", "false", "off")
-RUN_ROUND_LEASE_S = 90
+RUN_ROUND_LEASE_S = 60
+RUN_STEP_TURNS = 1
 
 
 def _client_key(request: Request) -> str:
@@ -477,11 +478,18 @@ def get_run(run_id: str, since_seq: int = -1) -> dict[str, Any]:
 
 
 async def step_run_once(store: Store, run_id: str) -> RunState | None:
-    """Advance one round if it is unclaimed; idempotent via the per-round lease."""
+    """Advance one agent turn (or the round's closing votes) if unclaimed."""
     run = store.get_run(run_id)
     if run is None:
-        emit("info", "run.step", runId=run_id, round=-1, status="missing", claimed=False,
-             reason="missing")
+        emit(
+            "info",
+            "run.step",
+            runId=run_id,
+            round=-1,
+            status="missing",
+            claimed=False,
+            reason="missing",
+        )
         return None
     claimed = False
     if run.status not in ("queued", "running"):
@@ -506,7 +514,9 @@ async def step_run_once(store: Store, run_id: str) -> RunState | None:
         round_idx = run.current_round
         start = time.perf_counter()
         try:
-            await orchestrator.run_round(store, llm.get_client(), run.id, round_idx)
+            await orchestrator.run_round(
+                store, llm.get_client(), run.id, round_idx, max_turns=RUN_STEP_TURNS
+            )
         except Exception as exc:  # noqa: BLE001 - run_round sets status error itself
             emit(
                 "warning",
@@ -524,8 +534,11 @@ async def step_run_once(store: Store, run_id: str) -> RunState | None:
                 runId=run_id,
                 round=round_idx,
                 status=after.status if after else "missing",
+                turns=len(after.turns) if after else 0,
                 durationMs=int((time.perf_counter() - start) * 1000),
             )
+        finally:
+            store.release_round(run.id)
     return store.get_run(run_id)
 
 
@@ -558,7 +571,11 @@ async def step_batch(batch_id: str) -> dict[str, Any]:
             stepped_id = run.id
             try:
                 await orchestrator.run_round(
-                    store, llm.get_client(), run.id, run.current_round
+                    store,
+                    llm.get_client(),
+                    run.id,
+                    run.current_round,
+                    max_turns=RUN_STEP_TURNS,
                 )
             except Exception as exc:  # noqa: BLE001 - run_round sets status error itself
                 emit(
@@ -568,11 +585,13 @@ async def step_batch(batch_id: str) -> dict[str, Any]:
                     round=run.current_round,
                     reason=str(exc),
                 )
+            finally:
+                store.release_round(run.id)
             break
     emit("info", "batch.step", batchId=batch_id, pending=len(pending), stepped=stepped_id)
-    return BatchState(
-        id=batch_id, runs=store.list_runs(batch_id=batch_id)
-    ).model_dump(by_alias=True, mode="json")
+    return BatchState(id=batch_id, runs=store.list_runs(batch_id=batch_id)).model_dump(
+        by_alias=True, mode="json"
+    )
 
 
 @app.get("/api/runs")

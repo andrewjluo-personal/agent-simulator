@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import time
 
@@ -12,9 +13,10 @@ os.environ["RUN_RATE_LIMIT_PER_MIN"] = "0"
 import pytest
 from fastapi.testclient import TestClient
 
+from app.llm import FakeClient
 from app.main import app, reset_state
 from app.models import RunConfig
-from app.orchestrator import new_run
+from app.orchestrator import new_run, run_round
 from app.store import MemoryStore
 
 client = TestClient(app)
@@ -34,36 +36,50 @@ def test_created_run_stays_queued_then_steps_to_done() -> None:
     assert run["status"] == "queued"
     assert run["currentRound"] == 0
 
-    stepped = client.post(f"/api/runs/{run['id']}/step")
-    assert stepped.status_code == 200
-    body = stepped.json()
-    assert body["currentRound"] == 1
-    assert body["status"] == "done"  # rounds=1 -> one step finishes the run
-
-    again = client.post(f"/api/runs/{run['id']}/step")
-    assert again.status_code == 200
-    assert again.json()["status"] == "done"
-    assert again.json()["currentRound"] == 1
-
-
-def test_step_advances_one_round_per_call() -> None:
-    run = client.post("/api/runs", json={"rounds": 3, "seed": 3}).json()
-    for expected in (1, 2, 3):
+    n = len(run["scenario"]["agents"])
+    turns = 0
+    for _ in range(n + 2):
         body = client.post(f"/api/runs/{run['id']}/step").json()
-        assert body["currentRound"] == expected
-        assert body["status"] == ("running" if expected < 3 else "done")
-    assert len(body["turns"]) == 3 * len(run["scenario"]["agents"])
+        if body["status"] == "done":
+            assert len(body["turns"]) == turns  # final step: votes + advance, no new turn
+            assert body["currentRound"] == 1
+            break
+        assert len(body["turns"]) == turns + 1
+        turns = len(body["turns"])
+    else:
+        raise AssertionError("run never finished")
+
+    again = client.post(f"/api/runs/{run['id']}/step").json()
+    assert again["status"] == "done"
+    assert again["currentRound"] == 1
+
+
+def test_step_advances_one_turn_per_call() -> None:
+    run = client.post("/api/runs", json={"rounds": 3, "seed": 3}).json()
+    n = len(run["scenario"]["agents"])
+    turns, rnd = 0, 0
+    for _ in range(4 * n + 2):
+        body = client.post(f"/api/runs/{run['id']}/step").json()
+        d_turns = len(body["turns"]) - turns
+        d_round = body["currentRound"] - rnd
+        assert (d_turns == 1 and d_round == 0) or (d_turns == 0 and d_round == 1)
+        turns, rnd = len(body["turns"]), body["currentRound"]
+        if body["status"] == "done":
+            break
+    assert body["status"] == "done"
+    assert len(body["turns"]) == 3 * n
 
 
 def test_step_since_seq_filters_turns() -> None:
     run = client.post("/api/runs", json={"rounds": 2, "seed": 3}).json()
-    first = client.post(f"/api/runs/{run['id']}/step").json()
-    seen = {t["seq"] for t in first["turns"]}
-    delta = client.post(
-        f"/api/runs/{run['id']}/step", params={"since_seq": max(seen)}
-    ).json()
-    assert all(t["seq"] > max(seen) for t in delta["turns"])
-    assert len(delta["turns"]) == len(run["scenario"]["agents"])
+    n = len(run["scenario"]["agents"])
+    seen: set[int] = set()
+    for _ in range(n + 1):  # n turn steps + 1 votes/advance step completes round 0
+        body = client.post(f"/api/runs/{run['id']}/step").json()
+        seen |= {t["seq"] for t in body["turns"]}
+    delta = client.post(f"/api/runs/{run['id']}/step", params={"since_seq": max(seen)}).json()
+    assert len(delta["turns"]) == 1
+    assert delta["turns"][0]["seq"] > max(seen)
 
 
 def test_step_unknown_run_is_404() -> None:
@@ -90,18 +106,53 @@ def test_memory_claim_round_semantics(monkeypatch: pytest.MonkeyPatch) -> None:
     assert store.claim_round(other.id, 0, 90)
 
 
+def test_memory_release_round_allows_reclaim() -> None:
+    store = MemoryStore()
+    run = new_run(store, RunConfig(rounds=2), provider="fake")
+    store.create_run(run)
+
+    assert store.claim_round(run.id, 0, 90)
+    assert not store.claim_round(run.id, 0, 90)
+    store.release_round(run.id)
+    assert store.claim_round(run.id, 0, 90)
+
+
 def test_batch_step_advances_one_run_per_call() -> None:
     resp = client.post("/api/runs/batch", json={"config": {"rounds": 2}, "n": 2})
     assert resp.status_code == 201
     batch = resp.json()
     assert all(r["status"] == "queued" for r in batch["runs"])
 
-    stepped = client.post(f"/api/batches/{batch['id']}/step").json()
-    assert sum(r["currentRound"] for r in stepped["runs"]) == 1
+    def total_turns() -> int:
+        return sum(len(client.get(f"/api/runs/{r['id']}").json()["turns"]) for r in batch["runs"])
 
-    stepped = client.post(f"/api/batches/{batch['id']}/step").json()
-    advanced = [r for r in stepped["runs"] if r["currentRound"] > 0]
-    assert sum(r["currentRound"] for r in stepped["runs"]) == 2
-    assert len(advanced) >= 1
+    for expected in (1, 2):
+        client.post(f"/api/batches/{batch['id']}/step")
+        assert total_turns() == expected  # exactly one run advanced by one turn
 
     assert client.post("/api/batches/nope/step").status_code == 404
+
+
+def test_run_round_max_turns_none_runs_whole_round() -> None:
+    store = MemoryStore()
+    run = new_run(store, RunConfig(rounds=2), provider="fake")
+    store.create_run(run)
+    n = len(run.scenario.agents)
+    result = asyncio.run(run_round(store, FakeClient(), run.id, 0, max_turns=None))
+    assert len(result.turns) == n
+    assert result.current_round == 1
+    assert result.status == "running"
+
+
+def test_run_round_max_turns_one_produces_one_turn() -> None:
+    store = MemoryStore()
+    run = new_run(store, RunConfig(rounds=2), provider="fake")
+    store.create_run(run)
+    n = len(run.scenario.agents)
+    for i in range(n):
+        result = asyncio.run(run_round(store, FakeClient(), run.id, 0, max_turns=1))
+        assert len(result.turns) == i + 1
+        assert result.current_round == 0
+    result = asyncio.run(run_round(store, FakeClient(), run.id, 0, max_turns=1))
+    assert len(result.turns) == n
+    assert result.current_round == 1
