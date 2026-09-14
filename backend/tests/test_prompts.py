@@ -260,3 +260,56 @@ def test_vote_message_visibility_none() -> None:
     tm = prompts.turn_message(SCENARIO, cfg, 0, heard, PARADIGM, 3)
     assert "hidden in this run" in tm
     assert "I hold a decisive note." not in tm
+
+
+def test_candidate_order_random_varies_by_seed() -> None:
+    orders = set()
+    for s in range(20):
+        cfg = RunConfig(candidate_order="random", seed=s)
+        ids = tuple(c.id for c in prompts.ordered_candidates(SCENARIO, cfg))
+        orders.add(ids)
+        msg = prompts.alone_vote_message(SCENARIO, cfg)
+        assert f'"vote": "{ids[0]}|' in msg
+    assert orders == {("john", "sally"), ("sally", "john")}
+
+
+def test_candidate_order_fixed_is_unchanged() -> None:
+    cfg = RunConfig(seed=7, fact_style="labelled", candidate_order="fixed")
+    sp = prompts.system_prompt(SCENARIO, cfg, DANA, HAND, PARADIGM)
+    assert sp.index("- john (John)") < sp.index("- sally (Sally)")
+    assert prompts.alone_vote_message(SCENARIO, cfg) == prompts.alone_vote_message(SCENARIO)
+
+
+def test_resolve_candidate_order_balanced() -> None:
+    orders0 = [
+        prompts.resolve_candidate_order(SCENARIO, RunConfig(seed=0), a) for a in SCENARIO.agents
+    ]
+    assert orders0.count("fixed") == 3 and orders0.count("reversed") == 2
+    orders1 = [
+        prompts.resolve_candidate_order(SCENARIO, RunConfig(seed=1), a) for a in SCENARIO.agents
+    ]
+    assert orders1.count("fixed") == 2 and orders1.count("reversed") == 3
+    assert all(a != b for a, b in zip(orders0, orders1))
+    assert prompts.resolve_candidate_order(SCENARIO, RunConfig(seed=0), None) == "fixed"
+    assert prompts.resolve_candidate_order(SCENARIO, RunConfig(seed=1), None) == "reversed"
+
+
+def test_alone_vote_options_match_system_order() -> None:
+    cfg = RunConfig(candidate_order="balanced", seed=1)
+    agent = next(
+        a
+        for a in SCENARIO.agents
+        if prompts.resolve_candidate_order(SCENARIO, cfg, a) == "reversed"
+    )
+    first_id = prompts._candidate_lines(SCENARIO, cfg, agent).splitlines()[0].split(" ")[1]
+    assert first_id == "sally"
+    msg = prompts.alone_vote_message(SCENARIO, cfg, agent)
+    assert f'"vote": "{first_id}|' in msg
+
+
+def test_candidate_order_reversed_reverses_lines_and_options() -> None:
+    cfg = RunConfig(candidate_order="reversed", seed=3)
+    lines = prompts._candidate_lines(SCENARIO, cfg, DANA).splitlines()
+    assert lines[0].startswith("- sally") and lines[1].startswith("- john")
+    assert prompts._lean_options(SCENARIO, cfg, DANA) == "sally|john|undecided"
+    assert '"vote": "sally|john"' in prompts.alone_vote_message(SCENARIO, cfg, DANA)

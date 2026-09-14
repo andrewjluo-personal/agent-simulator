@@ -89,6 +89,7 @@ def _planted_turn(
     sentences = [s.strip() for s in plant.text.replace("\n", " ").split(". ") if s.strip()]
     sentences = [s if s.endswith((".", "!", "?")) else s + "." for s in sentences]
     cited = truth.match_facts(sentences, scenario.facts)
+    speaker = next((a for a in scenario.agents if a.id == plant.speaker), None)
     return Turn(
         seq=seq,
         round=round_idx,
@@ -102,6 +103,7 @@ def _planted_turn(
         input_tokens=0,
         output_tokens=0,
         heard_before=sorted(common_ground),
+        candidate_order=prompts.resolve_candidate_order(scenario, run.config, speaker),
     )
 
 
@@ -110,12 +112,14 @@ def _meta(
 ) -> dict[str, Any]:
     scenario = run.scenario
     heard = sorted({f for t in run.turns for f in t.cited})
+    agent = next((a for a in scenario.agents if a.id == agent_id), None)
     return {
         "kind": kind,
         "seed": run.config.seed,
         "run_nonce": run.id,
         "agent_id": agent_id,
         "round": round_idx,
+        "candidate_order": prompts.resolve_candidate_order(scenario, run.config, agent),
         "hand": hand,
         "shared": sorted(truth.shared_fact_ids(scenario) & set(hand)),
         "heard": heard,
@@ -216,6 +220,7 @@ async def run_round(
                     input_tokens=resp.input_tokens,
                     output_tokens=resp.output_tokens,
                     heard_before=sorted(common_ground),
+                    candidate_order=prompts.resolve_candidate_order(scenario, cfg, agent),
                 )
             except Exception as exc:  # noqa: BLE001 - one silent panelist beats a dead run
                 emit(
@@ -236,6 +241,7 @@ async def run_round(
                     lean=truth.UNDECIDED,
                     confidence=0.0,
                     heard_before=sorted(common_ground),
+                    candidate_order=prompts.resolve_candidate_order(scenario, cfg, agent),
                 )
             store.insert_turn(run_id, turn)
             emit(
@@ -274,7 +280,7 @@ async def _vote_once(
     agent = next(a for a in scenario.agents if a.id == agent_id)
     system = prompts.system_prompt(scenario, cfg, agent, hand, spec)
     if round_idx < 0:
-        user = prompts.alone_vote_message(scenario)
+        user = prompts.alone_vote_message(scenario, cfg, agent)
         said_lean = truth.UNDECIDED
     else:
         user = prompts.vote_message(
@@ -302,6 +308,7 @@ async def _vote_once(
             confidence=confidence,
             reason=reason or None,
             said_lean=said_lean,
+            candidate_order=prompts.resolve_candidate_order(scenario, cfg, agent),
         ),
     )
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from collections import Counter
 from typing import Any
 
 import pytest
@@ -286,5 +287,19 @@ def test_tie_break_chair(monkeypatch: pytest.MonkeyPatch) -> None:
             v for v in final.votes if v.round == run.config.rounds - 1 and v.agent_id == first_agent
         )
         assert final.metrics.majority_candidate_id == chair_vote.choice == "john"
+
+    asyncio.run(go())
+
+
+def test_votes_record_candidate_order() -> None:
+    async def go() -> None:
+        store, client, run = _run()
+        final = await orchestrator.run_to_completion(store, client, run.id)
+        assert all(v.candidate_order in ("fixed", "reversed") for v in final.votes)
+        pre = [v for v in final.votes if v.round == -1]
+        split = Counter(v.candidate_order for v in pre)
+        # default balanced order, seed 0: agents 0,2,4 fixed, 1,3 reversed
+        assert split == Counter({"fixed": 3, "reversed": 2})
+        assert all(t.candidate_order in ("fixed", "reversed") for t in final.turns)
 
     asyncio.run(go())

@@ -25,6 +25,7 @@ _BACKEND = str(Path(__file__).parent.parent)
 sys.path.insert(0, _BACKEND)
 sys.path.insert(0, str(Path(__file__).parent))
 
+from probe_lib import order_for_sample
 from validate_scenario import CountingClient
 
 from app import orchestrator, prompts, scenario_gen, truth, validate
@@ -107,6 +108,7 @@ async def one_run(
         model=args.model,
         prompt_style=args.prompt_style,
         transcript_visibility=args.transcript_visibility,
+        candidate_order=order_for_sample(args.order, seed - args.seed_start),
     )
     run = orchestrator.new_run(store, cfg, provider=client.provider)
     store.create_run(run)
@@ -128,6 +130,7 @@ async def one_run(
         "prompt_style": cfg.prompt_style,
         "transcript_visibility": cfg.transcript_visibility,
         "seed": seed,
+        "candidate_order": cfg.candidate_order,
         "pre_votes": _votes_dict(final.votes, -1),
         "votes_by_round": [_votes_dict(final.votes, r) for r in vote_rounds],
         "final_tally": m.final_tally if m else {},
@@ -200,13 +203,13 @@ async def pooled_baseline(
     )
     spec = get_paradigm("free_discussion")
     all_fact_ids = [f.id for f in scenario.facts]
-    system = prompts.system_prompt(scenario, cfg, REVIEWER, all_fact_ids, spec)
-    user = prompts.alone_vote_message(scenario)
     candidate_ids = {c.id for c in scenario.candidates}
-    votes = [
-        await _one_vote(client, system, user, args.model, candidate_ids)
-        for _ in range(args.pooled_baseline)
-    ]
+    votes = []
+    for i in range(args.pooled_baseline):
+        cell_cfg = cfg.model_copy(update={"candidate_order": order_for_sample(args.order, i)})
+        system = prompts.system_prompt(scenario, cell_cfg, REVIEWER, all_fact_ids, spec)
+        user = prompts.alone_vote_message(scenario, cell_cfg, REVIEWER)
+        votes.append(await _one_vote(client, system, user, args.model, candidate_ids))
     right = truth.pooled_verdict(scenario)
     right_rate = sum(1 for v in votes if v == right) / len(votes) if votes else 0.0
     return {
@@ -229,12 +232,15 @@ async def alone_baseline(
         prompt_style=args.prompt_style,
         transcript_visibility=args.transcript_visibility,
     )
+    cfg = cfg.model_copy(
+        update={"candidate_order": "balanced" if args.order == "balanced" else args.order}
+    )
     spec = get_paradigm("free_discussion")
     candidate_ids = {c.id for c in scenario.candidates}
-    user = prompts.alone_vote_message(scenario)
     votes: dict[str, str] = {}
     for agent in scenario.agents:
         system = prompts.system_prompt(scenario, cfg, agent, scenario.distribution[agent.id], spec)
+        user = prompts.alone_vote_message(scenario, cfg, agent)
         votes[agent.id] = await _one_vote(client, system, user, args.model, candidate_ids)
     wrong = truth.shared_only_verdict(scenario)
     wrong_rate = sum(1 for v in votes.values() if v == wrong) / len(votes) if votes else 0.0
@@ -267,12 +273,20 @@ async def main() -> int:
         choices=["full", "last_round", "none"],
         default="full",
     )
+    parser.add_argument(
+        "--order",
+        choices=["balanced", "random", "fixed"],
+        default="balanced",
+        help="candidate order; 'balanced' alternates per run (--runs must be even)",
+    )
     parser.add_argument("--concurrency", type=int, default=3)
     parser.add_argument("--cell", default="")
     parser.add_argument("--out", required=True)
     parser.add_argument("--pooled-baseline", type=int, default=0)
     parser.add_argument("--alone-baseline", action="store_true")
     args = parser.parse_args()
+    if args.order == "balanced" and (args.runs % 2 or args.pooled_baseline % 2):
+        parser.error("--runs and --pooled-baseline must be even for balanced order")
 
     scenario = load_probe_scenario(args.scenario)
     if args.n_agents and args.n_agents != len(scenario.agents):

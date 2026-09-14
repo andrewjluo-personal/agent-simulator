@@ -111,3 +111,19 @@ def test_perceived_render_flags_disagreement() -> None:
     out = perceived_profile.render(result)
     assert "DIS-neu" in out and "weak-cal" in out
     assert "→ sally" in out and "→ john" in out
+
+
+def test_gate_null_within() -> None:
+    import gate_null
+
+    assert gate_null.within(0.5, 0.35, 0.65)
+    assert gate_null.within(0.35, 0.35, 0.65)
+    assert not gate_null.within(0.7, 0.35, 0.65)
+    assert not gate_null.within(0.2, 0.35, 0.65)
+
+
+def test_balanced_order_assignment() -> None:
+    assigned = [probe_lib.order_for_sample("balanced", j) for j in range(10)]
+    assert assigned.count("fixed") == assigned.count("reversed") == 5
+    assert probe_lib.order_for_sample("random", 0) == "random"
+    assert probe_lib.order_for_sample("fixed", 7) == "fixed"

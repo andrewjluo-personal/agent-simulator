@@ -103,3 +103,10 @@ def test_ensure_samples_overwrites_stale_rows() -> None:
     assert store.upserted == [stale.id]
     assert store.get_scenario(stale.id) == SAMPLE_SCENARIOS[0]
     assert store.get_scenario("custom-1") == custom
+
+
+def test_null_pool_candidates_symmetric() -> None:
+    cands = HIRING_PANEL_NULL.candidates
+    assert len(cands) == 2
+    assert cands[0].blurb == cands[1].blurb
+    assert "payments" not in HIRING_PANEL_NULL.brief

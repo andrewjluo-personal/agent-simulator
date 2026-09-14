@@ -826,7 +826,7 @@ def _null_twin(fact: dict[str, Any]) -> dict[str, Any]:
 def _null_pool(facts: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Every coherent item appears once for each candidate (pronouns swapped), all
     valences neutral: designed and perceived margins are 0 by construction, so the
-    Sally rate on this pool is the raw prompt/name/order bias."""
+    Sally rate on this pool is the raw name/order bias."""
     out: list[dict[str, Any]] = []
     for fact in facts:
         if fact["id"] in _NULL_EXCLUDE:
@@ -849,13 +849,26 @@ def _null_hand(ids: list[str]) -> list[str]:
     )
 
 
+HIRING_PANEL_NULL_CANDIDATES = [
+    {
+        "id": "john",
+        "name": "John",
+        "blurb": "Seven years of backend engineering; currently a senior engineer on a platform team",
+    },
+    {
+        "id": "sally",
+        "name": "Sally",
+        "blurb": "Seven years of backend engineering; currently a senior engineer on a platform team",
+    },
+]
+
 HIRING_PANEL_NULL = Scenario.model_validate(
     {
         "id": "hiring-panel-null",
         "title": "Hiring panel (null: symmetric items, zero margin)",
-        "brief": HIRING_PANEL_V1.brief,
+        "brief": "The panel must recommend exactly one candidate for a senior backend engineer role. Each panelist attended different parts of the interview loop and holds different evidence.",
         "isSample": True,
-        "candidates": HIRING_PANEL_CANDIDATES,
+        "candidates": HIRING_PANEL_NULL_CANDIDATES,
         "agents": HIRING_PANEL_AGENTS,
         "facts": NULL_SHARED + NULL_UNIQUE,
         "distribution": {

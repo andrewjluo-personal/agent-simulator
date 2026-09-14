@@ -16,6 +16,8 @@ class Model(BaseModel):
 Valence = Literal["pro", "con", "neutral"]
 Paradigm = Literal["free_discussion", "share_first"]
 TurnOrder = Literal["clockwise", "random"]
+CandidateOrder = Literal["fixed", "reversed", "random", "balanced"]
+ResolvedCandidateOrder = Literal["fixed", "reversed"]
 TieBreak = Literal["none", "runoff", "chair"]
 FactStyle = Literal["memo", "labelled"]
 PromptStyle = Literal["default", "naive", "naive_no_repeat", "naive_consensus"]
@@ -115,6 +117,7 @@ class RunConfig(Model):
     rounds: int = Field(default=3, ge=1, le=15)
     sentences_per_turn: int = Field(default=2, ge=1, le=5)
     turn_order: TurnOrder = "clockwise"
+    candidate_order: CandidateOrder = "balanced"
     tie_break: TieBreak = "runoff"
     fact_style: FactStyle = "memo"
     prompt_style: PromptStyle = "default"
@@ -185,6 +188,7 @@ class Turn(Model):
     input_tokens: int | None = None
     output_tokens: int | None = None
     heard_before: list[str] = []
+    candidate_order: ResolvedCandidateOrder | None = None  # order shown to the model
 
 
 class Vote(Model):
@@ -194,6 +198,7 @@ class Vote(Model):
     confidence: float
     reason: str | None = None
     said_lean: str = "undecided"  # latest public turn lean at ballot time
+    candidate_order: ResolvedCandidateOrder | None = None  # order shown to the model
 
 
 class FirstSurfaced(Model):
