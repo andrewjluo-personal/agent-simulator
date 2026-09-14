@@ -32,6 +32,7 @@ class Store(Protocol):
     def active_validation_job(self, stale_after_s: int) -> ValidationJob | None: ...
     def create_run(self, run: RunState) -> None: ...
     def get_run(self, run_id: str) -> RunState | None: ...
+    def claim_round(self, run_id: str, round_idx: int, lease_s: int) -> bool: ...
     def get_run_since(self, run_id: str, since_seq: int) -> RunState | None: ...
     def demo_snapshot(self, scenario_id: str) -> tuple[Scenario, list[RunSummary]] | None: ...
     def list_runs(
@@ -64,6 +65,7 @@ class MemoryStore:
         self._requests: list[tuple[str, float]] = []
         self._scenarios: dict[str, Scenario] = {}
         self._validation_jobs: dict[str, ValidationJob] = {}
+        self._leases: dict[str, tuple[int, float]] = {}
         from .samples import SAMPLE_SCENARIOS
 
         for sample in SAMPLE_SCENARIOS:
@@ -106,6 +108,20 @@ class MemoryStore:
 
     def create_run(self, run: RunState) -> None:
         self._runs[run.id] = run
+
+    def claim_round(self, run_id: str, round_idx: int, lease_s: int) -> bool:
+        run = self._runs.get(run_id)
+        if (
+            run is None
+            or run.status not in ("queued", "running")
+            or run.current_round != round_idx
+        ):
+            return False
+        lease = self._leases.get(run_id)
+        if lease is not None and lease[0] == round_idx and lease[1] > time.monotonic():
+            return False
+        self._leases[run_id] = (round_idx, time.monotonic() + lease_s)
+        return True
 
     def get_run(self, run_id: str) -> RunState | None:
         return self._runs.get(run_id)

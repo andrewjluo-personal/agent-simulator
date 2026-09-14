@@ -6,6 +6,7 @@ import asyncio
 import json
 import os
 import re
+import time
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any, Literal
@@ -22,6 +23,7 @@ from .models import (
     DemoSnapshot,
     Model,
     RunConfig,
+    RunState,
     RunSummary,
     Scenario,
     ValidationJob,
@@ -61,6 +63,7 @@ FORK_RATE_LIMIT_PER_HOUR = int(os.getenv("FORK_RATE_LIMIT_PER_HOUR", "10"))
 VALIDATION_JOB_STALE_MIN = int(os.getenv("VALIDATION_JOB_STALE_MIN", "30"))
 CUSTOM_SCENARIOS_LISTED = int(os.getenv("CUSTOM_SCENARIOS_LISTED", "20"))
 AUTO_RUN_ON_LOAD = os.getenv("AUTO_RUN_ON_LOAD", "1") not in ("0", "false", "off")
+RUN_ROUND_LEASE_S = 90
 
 
 def _client_key(request: Request) -> str:
@@ -393,10 +396,16 @@ def get_paradigms() -> list[dict[str, str]]:
 
 
 async def start_run(run_id: str, request: Request) -> None:
-    """Kick off round 0 via Vercel Queues, or drive the run in-process."""
+    """Kick off round 0, or leave the run queued for client-driven stepping.
+
+    RUN_MODE=queue sends round jobs to Vercel Queues; "sync" and "inline" drive
+    the whole run in-process. Default (unset) leaves the run queued — the
+    client's poll calls POST /api/runs/{id}/step, which advances it one round at
+    a time under a per-round lease.
+    """
     mode = os.getenv("RUN_MODE", "")
     token = queues.oidc_token(request)
-    if mode not in ("inline", "sync"):
+    if mode == "queue":
         try:
             await queues.send(
                 queues.SIMULATION_TOPIC,
@@ -414,10 +423,13 @@ async def start_run(run_id: str, request: Request) -> None:
         emit("info", "run.sync", runId=run_id)
         await orchestrator.run_to_completion(get_store(), client, run_id)
         return
-    emit("info", "run.inline", runId=run_id)
-    task = asyncio.create_task(orchestrator.run_to_completion(get_store(), client, run_id))
-    _background_tasks.add(task)
-    task.add_done_callback(_background_tasks.discard)
+    if mode == "inline" or mode == "queue":
+        emit("info", "run.inline", runId=run_id)
+        task = asyncio.create_task(orchestrator.run_to_completion(get_store(), client, run_id))
+        _background_tasks.add(task)
+        task.add_done_callback(_background_tasks.discard)
+        return
+    emit("info", "run.stepped", runId=run_id, mode="step")
 
 
 @app.post("/api/runs", status_code=201)
@@ -462,6 +474,105 @@ def get_run(run_id: str, since_seq: int = -1) -> dict[str, Any]:
     if run is None:
         raise HTTPException(status_code=404, detail="run not found")
     return run.model_dump(by_alias=True, mode="json")
+
+
+async def step_run_once(store: Store, run_id: str) -> RunState | None:
+    """Advance one round if it is unclaimed; idempotent via the per-round lease."""
+    run = store.get_run(run_id)
+    if run is None:
+        emit("info", "run.step", runId=run_id, round=-1, status="missing", claimed=False,
+             reason="missing")
+        return None
+    claimed = False
+    if run.status not in ("queued", "running"):
+        reason = "finished"
+    elif run.current_round >= orchestrator.total_rounds(run):
+        reason = "no_rounds_left"
+    elif store.claim_round(run.id, run.current_round, RUN_ROUND_LEASE_S):
+        claimed = True
+        reason = None
+    else:
+        reason = "lease_held"
+    fields: dict[str, Any] = {
+        "runId": run_id,
+        "round": run.current_round,
+        "status": run.status,
+        "claimed": claimed,
+    }
+    if not claimed:
+        fields["reason"] = reason
+    emit("info", "run.step", **fields)
+    if claimed:
+        round_idx = run.current_round
+        start = time.perf_counter()
+        try:
+            await orchestrator.run_round(store, llm.get_client(), run.id, round_idx)
+        except Exception as exc:  # noqa: BLE001 - run_round sets status error itself
+            emit(
+                "warning",
+                "run.step_failed",
+                runId=run_id,
+                round=round_idx,
+                reason=str(exc),
+                durationMs=int((time.perf_counter() - start) * 1000),
+            )
+        else:
+            after = store.get_run(run_id)
+            emit(
+                "info",
+                "run.step_done",
+                runId=run_id,
+                round=round_idx,
+                status=after.status if after else "missing",
+                durationMs=int((time.perf_counter() - start) * 1000),
+            )
+    return store.get_run(run_id)
+
+
+@app.post("/api/runs/{run_id}/step")
+async def step_run(run_id: str, since_seq: int = -1) -> dict[str, Any]:
+    if get_store().get_run(run_id) is None:
+        raise HTTPException(status_code=404, detail="run not found")
+    await step_run_once(get_store(), run_id)
+    run = get_store().get_run_since(run_id, since_seq)
+    assert run is not None
+    return run.model_dump(by_alias=True, mode="json")
+
+
+@app.post("/api/batches/{batch_id}/step")
+async def step_batch(batch_id: str) -> dict[str, Any]:
+    store = get_store()
+    runs = store.list_runs(batch_id=batch_id)
+    if not runs:
+        raise HTTPException(status_code=404, detail="batch not found")
+    pending = sorted(
+        (s for s in runs if s.status in ("queued", "running")),
+        key=lambda s: (s.current_round, s.created_at),
+    )
+    stepped_id = None
+    for pending_run in pending:
+        run = store.get_run(pending_run.id)
+        if run is None or run.current_round >= orchestrator.total_rounds(run):
+            continue
+        if store.claim_round(run.id, run.current_round, RUN_ROUND_LEASE_S):
+            stepped_id = run.id
+            try:
+                await orchestrator.run_round(
+                    store, llm.get_client(), run.id, run.current_round
+                )
+            except Exception as exc:  # noqa: BLE001 - run_round sets status error itself
+                emit(
+                    "warning",
+                    "run.step_failed",
+                    runId=run.id,
+                    round=run.current_round,
+                    reason=str(exc),
+                )
+            break
+    emit("info", "batch.step", batchId=batch_id, pending=len(pending), stepped=stepped_id)
+    return BatchState(
+        id=batch_id, runs=store.list_runs(batch_id=batch_id)
+    ).model_dump(by_alias=True, mode="json")
 
 
 @app.get("/api/runs")

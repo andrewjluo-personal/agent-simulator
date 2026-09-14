@@ -77,6 +77,12 @@ export function normalizeRun(run: RunState): RunState {
 export const getRun = (id: string, sinceSeq = -1) =>
   request<RunState>(`/api/runs/${encodeURIComponent(id)}?since_seq=${sinceSeq}`).then(normalizeRun)
 export const getBatch = (id: string) => request<BatchState>(`/api/batches/${encodeURIComponent(id)}`)
+export const stepRun = (id: string, sinceSeq = -1) =>
+  request<RunState>(`/api/runs/${encodeURIComponent(id)}/step?since_seq=${sinceSeq}`, {
+    method: 'POST',
+  }).then(normalizeRun)
+export const stepBatch = (id: string) =>
+  request<BatchState>(`/api/batches/${encodeURIComponent(id)}/step`, { method: 'POST' })
 export const createRun = (config: RunConfig) =>
   request<RunState>('/api/runs', { method: 'POST', body: JSON.stringify(config) }).then(normalizeRun)
 export const createBatch = (config: RunConfig, n: number) =>
