@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { createRun, getRun } from '../api'
+import { createRun, getRun, stepRun } from '../api'
 import type { RunConfig, RunState, Turn, Vote } from '../types'
 
 export const TURN_MS = 2600
@@ -63,28 +63,39 @@ export function usePlayback() {
     [loadRun],
   )
 
-  // Poll the backend while the run is still being written by round jobs.
+  // Drive the run forward one round per call; a step can take ~10-15 s, so
+  // iterate sequentially and never overlap steps from this tab.
   useEffect(() => {
-    if (!run || run.status === 'done' || run.status === 'error') return
-    const id = run.id
-    const timer = window.setInterval(async () => {
-      const current = runRef.current
-      if (!current || current.id !== id) return
-      const turns = current.turns ?? []
-      const sinceSeq = turns.length ? turns[turns.length - 1].seq : -1
-      try {
-        const delta = await getRun(id, sinceSeq)
-        setRun((prev) =>
-          prev && prev.id === id
-            ? { ...delta, turns: mergeTurns(prev.turns ?? [], delta.turns ?? []), votes: delta.votes ?? [] }
-            : prev,
-        )
-      } catch (cause) {
-        setError(cause instanceof Error ? cause.message : String(cause))
+    const id = run?.id
+    if (!id || run?.status === 'done' || run?.status === 'error') return
+    let cancelled = false
+    const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms))
+    const loop = async () => {
+      while (!cancelled) {
+        const current = runRef.current
+        if (!current || current.id !== id) return
+        if (current.status === 'done' || current.status === 'error') return
+        const turns = current.turns ?? []
+        const sinceSeq = turns.length ? turns[turns.length - 1].seq : -1
+        try {
+          const delta = await stepRun(id, sinceSeq)
+          if (cancelled) return
+          setRun((prev) =>
+            prev && prev.id === id
+              ? { ...delta, turns: mergeTurns(prev.turns ?? [], delta.turns ?? []), votes: delta.votes ?? [] }
+              : prev,
+          )
+        } catch (cause) {
+          if (!cancelled) setError(cause instanceof Error ? cause.message : String(cause))
+        }
+        await sleep(POLL_MS)
       }
-    }, POLL_MS)
-    return () => window.clearInterval(timer)
-  }, [run])
+    }
+    void loop()
+    return () => {
+      cancelled = true
+    }
+  }, [run?.id, run?.status])
 
   // Reveal one turn per tick so replays and live runs animate identically.
   useEffect(() => {

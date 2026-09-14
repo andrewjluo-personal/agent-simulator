@@ -81,6 +81,12 @@ Two Vercel projects share this repo:
 `VERCEL_OIDC_TOKEN` is injected by Vercel at runtime and authenticates queue calls; pull it locally
 with `vercel env pull` if you want to exercise queues outside Vercel.
 
+Simulation runs do not depend on the queue for progress: each queued/running run advances one
+round per `POST /api/runs/{id}/step` (the client poll calls it; the step is idempotent via a
+per-round lease on the run row, so overlapping calls can't double-step a round). Vercel Queues
+drives rounds only when `RUN_MODE=queue`; `sync`/`inline` run the whole run in-process. Grep the
+Vercel logs for `run.step` / `run.step_done` / `run.step_failed` to trace stepping.
+
 ## Demo runs & engine version
 
 Every run is stamped with `ENGINE_VERSION` (`backend/app/engine_version.py`) — the first 12 hex of

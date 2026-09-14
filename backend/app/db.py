@@ -42,6 +42,7 @@ create table if not exists runs (
     updated_at timestamptz not null default now()
 );
 alter table runs add column if not exists engine_version text not null default '';
+alter table runs add column if not exists lease_until timestamptz;
 create index if not exists runs_demo_idx on runs (is_demo, created_at desc);
 create index if not exists runs_batch_idx on runs (batch_id);
 
@@ -390,6 +391,17 @@ class PgStore:
                 (scenario_id, scenario_engine_version(scenario)),
             ).fetchall()
         return scenario, [_summary_from_row(r) for r in rows]
+
+    def claim_round(self, run_id: str, round_idx: int, lease_s: int) -> bool:
+        with connection() as conn:
+            row = conn.execute(
+                "update runs set lease_until = now() + make_interval(secs => %s), "
+                "updated_at = now() where id = %s and status in ('queued', 'running') "
+                "and current_round = %s and (lease_until is null or lease_until < now()) "
+                "returning id",
+                (lease_s, run_id, round_idx),
+            ).fetchone()
+        return row is not None
 
     def get_run_since(self, run_id: str, since_seq: int) -> RunState | None:
         with connection() as conn:
