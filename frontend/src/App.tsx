@@ -296,20 +296,6 @@ function App() {
       <section className="stage">
         <div className="stage-left">
           <Table scenario={runScenario} config={pb.run?.config ?? null} derived={pb.derived} status={status} round={Math.max(roundShown, 0)} />
-          {labOpen && runScenario && (
-            <ScenarioLab
-              scenario={runScenario}
-              onClose={() => setLabOpen(false)}
-              onSaved={(saved) => {
-                setLabOpen(false)
-                setScenarios((prev) => [...prev.filter((item) => item.id !== saved.id), saved])
-                setConfig(defaultConfig(saved))
-                pb.clear()
-                void listScenarios().then(setScenarios)
-                void loadRecent(saved.id)
-              }}
-            />
-          )}
           {pb.run && pb.derived.finished && <VerdictCard run={pb.run} commonGround={pb.derived.commonGround} />}
           {pb.run &&
             !pb.derived.finished &&
@@ -345,6 +331,21 @@ function App() {
           )}
         </aside>
       </section>
+
+      {labOpen && runScenario && (
+        <ScenarioLab
+          scenario={runScenario}
+          onClose={() => setLabOpen(false)}
+          onSaved={(saved) => {
+            setLabOpen(false)
+            setScenarios((prev) => [...prev.filter((item) => item.id !== saved.id), saved])
+            setConfig(defaultConfig(saved))
+            pb.clear()
+            void listScenarios().then(setScenarios)
+            void loadRecent(saved.id)
+          }}
+        />
+      )}
 
       {pb.run && (
         <section className="timeline-section">
