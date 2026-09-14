@@ -84,13 +84,11 @@ function App() {
   }, [loadRecent])
 
   // Live-first landing: kick off a real run once the default scenario resolves —
-  // once per page load (ref) and once per browser session (sessionStorage).
+  // once per page load (ref). The server flag and per-IP rate limit bound cost.
   useEffect(() => {
     if (!scenario || !config) return
     if (autoRunStarted.current || autoRunAllowed.current !== true) return
-    if (sessionStorage.getItem('hp.autoRun') === '1') return
     autoRunStarted.current = true
-    sessionStorage.setItem('hp.autoRun', '1')
     track('autorun.start', { scenarioId: scenario.id })
     void pb.startLive({ ...defaultConfig(scenario), seed: Math.floor(Math.random() * 10000) })
   }, [scenario, config, pb])
