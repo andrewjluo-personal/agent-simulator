@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { aloneVotes, candidateName, decisiveFactIds, pooledVerdict, sharedFactIds, tally, tallyText } from '../truth'
-import type { Paradigm, RunConfig, RunState, RunSummary, Scenario, TieBreak, Turn, TurnOrder } from '../types'
+import type { Paradigm, RunConfig, RunState, RunSummary, Scenario, Turn, TurnOrder } from '../types'
 import { candidateColor } from './Table'
 
 export function VerdictBadges({ scenario }: { scenario: Scenario }) {
@@ -113,14 +113,6 @@ export function Controls(p: ControlsProps) {
         <select value={p.config.turnOrder} onChange={(e) => set('turnOrder', e.target.value as TurnOrder)}>
           <option value="clockwise">clockwise</option>
           <option value="random">random</option>
-        </select>
-      </label>
-      <label>
-        Tie-break
-        <select value={p.config.tieBreak} onChange={(e) => set('tieBreak', e.target.value as TieBreak)}>
-          <option value="runoff">runoff</option>
-          <option value="none">none</option>
-          <option value="chair">chair</option>
         </select>
       </label>
       <span className="spacer" />
