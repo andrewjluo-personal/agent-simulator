@@ -34,7 +34,7 @@ def test_run_lifecycle_sync() -> None:
     assert resp.status_code == 201
     run = resp.json()
     assert run["status"] == "done"  # RUN_MODE=sync awaited completion
-    assert len(run["turns"]) == 5
+    assert len(run["turns"]) == 4
     assert run["metrics"]["correctCandidateId"] == "sally"
 
     got = client.get(f"/api/runs/{run['id']}")

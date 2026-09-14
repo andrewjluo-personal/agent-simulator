@@ -289,6 +289,13 @@ class PgStore:
                 ),
             )
 
+    def delete_scenario(self, scenario_id: str) -> bool:
+        with connection() as conn:
+            cur = conn.execute(
+                "delete from scenarios where id = %s and is_sample", (scenario_id,)
+            )
+        return (cur.rowcount or 0) > 0
+
     def upsert_validation_job(self, job: ValidationJob) -> None:
         with connection() as conn:
             conn.execute(

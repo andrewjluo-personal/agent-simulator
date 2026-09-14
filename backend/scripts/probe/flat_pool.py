@@ -2,4 +2,4 @@
 
 from app.samples import SAMPLES_BY_ID
 
-FLAT = SAMPLES_BY_ID["hiring-panel-flat"]
+FLAT = SAMPLES_BY_ID["hiring-panel-flat-v2"]

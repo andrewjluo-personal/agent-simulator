@@ -11,7 +11,6 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, Any
 
-from . import scenario_gen
 from .models import Scenario
 from .scenarios.papers import PAPER_SCENARIOS
 
@@ -67,6 +66,9 @@ HIRING_PANEL_AGENTS: list[dict[str, str]] = [
         "role": "QA lead",
         "style": "skeptical, asks what could go wrong",
     },
+]
+
+HIRING_PANEL_AGENTS_V1: list[dict[str, str]] = HIRING_PANEL_AGENTS + [
     {
         "id": "omar",
         "name": "Omar",
@@ -458,9 +460,9 @@ HIRING_PANEL_V1 = Scenario.model_validate(
         "id": "hiring-panel-v1",
         "title": "Senior Backend Engineer: John vs. Sally",
         "brief": "The panel must recommend exactly one candidate for a senior backend role on a payments team. Each panelist attended different parts of the interview loop and holds different evidence.",
-        "isSample": True,
+        "isSample": False,
         "candidates": HIRING_PANEL_CANDIDATES,
-        "agents": HIRING_PANEL_AGENTS,
+        "agents": HIRING_PANEL_AGENTS_V1,
         "facts": _HP_SHARED + _HP_DECISIVE + _HP_COUNTER,
         "distribution": {
             "dana": _HP_SHARED_IDS + ["S12", "S14", "J16", "J17"],
@@ -660,9 +662,9 @@ HIRING_PANEL_FLAT = Scenario.model_validate(
         "id": "hiring-panel-flat",
         "title": "Hiring panel (flat items)",
         "brief": HIRING_PANEL_V1.brief,
-        "isSample": True,
+        "isSample": False,
         "candidates": HIRING_PANEL_CANDIDATES,
-        "agents": HIRING_PANEL_AGENTS,
+        "agents": HIRING_PANEL_AGENTS_V1,
         "facts": FLAT_SHARED + FLAT_DECISIVE + FLAT_COUNTER,
         "distribution": {
             "dana": FLAT_SHARED_IDS + ["F1", "F5", "G1", "J17"],
@@ -872,11 +874,10 @@ HIRING_PANEL_NULL = Scenario.model_validate(
         "agents": HIRING_PANEL_AGENTS,
         "facts": NULL_SHARED + NULL_UNIQUE,
         "distribution": {
-            "dana": _null_hand(["F1", "F5", "F9", "G1"]),
-            "marcus": _null_hand(["F2", "F6", "F10", "G4"]),
-            "priya": _null_hand(["F3", "F7", "F11", "G5"]),
-            "tom": _null_hand(["F12", "F13", "G7"]),
-            "omar": _null_hand(["F14", "F15", "G8"]),
+            "dana": _null_hand(["F9", "F13", "F15", "G1", "G4"]),
+            "marcus": _null_hand(["F7", "F11", "F12", "G5", "G7"]),
+            "priya": _null_hand(["F1", "F3", "F5", "F6", "G8"]),
+            "tom": _null_hand(["F2", "F8", "F10", "F14"]),
         },
         "validation": {},
     }
@@ -892,29 +893,28 @@ HIRING_PANEL_FLAT_V2 = Scenario.model_validate(
         "agents": HIRING_PANEL_AGENTS,
         "facts": FLAT_V2_SHARED + FLAT_V2_UNIQUE,
         "distribution": {
-            "dana": FLAT_V2_SHARED_IDS + ["F1", "F5", "F9", "G1"],
-            "marcus": FLAT_V2_SHARED_IDS + ["F2", "F6", "F10", "G4"],
-            "priya": FLAT_V2_SHARED_IDS + ["F3", "F7", "F11", "G5"],
-            "tom": FLAT_V2_SHARED_IDS + ["F8", "F12", "F13", "G7"],
-            "omar": FLAT_V2_SHARED_IDS + ["F14", "F15", "G8"],
+            "dana": FLAT_V2_SHARED_IDS + ["F9", "F13", "F15", "G1", "G4"],
+            "marcus": FLAT_V2_SHARED_IDS + ["F7", "F11", "F12", "G5", "G7"],
+            "priya": FLAT_V2_SHARED_IDS + ["F1", "F3", "F5", "F6", "G8"],
+            "tom": FLAT_V2_SHARED_IDS + ["F2", "F8", "F10", "F14"],
         },
-        # Gate results from docs/probes/S1_report.md §5 (claude-haiku-4-5, 10
-        # trials, default prompt): pooled reviewer Sally 10/10; each agent alone
-        # picks the shared-only candidate John 10/10. Naive prompt also passes
-        # (pooled 10/10; alone 10, 10, 10, 8, 10).
+        # gate_pool.py, 4-panelist hands, balanced candidate order, default
+        # prompt, 10 trials: pooled reviewer Sally 10/10; alone->John dana 10,
+        # marcus 8, priya 5, tom 10. Naive prompt: alone dana 5, marcus 0,
+        # priya 0, tom 4. Not a passing hidden profile under balanced order;
+        # hiring-panel-flat-v3 is the designed profile.
         "validation": {
             "claude-haiku-4-5": {
                 "aloneWrongRate": {
                     "dana": 1.0,
-                    "marcus": 1.0,
-                    "priya": 1.0,
+                    "marcus": 0.8,
+                    "priya": 0.5,
                     "tom": 1.0,
-                    "omar": 1.0,
                 },
                 "pooledRightRate": 1.0,
                 "trials": 10,
                 "date": "2026-09-14",
-                "passed": True,
+                "passed": False,
             }
         },
     }
@@ -1843,150 +1843,28 @@ VENDOR_SELECTION_V1 = Scenario.model_validate(
 )
 
 
-# ---------------------------------------------------------------------------
-# hiring-weak-profile-v1 — same item pool as v1, thinner shared set, 4 decisive
-# items, pooled margin +2
-
-_HP_BY_ID = {f["id"]: f for f in _HP_SHARED + _HP_DECISIVE + _HP_COUNTER}
-
-
-def _hp_facts(ids: list[str], weights: dict[str, int] | None = None) -> list[dict[str, Any]]:
-    return [{**_HP_BY_ID[i], "weight": (weights or {}).get(i, _HP_BY_ID[i]["weight"])} for i in ids]
-
-
-_WEAK_SHARED_IDS = [i for i in _HP_SHARED_IDS if i not in {"J8", "S10", "S11"}]
-_WEAK_DECISIVE_IDS = ["S12", "S13", "J12", "J13"]
-
-HIRING_WEAK_PROFILE_V1 = Scenario.model_validate(
-    {
-        "id": "hiring-weak-profile-v1",
-        "title": "Senior Backend Engineer: John vs. Sally (weak profile)",
-        "brief": HIRING_PANEL_V1.brief,
-        "isSample": True,
-        "candidates": HIRING_PANEL_CANDIDATES,
-        "agents": [
-            {
-                "id": "lena",
-                "name": "Lena",
-                "role": "HR partner",
-                "style": "listens for how people treat others",
-            },
-            {
-                "id": "kai",
-                "name": "Kai",
-                "role": "Release manager",
-                "style": "process-minded, risk-averse",
-            },
-            {
-                "id": "ines",
-                "name": "Ines",
-                "role": "Support lead",
-                "style": "empathetic, tests the edge cases",
-            },
-            {
-                "id": "felix",
-                "name": "Felix",
-                "role": "Finance partner",
-                "style": "numbers-driven, questions the cost",
-            },
-            {
-                "id": "theo",
-                "name": "Theo",
-                "role": "Data engineer",
-                "style": "methodical, follows the numbers",
-            },
-        ],
-        "facts": _hp_facts(_WEAK_SHARED_IDS)
-        + _hp_facts(_WEAK_DECISIVE_IDS, {"S12": 3, "S13": 2, "J12": 3, "J13": 2}),
-        "distribution": {
-            "lena": _WEAK_SHARED_IDS + ["J12"],
-            "kai": _WEAK_SHARED_IDS + ["S12"],
-            "ines": _WEAK_SHARED_IDS + ["J13"],
-            "felix": _WEAK_SHARED_IDS + ["S13"],
-            "theo": _WEAK_SHARED_IDS,
-        },
-        "validation": _haiku(
-            ["lena", "kai", "ines", "felix", "theo"], 0.5, False, alone={"lena": 0.9}
-        ),
-    }
-)
-
-
-# ---------------------------------------------------------------------------
-# hiring-adversarial-v1 — same item pool as v1; one sponsor holds only the
-# pro-John / anti-Sally uniques, the other four split the decisive items
-
-HIRING_ADVERSARIAL_V1 = Scenario.model_validate(
-    {
-        "id": "hiring-adversarial-v1",
-        "title": "Senior Backend Engineer: John vs. Sally (biased sponsor)",
-        "brief": HIRING_PANEL_V1.brief + " Victor referred John and sponsored the requisition.",
-        "isSample": True,
-        "candidates": HIRING_PANEL_CANDIDATES,
-        "agents": [
-            {
-                "id": "victor",
-                "name": "Victor",
-                "role": "Executive sponsor",
-                "style": "referred John; wants the requisition closed this week",
-            },
-            {
-                "id": "grace",
-                "name": "Grace",
-                "role": "Engineering director",
-                "style": "big-picture, budget-aware",
-            },
-            {
-                "id": "ravi",
-                "name": "Ravi",
-                "role": "Platform engineer",
-                "style": "systems-minded, traces dependencies",
-            },
-            {
-                "id": "mei",
-                "name": "Mei",
-                "role": "Product manager",
-                "style": "customer-focused, clarifies tradeoffs",
-            },
-            {
-                "id": "nadia",
-                "name": "Nadia",
-                "role": "Security engineer",
-                "style": "threat-models everything; terse",
-            },
-        ],
-        "facts": _HP_SHARED + _HP_DECISIVE + _HP_COUNTER,
-        "distribution": {
-            "victor": _HP_SHARED_IDS + ["J18", "J19", "S20"],
-            "grace": _HP_SHARED_IDS + ["S12", "S13", "J12"],
-            "ravi": _HP_SHARED_IDS + ["S14", "S15", "J13", "J17"],
-            "mei": _HP_SHARED_IDS + ["S16", "S17", "J14"],
-            "nadia": _HP_SHARED_IDS + ["S18", "J15", "J16", "S19"],
-        },
-        "validation": _haiku(["victor", "grace", "ravi", "mei", "nadia"], 1.0, True),
-    }
-)
-
-# N-agent variants of v1: shared items to everyone, uniques redealt with a fixed
-# seed (scripts/make_scenario.py --base hiring-panel-v1 --agents N --seed 1).
-HIRING_PANEL_VARIANTS: list[Scenario] = [
-    scenario_gen.redistribute(HIRING_PANEL_V1, n, seed=1) for n in (3, 7, 9)
-]
-
 SAMPLE_SCENARIOS: list[Scenario] = [
-    HIRING_PANEL_V1,
-    *HIRING_PANEL_VARIANTS,
-    INCIDENT_REVIEW_V1,
-    VENDOR_SELECTION_V1,
-    HIRING_WEAK_PROFILE_V1,
-    HIRING_ADVERSARIAL_V1,
-    HIRING_PANEL_FLAT,
     HIRING_PANEL_FLAT_V2,
     HIRING_PANEL_NULL,
+    INCIDENT_REVIEW_V1,
+    VENDOR_SELECTION_V1,
     *PAPER_SCENARIOS,
 ]
 
 SAMPLES_BY_ID: dict[str, Scenario] = {s.id: s for s in SAMPLE_SCENARIOS}
+
+# Sample ids removed from SAMPLE_SCENARIOS; ensure_samples deletes stored rows
+# carrying these ids as samples (runs embed their scenario, so old runs remain
+# readable).
+RETIRED_SAMPLE_IDS: list[str] = [
+    "hiring-panel-v1",
+    "hiring-panel-3",
+    "hiring-panel-7",
+    "hiring-panel-9",
+    "hiring-weak-profile-v1",
+    "hiring-adversarial-v1",
+    "hiring-panel-flat",
+]
 
 
 def ensure_samples(store: Store) -> int:
@@ -1998,6 +1876,10 @@ def ensure_samples(store: Store) -> int:
     """
     existing = {s.id: s for s in store.list_scenarios()}
     changed = 0
+    for retired_id in RETIRED_SAMPLE_IDS:
+        stored = existing.get(retired_id)
+        if stored is not None and stored.is_sample:
+            store.delete_scenario(retired_id)
     for sample in SAMPLE_SCENARIOS:
         stored = existing.get(sample.id)
         if stored is None or stored.model_dump() != sample.model_dump():
