@@ -9,7 +9,6 @@ from app import prompts, truth, validator
 from app.llm import FakeClient
 from app.models import RunConfig, Scenario
 from app.samples import (
-    _V3_JOHN_UNIQUE,
     _V3_SALLY_UNIQUE,
     ALL_SAMPLE_SCENARIOS,
     FLAT_V3_FILLER,
@@ -211,7 +210,7 @@ def test_symmetric_candidates_and_brief(s: Scenario) -> None:
 def test_flat_v3_is_cut_from_null_v2_bank() -> None:
     s = HIRING_PANEL_FLAT_V3
     bank = {f.id: f for f in HIRING_PANEL_NULL_V2.facts}
-    assert len(s.facts) == 31
+    assert len(s.facts) == 25
     assert all(f.id in bank for f in s.facts)
     for f in s.facts:
         twin = bank[f.id]
@@ -228,20 +227,13 @@ def test_flat_v3_is_cut_from_null_v2_bank() -> None:
     for base in FLAT_V3_FILLER:
         assert base in shared and base + "x" in shared
     uniques = [f for f in s.facts if f.id not in shared]
-    assert len(uniques) == 14
-    for f in uniques:
-        if f.candidate_id == "sally":
-            assert f.valence == "pro"
-        else:
-            assert f.candidate_id == "john" and f.valence == "con"
-    assert {_v3_sally(b) for b in FLAT_V3_FILLER} & {f.id for f in uniques} == set()
-    expected_hand_uniques = {"dana": 4, "marcus": 3, "priya": 3, "tom": 4}
+    assert len(uniques) == 8
+    assert all(f.candidate_id == "sally" and f.valence == "pro" for f in uniques)
     for agent, hand in s.distribution.items():
-        assert len([i for i in hand if i not in shared]) == expected_hand_uniques[agent]
+        assert len([i for i in hand if i not in shared]) == 2
     for agent, bases in _V3_SALLY_UNIQUE.items():
         hand = s.distribution[agent]
         assert all(_v3_sally(b) in hand for b in bases)
-        assert all(_v3_john(b) in hand for b in _V3_JOHN_UNIQUE.get(agent, []))
     assert truth.shared_only_verdict(s) == "john"
     assert truth.pooled_verdict(s) == "sally"
     assert all(truth.verdict(s, hand) == "john" for hand in s.distribution.values())
@@ -254,9 +246,8 @@ def test_flat_v3_null_mirrors_every_v3_item() -> None:
         | set(FLAT_V3_SALLY_CON)
         | set(FLAT_V3_FILLER)
         | {b for bases in _V3_SALLY_UNIQUE.values() for b in bases}
-        | {b for bases in _V3_JOHN_UNIQUE.values() for b in bases}
     )
-    assert len(null.facts) == 2 * len(pairs) == 52
+    assert len(null.facts) == 2 * len(pairs) == 40
     assert null.brief == v3.brief and null.candidates == v3.candidates
     ids = {f.id for f in null.facts}
     assert all(b in ids and b + "x" in ids for b in pairs)

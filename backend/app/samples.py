@@ -1154,27 +1154,26 @@ HIRING_PANEL_FLAT_V2 = Scenario.model_validate(
 # hiring-panel-flat-v3 — hidden profile cut from the null-v2 paraphrase bank.
 # Every item is one side of a null-v2 pair (same type and valence, one wording
 # per candidate); the pair's valence is restored from the flat-v2 base item:
-#   JOHN_PRO pairs: John's version shared, Sally's version omitted;
+#   JOHN_PRO pairs: John's version shared, Sally's version omitted (includes
+#     F7x/F14x — the John versions of two Sally-pro pairs);
 #   SALLY_CON pairs: Sally's version shared, John's version omitted;
 #   FILLER pairs: both versions shared;
-#   hidden uniques: Sally pros (one F pair version per hand) plus two John
-#   cons (G1 for dana, G4 for tom).
-# Shared therefore leans John through both John pros and Sally cons; the union
+#   hidden uniques: two Sally pros per hand.
+# Shared therefore leans John through both John pros and a Sally con; the union
 # of hands favours Sally. docs/probes/S4_flat_v3.md.
 # ---------------------------------------------------------------------------
 _NULL_V2_BY_ID = {f["id"]: f for f in NULL_V2_SHARED + NULL_V2_UNIQUE}
 _FLAT_V2_BY_ID = {f["id"]: f for f in FLAT_V2_SHARED + FLAT_V2_UNIQUE}
 
-FLAT_V3_JOHN_PRO = ["J1", "J3", "J5", "J7"]
-FLAT_V3_SALLY_CON = ["S6", "S7", "S10"]
+FLAT_V3_JOHN_PRO = ["J1", "J3", "J5", "J7", "F7", "F14"]
+FLAT_V3_SALLY_CON = ["S10"]
 FLAT_V3_FILLER = ["S1", "S4", "J9", "J10", "J11"]
 _V3_SALLY_UNIQUE = {
-    "dana": ["F9", "F13", "F15"],
-    "marcus": ["F7", "F11", "F12"],
-    "priya": ["F1", "F3", "F5"],
-    "tom": ["F2", "F10", "F14"],
+    "dana": ["F9", "F13"],
+    "marcus": ["F11", "F12"],
+    "priya": ["F1", "F3"],
+    "tom": ["F2", "F10"],
 }
-_V3_JOHN_UNIQUE = {"dana": ["G1"], "tom": ["G4"]}
 
 
 def _v3_john(base: str) -> str:
@@ -1195,9 +1194,7 @@ def _v3_fact(fact_id: str) -> dict[str, Any]:
 
 
 def _v3_uniques(agent: str) -> list[str]:
-    return [_v3_sally(b) for b in _V3_SALLY_UNIQUE[agent]] + [
-        _v3_john(b) for b in _V3_JOHN_UNIQUE.get(agent, [])
-    ]
+    return [_v3_sally(b) for b in _V3_SALLY_UNIQUE[agent]]
 
 
 FLAT_V3_SHARED_IDS = (
@@ -1227,9 +1224,7 @@ HIRING_PANEL_FLAT_V3 = Scenario.model_validate(
 # null hands mirror v3's structure — shared pairs shared to all, each agent's
 # unique pairs held only by them — so the Sally rate is the residual
 # name/order bias.
-_V3_NULL_UNIQUE_PAIRS = {
-    a: _V3_SALLY_UNIQUE[a] + _V3_JOHN_UNIQUE.get(a, []) for a in _V3_SALLY_UNIQUE
-}
+_V3_NULL_UNIQUE_PAIRS = _V3_SALLY_UNIQUE
 FLAT_V3_NULL_FACTS: list[dict[str, Any]] = [
     _NULL_V2_BY_ID[i]
     for b in FLAT_V3_JOHN_PRO
