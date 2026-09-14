@@ -18,6 +18,7 @@ DEVIN_OIDC_TOKEN_FILE = "/opt/.devin/oidc_token"
 DEVIN_EXCHANGE_URL = "https://app.devin.ai/api/oidc/token"
 ANTHROPIC_TOKEN_URL = "https://api.anthropic.com/v1/oauth/token"
 REFRESH_MARGIN_S = 30
+WIF_ENABLE_VAR = "ANTHROPIC_AUTH"
 
 
 @dataclass(frozen=True)
@@ -29,6 +30,8 @@ class WIFConfig:
 
     @classmethod
     def from_env(cls) -> WIFConfig | None:
+        if os.getenv(WIF_ENABLE_VAR) != "wif":
+            return None
         federation_rule_id = os.getenv("ANTHROPIC_FEDERATION_RULE_ID")
         organization_id = os.getenv("ANTHROPIC_ORGANIZATION_ID")
         service_account_id = os.getenv("ANTHROPIC_SERVICE_ACCOUNT_ID")

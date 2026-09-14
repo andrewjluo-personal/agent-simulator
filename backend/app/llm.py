@@ -67,8 +67,9 @@ class AnthropicClient:
                 provider = WIFTokenProvider(config)
             if provider is None:
                 raise RuntimeError(
-                    "ANTHROPIC_API_KEY is not set and Anthropic workload identity "
-                    "federation is not configured (ANTHROPIC_FEDERATION_RULE_ID/"
+                    "ANTHROPIC_API_KEY is not set (set it for deployed/Vercel use) "
+                    "and Devin workload identity federation is not enabled "
+                    "(ANTHROPIC_AUTH=wif plus ANTHROPIC_FEDERATION_RULE_ID/"
                     "ANTHROPIC_ORGANIZATION_ID/ANTHROPIC_SERVICE_ACCOUNT_ID)"
                 )
             self._token_provider = provider

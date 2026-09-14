@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Devin sessions only — the deployed app uses ANTHROPIC_API_KEY.
 # Mint a short-lived Anthropic access token via workload identity federation.
 # Prints the token to stdout; errors go to stderr. Requires
 # ANTHROPIC_FEDERATION_RULE_ID, ANTHROPIC_ORGANIZATION_ID, ANTHROPIC_SERVICE_ACCOUNT_ID.

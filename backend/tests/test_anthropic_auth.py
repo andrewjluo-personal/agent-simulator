@@ -19,8 +19,16 @@ REQUIRED_ENV = {
 
 
 def _set_wif_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ANTHROPIC_AUTH", "wif")
     for key, value in REQUIRED_ENV.items():
         monkeypatch.setenv(key, value)
+
+
+def test_wif_config_none_without_enable_var(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("ANTHROPIC_AUTH", raising=False)
+    for key, value in REQUIRED_ENV.items():
+        monkeypatch.setenv(key, value)
+    assert WIFConfig.from_env() is None
 
 
 def test_wif_config_none_when_required_missing(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -28,6 +36,7 @@ def test_wif_config_none_when_required_missing(monkeypatch: pytest.MonkeyPatch) 
         for key in REQUIRED_ENV:
             monkeypatch.delenv(key, raising=False)
         monkeypatch.delenv("ANTHROPIC_WORKSPACE_ID", raising=False)
+        monkeypatch.delenv("ANTHROPIC_AUTH", raising=False)
         _set_wif_env(monkeypatch)
         monkeypatch.delenv(missing)
         assert WIFConfig.from_env() is None
@@ -112,9 +121,10 @@ def test_client_api_key_mode(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_client_requires_some_auth(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_AUTH", raising=False)
     for key in REQUIRED_ENV:
         monkeypatch.delenv(key, raising=False)
-    with pytest.raises(RuntimeError, match="workload identity"):
+    with pytest.raises(RuntimeError, match="workload identity federation is not enabled"):
         AnthropicClient()
 
 
