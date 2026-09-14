@@ -73,18 +73,18 @@ def validate_board(
     else:
         facts = raw.get("facts")
         seen_cited: set[str] = set()
-        held_facts = [scenario.fact(fact_id) for fact_id in hand]
+        all_facts = scenario.facts
         if isinstance(facts, list):
             for text in facts:
                 if not isinstance(text, str):
                     continue
-                matched = match_facts([text], held_facts)
-                if matched:
-                    for fact_id in matched:
-                        if fact_id not in seen_cited:
-                            seen_cited.add(fact_id)
-                            out.cited.append(fact_id)
-                else:
+                matched = match_facts([text], all_facts)
+                held = [fact_id for fact_id in matched if fact_id in hand]
+                for fact_id in held:
+                    if fact_id not in seen_cited:
+                        seen_cited.add(fact_id)
+                        out.cited.append(fact_id)
+                if not matched:
                     out.hallucinated.append(f"unmatched:{text[:60]}")
     note = raw.get("note")
     if isinstance(note, str) and note:

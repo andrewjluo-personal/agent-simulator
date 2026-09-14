@@ -11,7 +11,7 @@ from app.paradigms import MODERATOR_ID, ExchangeThenDecide, get_paradigm
 from app.prompts import moderator_message, system_prompt, turn_message, vote_message
 from app.samples import SAMPLE_SCENARIOS
 from app.store import MemoryStore
-from app.truth import UNDECIDED, _majority, match_facts
+from app.truth import UNDECIDED, _majority
 from app.validate import validate_board, validate_turn
 
 
@@ -301,14 +301,11 @@ def test_memo_board_context_and_validation_use_verbatim_facts() -> None:
     assert f"[{fact_id}]" not in context
 
     hand = set(scenario.distribution[agent.id])
-    off_hand = next(
-        fact
-        for fact in scenario.facts
-        if fact.id not in hand and not match_facts([fact.text], [scenario.fact(fid) for fid in hand])
-    )
+    off_hand = next(fact for fact in scenario.facts if fact.id not in hand)
+    nonsense = "A fabricated detail unrelated to every panel note."
     validated = validate_board(
         {
-            "facts": [scenario.fact(fact_id).text, off_hand.text],
+            "facts": [scenario.fact(fact_id).text, off_hand.text, nonsense],
             "note": "",
             "current_lean": UNDECIDED,
             "confidence": 0.5,
@@ -321,4 +318,5 @@ def test_memo_board_context_and_validation_use_verbatim_facts() -> None:
     )
     assert fact_id in validated.cited
     assert off_hand.id not in validated.cited
-    assert f"unmatched:{off_hand.text[:60]}" in validated.hallucinated
+    assert f"unmatched:{off_hand.text[:60]}" not in validated.hallucinated
+    assert f"unmatched:{nonsense}" in validated.hallucinated
