@@ -235,3 +235,32 @@ def test_twin_null_is_symmetric_and_rotates_names() -> None:
     for held in twin.distribution.values():
         scores = truth.scores(twin, held)
         assert len(set(scores.values())) == 1
+
+
+def test_twin_null_rotates_candidate_name_prefix_aliases() -> None:
+    scenario = Scenario(
+        id="alias-three-way",
+        title="Alias three-way",
+        brief="Choose.",
+        candidates=[
+            Candidate(id="option-a", name="Option A: Foo", blurb=""),
+            Candidate(id="option-b", name="Option B: Bar", blurb=""),
+        ],
+        facts=[
+            Fact(
+                id="fact-a",
+                candidate_id="option-a",
+                valence="pro",
+                weight=1,
+                text="Option B's revenue is stable.",
+            )
+        ],
+        agents=[
+            AgentPersona(id="one", name="One", role="reviewer", style="careful"),
+        ],
+        distribution={"one": ["fact-a"]},
+    )
+    twin = probe_lib.twin_null(scenario)
+    assert twin.facts[0].text == "Option B's revenue is stable."
+    assert twin.facts[1].candidate_id == "option-b"
+    assert twin.facts[1].text == "Option A's revenue is stable."
