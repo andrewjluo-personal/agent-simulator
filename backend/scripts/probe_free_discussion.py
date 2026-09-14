@@ -91,6 +91,8 @@ async def one_run(
     args: argparse.Namespace,
     seed: int,
     sem: asyncio.Semaphore,
+    done: list[bool],
+    out: Path,
 ) -> dict[str, Any]:
     store = MemoryStore()
     store.upsert_scenario(scenario)
@@ -161,10 +163,14 @@ async def one_run(
             for v in final.votes
         ],
     }
+    done.append(bool(record["correct"]))
+    with out.open("a") as fh:
+        fh.write(json.dumps(record) + "\n")
     print(
         f"seed {seed}: correct={record['correct']} majority={record['final_majority']} "
         f"spoken={spoken} uniques={record['n_uniques_cited']}/{record['n_uniques_total']} "
-        f"decisive={record['decisive_surfaced_count']}/{record['decisive_total']}",
+        f"decisive={record['decisive_surfaced_count']}/{record['decisive_total']} "
+        f"running={sum(done)}/{len(done)}",
         flush=True,
     )
     return record
@@ -276,25 +282,27 @@ async def main() -> int:
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
 
-    lines: list[dict[str, Any]] = []
-    lines.extend(
+    done: list[bool] = []
+    lines: list[dict[str, Any]] = list(
         await asyncio.gather(
             *(
-                one_run(client, scenario, args, seed, sem)
+                one_run(client, scenario, args, seed, sem, done, out)
                 for seed in range(args.seed_start, args.seed_start + args.runs)
             )
         )
     )
     if args.pooled_baseline:
-        lines.append(await pooled_baseline(client, scenario, args))
-    if args.alone_baseline:
-        lines.append(await alone_baseline(client, scenario, args))
-
-    with out.open("a") as fh:  # noqa: ASYNC230 - append dump, runs once at exit
-        for line in lines:
+        line = await pooled_baseline(client, scenario, args)
+        with out.open("a") as fh:  # noqa: ASYNC230 - sync append
             fh.write(json.dumps(line) + "\n")
+        lines.append(line)
+    if args.alone_baseline:
+        line = await alone_baseline(client, scenario, args)
+        with out.open("a") as fh:  # noqa: ASYNC230 - sync append
+            fh.write(json.dumps(line) + "\n")
+        lines.append(line)
 
-    n_correct = sum(1 for line in lines if line["kind"] == "run" and line["correct"])
+    n_correct = sum(done)
     print(
         f"cell {args.cell}: {n_correct}/{args.runs} correct "
         f"({n_correct / args.runs:.2f}); tokens {client.input_tokens} in / "

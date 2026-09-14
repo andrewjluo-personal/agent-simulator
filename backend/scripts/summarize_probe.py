@@ -27,6 +27,20 @@ def load_lines(paths: list[str]) -> list[dict[str, Any]]:
     return lines
 
 
+_COST_PER_M = {  # (input $/Mtok, output $/Mtok)
+    "claude-haiku-4-5": (1.0, 5.0),
+    "claude-sonnet-4-5": (3.0, 15.0),
+}
+
+
+def _cost(record: dict[str, Any]) -> float:
+    prices = _COST_PER_M.get(str(record.get("model", "")))
+    if prices is None:
+        return 0.0
+    tokens = record.get("tokens", {})
+    return float(tokens.get("input", 0) * prices[0] + tokens.get("output", 0) * prices[1]) / 1e6
+
+
 def _fmt(x: float | None) -> str:
     return "—" if x is None else f"{x:.2f}"
 
@@ -49,7 +63,7 @@ def cell_rows(lines: list[dict[str, Any]]) -> list[str]:
         "| cell | n | correct | Wilson 95% CI | uniques cited | decisive surfaced | "
         "% final≠spoken | "
         + " | ".join(f"echo r{r + 1}" for r in range(n_rounds))
-        + " | pooled right | alone wrong | tokens (in/out) |"
+        + " | pooled right | alone wrong | tokens (in/out) | est. cost |"
     )
     sep = "|" + "---|" * (header.count("|") - 1)
     rows = [header, sep]
@@ -68,7 +82,11 @@ def cell_rows(lines: list[dict[str, Any]]) -> list[str]:
         ]
         differs = sum(1 for r in rs if r.get("final_differs_from_spoken")) / n
         echo_means = [
-            sum(r.get("echo_by_round", [0.0] * n_rounds)[i] for r in rs) / n
+            sum(
+                (r.get("echo_by_round", [])[i] if i < len(r.get("echo_by_round", [])) else 0.0)
+                for r in rs
+            )
+            / n
             for i in range(n_rounds)
         ]
         tok_in = sum(r.get("tokens", {}).get("input", 0) for r in rs) / n
@@ -80,7 +98,7 @@ def cell_rows(lines: list[dict[str, Any]]) -> list[str]:
             f"{differs:.2f} | "
             + " | ".join(f"{e:.2f}" for e in echo_means)
             + f" | {_fmt(pooled.get(cell))} | {_fmt(alone.get(cell))} | "
-            f"{tok_in:.0f}/{tok_out:.0f} |"
+            f"{tok_in:.0f}/{tok_out:.0f} | ${sum(_cost(r) for r in rs):.2f} |"
         )
     return rows
 
