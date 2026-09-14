@@ -97,5 +97,5 @@ stale-version demo rows; `--keep-stale` to keep them, `--reset-demo` to wipe all
 ```
 cd backend && DATABASE_URL=<prod> LLM_PROVIDER=anthropic \
   .venv/bin/python scripts/seed_demo.py --provider anthropic \
-  --scenario hiring-panel-flat-v2 --per-paradigm 5
+  --scenario hiring-panel-flat-v3 --per-paradigm 5
 ```

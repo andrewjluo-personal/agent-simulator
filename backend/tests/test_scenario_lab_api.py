@@ -16,7 +16,7 @@ from app.main import app, reset_state
 from app.models import ValidationJob
 
 client = TestClient(app)
-SID = "hiring-panel-flat-v2"
+SID = "hiring-panel-flat-v3"
 
 
 def test_analysis_and_stateless_analyze() -> None:
@@ -41,7 +41,7 @@ def test_fork_and_validate_lifecycle(monkeypatch: pytest.MonkeyPatch) -> None:
     fork = client.post("/api/scenarios", json={"baseId": SID, "scenario": base})
     assert fork.status_code == 201
     forked = fork.json()
-    assert forked["id"] == "hiring-panel-flat-v4"  # v3 is a seeded sample
+    assert forked["id"] == "hiring-panel-flat-v2"  # v2 retired, first free slot
     assert forked["parentId"] == SID
     assert forked["isSample"] is False
     assert forked["source"]["kind"] == "custom"
@@ -51,7 +51,7 @@ def test_fork_and_validate_lifecycle(monkeypatch: pytest.MonkeyPatch) -> None:
 
     fork_again = client.post("/api/scenarios", json={"baseId": SID, "scenario": base})
     assert fork_again.status_code == 201
-    assert fork_again.json()["id"] == "hiring-panel-flat-v5"
+    assert fork_again.json()["id"] == "hiring-panel-flat-v4"
     slug = client.post(
         "/api/scenarios",
         json={"baseId": SID, "slug": "custom-panel", "scenario": base},
@@ -112,7 +112,7 @@ def test_validation_hourly_limit(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(main, "FORK_RATE_LIMIT_PER_HOUR", 0)
     monkeypatch.setattr(validation_jobs, "run_job", _finish_validation)
     headers = {"x-forwarded-for": "203.0.113.50"}
-    for scenario_id in ("hiring-panel-flat-v2", "stasser-1985-hidden"):
+    for scenario_id in ("hiring-panel-flat-v3", "stasser-1985-hidden"):
         response = client.post(f"/api/scenarios/{scenario_id}/validate", headers=headers)
         assert response.status_code == 202
     response = client.post(
@@ -216,7 +216,7 @@ def test_custom_scenario_picker_cap(monkeypatch: pytest.MonkeyPatch) -> None:
     assert listed.status_code == 200
     listed_body = listed.json()
     assert all(
-        s["source"]["kind"] != "custom" for s in listed_body if s["id"] == "hiring-panel-flat-v2"
+        s["source"]["kind"] != "custom" for s in listed_body if s["id"] == "hiring-panel-flat-v3"
     )
     custom_ids = {s["id"] for s in listed_body if s["source"]["kind"] == "custom"}
     newest = {s["id"] for s in sorted(created, key=lambda s: s["createdAt"], reverse=True)[:2]}

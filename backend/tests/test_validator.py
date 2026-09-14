@@ -9,7 +9,7 @@ from app.store import MemoryStore
 
 
 def _sample() -> Scenario:
-    scenario = MemoryStore().get_scenario("hiring-panel-flat-v2")
+    scenario = MemoryStore().get_scenario("hiring-panel-flat-v3")
     assert scenario is not None
     return scenario
 

@@ -21,14 +21,17 @@ from app.samples import (
     HIRING_PANEL_NULL,
     HIRING_PANEL_NULL_V2,
     NULL_V2_SHARED_IDS,
+    RETIRED_SAMPLE_IDS,
     SAMPLE_SCENARIOS,
     SAMPLES_BY_ID,
+    SERVED_SCENARIO_IDS,
     _null_swap,
     _v3_john,
     _v3_sally,
     ensure_samples,
 )
 from app.scenarios.papers import PAPER_SCENARIOS
+from app.store import MemoryStore
 
 NULL_POOLS = [HIRING_PANEL_NULL, HIRING_PANEL_NULL_V2, HIRING_PANEL_FLAT_V3_NULL]
 
@@ -63,7 +66,7 @@ def test_sample_is_hidden_profile_and_each_hand_favors_shared_verdict(scenario: 
 
 def test_sample_ids_are_unique() -> None:
     assert len({scenario.id for scenario in SAMPLE_SCENARIOS}) == len(SAMPLE_SCENARIOS)
-    assert SAMPLE_SCENARIOS[0].id == "hiring-panel-flat-v2"
+    assert SAMPLE_SCENARIOS[0].id == "hiring-panel-flat-v3"
     assert len(ALL_SAMPLE_SCENARIOS) > len(SAMPLE_SCENARIOS)
     assert "incident-review-v1" in HIDDEN_SAMPLE_IDS
 
@@ -160,6 +163,23 @@ def test_hiring_panel_samples_have_four_panelists() -> None:
         truth.verdict(HIRING_PANEL_FLAT_V2, hand) == "john"
         for hand in HIRING_PANEL_FLAT_V2.distribution.values()
     )
+
+
+RETIRED_HIRING_IDS = ["hiring-panel-flat-v2", "hiring-panel-null", "hiring-panel-flat-v3-null"]
+
+
+def test_retired_hiring_samples_not_served() -> None:
+    for scenario_id in RETIRED_HIRING_IDS:
+        assert scenario_id in RETIRED_SAMPLE_IDS
+        assert scenario_id not in SERVED_SCENARIO_IDS
+        assert scenario_id in SAMPLES_BY_ID
+
+    store = MemoryStore()
+    store.upsert_scenario(
+        HIRING_PANEL_FLAT_V2.model_copy(update={"is_sample": True})
+    )
+    ensure_samples(store)
+    assert store.get_scenario("hiring-panel-flat-v2") is None
 
 
 def test_null_v2_pairs_are_paraphrased_not_mirrored() -> None:
