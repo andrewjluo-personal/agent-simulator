@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 from app.main import app, get_store
 
 client = TestClient(app)
-SID = "hiring-panel-v1"
+SID = "hiring-panel-flat-v2"
 
 
 def test_list_and_get_scenarios() -> None:

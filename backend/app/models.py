@@ -109,7 +109,7 @@ class Scenario(Model):
 
 
 class RunConfig(Model):
-    scenario_id: str = "hiring-panel-v1"
+    scenario_id: str = "hiring-panel-flat-v2"
     paradigm: Paradigm = "free_discussion"
     rounds: int = Field(default=3, ge=1, le=10)
     sentences_per_turn: int = Field(default=2, ge=1, le=5)

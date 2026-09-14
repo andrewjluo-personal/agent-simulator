@@ -44,7 +44,7 @@ def test_run_to_completion() -> None:
         assert len(final.votes) == (run.config.rounds + 1) * n
         assert final.metrics is not None
         assert final.metrics.correct_candidate_id == "sally"
-        assert final.metrics.decisive_total == 12
+        assert final.metrics.decisive_total == 19
         assert len(final.metrics.vote_trajectory) == run.config.rounds + 1
         assert final.metrics.vote_rounds[0] == -1
 
