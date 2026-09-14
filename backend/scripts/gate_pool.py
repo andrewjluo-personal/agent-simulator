@@ -21,7 +21,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent))
 
-from probe_lib import cost_usd, load_scenario_arg
+from probe_lib import cost_usd, load_scenario_arg, order_for_sample
 
 from app import prompts, truth, validate
 from app.llm import AnthropicClient, LLMClient, LLMRequest, LLMResponse
@@ -61,16 +61,18 @@ async def votes(
     hand: list[str],
     cfg: RunConfig,
     samples: int,
+    order: str = "balanced",
 ) -> Counter[str]:
     spec = get_paradigm(cfg.paradigm)
-    user = prompts.alone_vote_message(scenario, cfg)
     ids = {c.id for c in scenario.candidates}
 
     async def one(seed: int) -> str:
         # one seed per sample so memo shuffle + run nonce vary as they do in real runs
-        system = prompts.system_prompt(
-            scenario, cfg.model_copy(update={"seed": seed}), agent, hand, spec
+        cell_cfg = cfg.model_copy(
+            update={"seed": seed, "candidate_order": order_for_sample(order, seed % samples)}
         )
+        system = prompts.system_prompt(scenario, cell_cfg, agent, hand, spec)
+        user = prompts.alone_vote_message(scenario, cell_cfg, agent)
         resp = await client.complete(
             LLMRequest(system=system, user=user, model=MODEL, max_tokens=200)
         )
@@ -82,16 +84,29 @@ async def votes(
 
 
 async def gate(
-    client: LLMClient, scenario: Scenario, style: PromptStyle, samples: int, fact_style: str
+    client: LLMClient,
+    scenario: Scenario,
+    style: PromptStyle,
+    samples: int,
+    fact_style: str,
+    order: str = "balanced",
 ) -> dict[str, Any]:
-    cfg = RunConfig(prompt_style=style, fact_style=fact_style, seed=0)  # type: ignore[arg-type]
+    cfg = RunConfig(prompt_style=style, fact_style=fact_style, seed=0, candidate_order="fixed")  # type: ignore[arg-type]
     correct = truth.verdict(scenario, truth.pooled_fact_ids(scenario))
     shared_v = truth.verdict(scenario, truth.shared_fact_ids(scenario))
     pooled = await votes(
-        client, scenario, POOLED, sorted(truth.pooled_fact_ids(scenario)), cfg, samples
+        client,
+        scenario,
+        POOLED,
+        sorted(truth.pooled_fact_ids(scenario)),
+        cfg,
+        samples,
+        order,
     )
     alone = {
-        a.id: await votes(client, scenario, a, list(scenario.distribution[a.id]), cfg, samples)
+        a.id: await votes(
+            client, scenario, a, list(scenario.distribution[a.id]), cfg, samples, order
+        )
         for a in scenario.agents
     }
     pooled_right = pooled[correct] / samples
@@ -115,14 +130,22 @@ async def main() -> int:
     parser.add_argument("--prompt", nargs="+", default=["naive", "default"])
     parser.add_argument("--samples", type=int, default=10)
     parser.add_argument("--fact-style", default="memo")
+    parser.add_argument(
+        "--order",
+        choices=["balanced", "random", "fixed"],
+        default="balanced",
+        help="candidate order; 'balanced' alternates per sample (--samples must be even)",
+    )
     parser.add_argument("--out", default="scripts/probe/out/gate")
     args = parser.parse_args()
+    if args.order == "balanced" and args.samples % 2:
+        parser.error("--samples must be even for balanced order")
     client = CountingClient(AnthropicClient())
     scenario = load_scenario_arg(args.scenario)
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
     for style in args.prompt:
-        res = await gate(client, scenario, style, args.samples, args.fact_style)
+        res = await gate(client, scenario, style, args.samples, args.fact_style, args.order)
         (out_dir / f"{scenario.id}_{style}.json").write_text(json.dumps(res, indent=1))
         print(
             f"{scenario.id} [{style}] correct={res['correct']} pooled={res['pooled']} "

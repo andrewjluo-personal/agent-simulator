@@ -5,6 +5,30 @@ Anthropic calls via workload identity (`backend/app/anthropic_auth.py`, no API k
 Probe: `backend/scripts/probe/leak_null.py`; gate: `backend/scripts/gate_null.py`.
 Total spend ≈ $0.82 across all runs below.
 
+## Finding: candidate order dominates close ballots
+
+With the null pool made fully symmetric (identical items per candidate, identical
+blurbs, neutral brief), Haiku votes for **whichever candidate is listed first** in the
+system prompt and the vote option string:
+
+| listed first | pooled reviewer | alone (5 agents × 10) |
+|---|---|---|
+| John (fixed, the historical default) | John 10/10 | John 45/50 (3 undecided, 2 Sally; `gate_null` fixed cells) |
+| Sally (`candidate_order=reversed`) | Sally 9/10 | Sally 47/50 (2 undecided, 1 John) |
+| Candidate A (neutral names, A first) | A 10/10 | A 42/50 (8 undecided, 0 B) |
+
+n = 10 per cell, naive prompt, memo style, one seed per sample. Ballot reasons
+confabulate a difference between identical hands and hand the favourable reading to the
+first-listed candidate (see §3a). Names, gender and persona text add nothing measurable
+once blurbs are symmetric.
+
+Implication: every earlier run on v1 / v2 / flat pools used a fixed John-first order,
+so all prior alone→John passes were partly a position effect (~±45 pt on a close hand),
+not only item evidence. From this PR `RunConfig.candidate_order` defaults to
+`balanced`: samples and agents alternate John-first / Sally-first with an even split,
+order is recorded per ballot, and `gate_null.py` checks the balanced null stays within
+35–65%. `fixed` remains available for byte-identical replay of old runs.
+
 ## 0. Two different "hiring-panel-null" pools
 
 The S2 Sally result (alone 107/120, pooled 10/10) was measured on the 31-item JSON
@@ -131,6 +155,24 @@ A random shuffle at n=20 does not counterbalance position.
 Alone and pooled are all within 35–65% Sally. The `by_order` column shows the
 position prior is not removed, only cancelled: under fixed order the first-listed
 candidate still wins 8–10/10. Pooled at 0.65 sits on the band edge.
+
+### 3d. Which surface carries the position effect
+
+`leak_null.py --cond order_split` (hiring-panel-null, 10 samples/cell, ≈ $0.16):
+candidate order fixed everywhere except ONE reversed surface — the candidate list
+in the system prompt ("list"), the memo paragraph order ("memo"), or the ballot
+option string ("options"). Counts are Sally/John/undecided.
+
+| variant reversed | pooled | dana | marcus | priya | tom | omar |
+|---|---|---|---|---|---|---|
+| list (candidate lines) | J9/S1 | J10 | J8/S1/U1 | J9/S1 | J10 | J9/S1 |
+| memo (notes paragraphs) | S9/J1 | S10 | S10 | S10 | S9/U1 | S10 |
+| options (ballot string) | J8/S2 | J10 | J9/S1 | J9/S1 | J10 | J9/S1 |
+
+Reversing only the memo paragraph order flips the vote to Sally ~97%; reversing
+the candidate list or the ballot options alone leaves John dominant — the
+position effect is carried by the order of the notes paragraphs, not by the
+listing or the option string.
 
 ## 4. Conclusions
 

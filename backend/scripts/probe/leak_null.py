@@ -15,6 +15,8 @@ Conditions:
                  and a neutral "panelist" persona -> do the persona lines carry the prior?
   cand_order     candidates listed Sally-first (system prompt + vote option string), alone + pooled
   neutral_names  John/Sally -> "Candidate A"/"Candidate B", pronouns neutralised everywhere
+  order_split    diagnostic: reverse exactly one surface (candidate list / memo
+                 paragraphs / ballot options) while the rest stay in fixed order
   alone_base     each agent alone on its real hand (reference)
 
 Usage:
@@ -27,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import contextlib
 import json
 import re
 import sys
@@ -38,7 +41,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from gate_pool import POOLED, CountingClient
-from probe_lib import cost_usd, load_scenario_arg, mirror_scenario
+from probe_lib import cost_usd, load_scenario_arg, mirror_scenario, order_for_sample
 
 from app import prompts, truth, validate
 from app.llm import AnthropicClient, LLMRequest
@@ -60,6 +63,39 @@ def reverse_candidates(s: Scenario) -> Scenario:
     return s.model_copy(
         update={"id": s.id + "-revorder", "candidates": list(reversed(s.candidates))}
     )
+
+
+@contextlib.contextmanager
+def _reversed_surface(which: str):
+    """Diagnostic: reverse exactly one prompt surface by routing its builder through
+    a reversed-candidates scenario view. Restores everything on exit."""
+    orig_lines = prompts._candidate_lines
+    orig_memo = prompts._memo_lines
+    orig_msg = prompts.alone_vote_message
+    if which == "list":
+
+        def lines(s: Scenario, cfg=None, agent=None) -> str:
+            return orig_lines(reverse_candidates(s), cfg, agent)
+
+        prompts._candidate_lines = lines
+    elif which == "memo":
+
+        def memo(s: Scenario, cfg, agent, hand_fact_ids) -> str:
+            return orig_memo(reverse_candidates(s), cfg, agent, hand_fact_ids)
+
+        prompts._memo_lines = memo
+    elif which == "options":
+
+        def msg(s: Scenario, cfg=None, agent=None) -> str:
+            return orig_msg(reverse_candidates(s), cfg, agent)
+
+        prompts.alone_vote_message = msg
+    try:
+        yield
+    finally:
+        prompts._candidate_lines = orig_lines
+        prompts._memo_lines = orig_memo
+        prompts.alone_vote_message = orig_msg
 
 
 _PRONOUN = [
@@ -114,15 +150,26 @@ def neutral_names(s: Scenario) -> Scenario:
 
 
 async def votes(
-    client: CountingClient, s: Scenario, hand: list[str], agent: AgentPersona, n: int
+    client: CountingClient,
+    s: Scenario,
+    hand: list[str],
+    agent: AgentPersona,
+    n: int,
+    order_mode: str = "balanced",
 ) -> dict[str, Any]:
     spec = get_paradigm("free_discussion")
-    user = prompts.alone_vote_message(s)
     ids = {c.id for c in s.candidates}
 
     async def one(seed: int) -> tuple[str, str]:
-        cfg = RunConfig(scenario_id=s.id, model=MODEL, prompt_style="naive", seed=seed)
+        cfg = RunConfig(
+            scenario_id=s.id,
+            model=MODEL,
+            prompt_style="naive",
+            seed=seed,
+            candidate_order=order_for_sample(order_mode, seed),
+        )
         system = prompts.system_prompt(s, cfg, agent, hand, spec)
+        user = prompts.alone_vote_message(s, cfg, agent)
         r = await client.complete(LLMRequest(system=system, user=user, model=MODEL, max_tokens=300))
         raw = validate.parse_json_object(r.text) or {}
         v = raw.get("vote")
@@ -138,13 +185,25 @@ def fmt(counts: dict[str, int]) -> str:
 
 
 async def run_condition(
-    client: CountingClient, cond: str, base: Scenario, n: int, out: dict[str, Any]
+    client: CountingClient,
+    cond: str,
+    base: Scenario,
+    n: int,
+    out: dict[str, Any],
+    order: str = "balanced",
 ) -> None:
     all_ids = [f.id for f in base.facts]
     swapped = mirror_scenario(base)
 
-    async def rec(label: str, s: Scenario, hand: list[str], agent: AgentPersona, k: int) -> None:
-        res = await votes(client, s, hand, agent, k)
+    async def rec(
+        label: str,
+        s: Scenario,
+        hand: list[str],
+        agent: AgentPersona,
+        k: int,
+        cell_order: str | None = None,
+    ) -> None:
+        res = await votes(client, s, hand, agent, k, cell_order or order)
         out[label] = res
         print(f"{label:34} n={k:<3} {fmt(res['counts'])}", flush=True)
 
@@ -178,6 +237,37 @@ async def run_condition(
         await rec("cand_order pooled", rev, all_ids, POOLED, n)
         for ag in rev.agents:
             await rec(f"cand_order alone {ag.id}", rev, rev.distribution[ag.id], ag, n)
+    elif cond == "order_split":
+        # sanity: the swap machinery is transparent when nothing is reversed
+        spec = get_paradigm("free_discussion")
+        cfg_fix = RunConfig(
+            scenario_id=base.id,
+            model=MODEL,
+            prompt_style="naive",
+            seed=0,
+            candidate_order="fixed",
+        )
+        ag = base.agents[0]
+        expected_sys = prompts.system_prompt(base, cfg_fix, ag, base.distribution[ag.id], spec)
+        expected_msg = prompts.alone_vote_message(base, cfg_fix, ag)
+        with _reversed_surface("none"):
+            assert (
+                prompts.system_prompt(base, cfg_fix, ag, base.distribution[ag.id], spec)
+                == expected_sys
+            )
+            assert prompts.alone_vote_message(base, cfg_fix, ag) == expected_msg
+        for variant in ("list", "memo", "options"):
+            with _reversed_surface(variant):
+                await rec(f"order_split {variant} pooled", base, all_ids, POOLED, n, "fixed")
+                for ag in base.agents:
+                    await rec(
+                        f"order_split {variant} alone {ag.id}",
+                        base,
+                        base.distribution[ag.id],
+                        ag,
+                        n,
+                        "fixed",
+                    )
     elif cond == "neutral_names":
         neu = neutral_names(base)
         await rec("neutral_names blurb_only", neu, [], POOLED, n)
@@ -193,15 +283,23 @@ async def main() -> int:
     p.add_argument("scenario")
     p.add_argument("--samples", type=int, default=10)
     p.add_argument("--cond", nargs="+", default=["blurb_only", "pooled_base"])
+    p.add_argument(
+        "--order",
+        choices=["balanced", "random", "fixed"],
+        default="balanced",
+        help="candidate order; 'balanced' alternates per sample (--samples must be even)",
+    )
     p.add_argument("--out", default="scripts/probe/out/s3/leak_null.json")
     args = p.parse_args()
+    if args.order == "balanced" and args.samples % 2:
+        p.error("--samples must be even for balanced order")
     base = load_scenario_arg(args.scenario)
     client = CountingClient(AnthropicClient())
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out: dict[str, Any] = json.loads(out_path.read_text()) if out_path.exists() else {}
     for cond in args.cond:
-        await run_condition(client, cond, base, args.samples, out)
+        await run_condition(client, cond, base, args.samples, out, args.order)
         out_path.write_text(json.dumps(out, indent=1))
     print(f"~${cost_usd(client.input_tokens, client.output_tokens):.2f}")
     return 0

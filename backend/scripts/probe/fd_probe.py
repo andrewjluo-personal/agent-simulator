@@ -25,10 +25,10 @@ from app import orchestrator as _orch
 
 def naive_system_prompt(scenario, cfg, agent, hand_fact_ids, paradigm):
     notes = prompts._memo_lines(scenario, cfg, agent, hand_fact_ids)
-    schema = f'{{"sentences": string[], "current_lean": "{prompts._lean_options(scenario, None)}", "confidence": 0..1}}'
+    schema = f'{{"sentences": string[], "current_lean": "{prompts._lean_options(scenario, None, None)}", "confidence": 0..1}}'
     return f"""You are {agent.name}, {agent.role} on the panel. Style: {agent.style}.
 The panel has {len(scenario.agents)} interviewers and must recommend exactly one candidate:
-{prompts._candidate_lines(scenario, None)}
+{prompts._candidate_lines(scenario, None, None)}
 
 {scenario.brief}
 The panel will discuss and then each of you will give a private recommendation.

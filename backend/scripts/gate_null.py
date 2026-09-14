@@ -22,23 +22,16 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent))
 
 from gate_pool import MODEL, POOLED, CountingClient
-from probe_lib import cost_usd, load_scenario_arg, wilson
+from probe_lib import cost_usd, load_scenario_arg, order_for_sample, wilson
 
 from app import prompts, truth, validate
 from app.llm import AnthropicClient, LLMClient, LLMRequest
-from app.models import AgentPersona, CandidateOrder, PromptStyle, RunConfig, Scenario
+from app.models import AgentPersona, PromptStyle, RunConfig, Scenario
 from app.paradigms import get_paradigm
 
 
 def within(rate: float, lo: float, hi: float) -> bool:
     return lo <= rate <= hi
-
-
-def order_for_sample(order_mode: str, j: int) -> CandidateOrder:
-    """Candidate order for sample index j; `balanced` alternates fixed/reversed."""
-    if order_mode == "balanced":
-        return "fixed" if j % 2 == 0 else "reversed"
-    return order_mode  # type: ignore[return-value]
 
 
 async def cell_votes(
@@ -59,10 +52,12 @@ async def cell_votes(
         eff = order_for_sample(order_mode, j)
         cell_cfg = cfg.model_copy(update={"seed": seed, "candidate_order": eff})
         key = (
-            prompts.ordered_candidates(scenario, cell_cfg)[0].id if order_mode == "random" else eff
+            prompts.ordered_candidates(scenario, cell_cfg, agent)[0].id
+            if order_mode == "random"
+            else eff
         )
         system = prompts.system_prompt(scenario, cell_cfg, agent, hand, spec)
-        user = prompts.alone_vote_message(scenario, cell_cfg)
+        user = prompts.alone_vote_message(scenario, cell_cfg, agent)
         resp = await client.complete(
             LLMRequest(system=system, user=user, model=MODEL, max_tokens=200)
         )
@@ -133,11 +128,18 @@ async def main() -> int:
     parser.add_argument("--prompt", nargs="+", default=["naive", "default"])
     parser.add_argument("--samples", type=int, default=10)
     parser.add_argument("--seeds", type=int, default=2)
-    parser.add_argument("--order", choices=["balanced", "random", "fixed"], default="balanced")
+    parser.add_argument(
+        "--order",
+        choices=["balanced", "random", "fixed"],
+        default="balanced",
+        help="candidate order; 'balanced' alternates per sample (--samples must be even)",
+    )
     parser.add_argument("--lo", type=float, default=0.35)
     parser.add_argument("--hi", type=float, default=0.65)
     parser.add_argument("--out", default="scripts/probe/out/gate_null")
     args = parser.parse_args()
+    if args.order == "balanced" and args.samples % 2:
+        parser.error("--samples must be even for balanced order")
     client = CountingClient(AnthropicClient())
     scenario = load_scenario_arg(args.scenario)
     out_dir = Path(args.out)
