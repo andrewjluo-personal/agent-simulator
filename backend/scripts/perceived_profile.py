@@ -12,8 +12,8 @@ Prints per-item designed vs perceived sign, lists disagreements, and recomputes 
 shared-only / per-hand / pooled tallies with perceived weights.
 
 Usage:
-  .venv/bin/python scripts/perceived_profile.py hiring-panel-flat hiring-panel-flat:mirror \
-      hiring-panel-v1 [--samples 5] [--out DIR]
+  .venv/bin/python scripts/perceived_profile.py hiring-panel-flat-v2 hiring-panel-flat-v2:mirror \
+      hiring-panel-flat-v2 [--samples 5] [--out DIR]
 """
 
 from __future__ import annotations

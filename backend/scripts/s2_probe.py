@@ -3,7 +3,7 @@ of the real orchestrator and record per-run JSONL.
 
 Usage:
   .venv/bin/python scripts/s2_probe.py \
-      --scenario hiring-panel-flat --cell fd-naive-hidden \
+      --scenario hiring-panel-flat-v2 --cell fd-naive-hidden \
       --prompt-style naive --transcript-visibility none \
       --runs 20 --out probes.jsonl
 """
@@ -257,7 +257,7 @@ async def alone_baseline(
 
 async def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--scenario", default="hiring-panel-flat")
+    parser.add_argument("--scenario", default="hiring-panel-flat-v2")
     parser.add_argument("--n-agents", type=int, default=0, help="0 = scenario's own panel")
     parser.add_argument("--rounds", type=int, default=3)
     parser.add_argument("--runs", type=int, default=20)

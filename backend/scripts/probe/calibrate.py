@@ -41,7 +41,7 @@ async def main() -> None:
     sem = asyncio.Semaphore(6)
     facts = [f for f in FLAT.facts if not ONLY or f.id in ONLY]
     results = await asyncio.gather(*(rate(client, f.memo_text or f.text, sem) for f in facts))
-    shared = set(FLAT.distribution["dana"]) & set(FLAT.distribution["omar"])
+    shared = set(FLAT.distribution["dana"]) & set(FLAT.distribution["tom"])
     rows = []
     for f, r in zip(facts, results, strict=True):
         kind = "shared" if f.id in shared else "unique"

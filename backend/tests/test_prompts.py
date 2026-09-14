@@ -3,9 +3,9 @@ from __future__ import annotations
 from app import prompts
 from app.models import RunConfig, Turn
 from app.paradigms import get_paradigm
-from app.samples import SAMPLES_BY_ID
+from app.samples import HIRING_PANEL_V1
 
-SCENARIO = SAMPLES_BY_ID["hiring-panel-v1"]
+SCENARIO = HIRING_PANEL_V1
 CFG = RunConfig(seed=7, fact_style="labelled")
 DANA = next(a for a in SCENARIO.agents if a.id == "dana")
 HAND = SCENARIO.distribution["dana"]

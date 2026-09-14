@@ -3,11 +3,11 @@ from __future__ import annotations
 import pytest
 
 from app import scenario_gen, truth
-from app.samples import SAMPLES_BY_ID
+from app.samples import HIRING_PANEL_V1
 
 
 def test_redistribute_preserves_hidden_profile() -> None:
-    base = SAMPLES_BY_ID["hiring-panel-v1"]
+    base = HIRING_PANEL_V1
     scenario = scenario_gen.redistribute(base, 7, 1)
 
     assert truth.is_hidden_profile(scenario)
@@ -24,6 +24,6 @@ def test_redistribute_preserves_hidden_profile() -> None:
 
 
 def test_redistribute_requires_one_decisive_fact_per_agent() -> None:
-    base = SAMPLES_BY_ID["hiring-panel-v1"]
+    base = HIRING_PANEL_V1
     with pytest.raises(ValueError, match="decisive"):
         scenario_gen.redistribute(base, len(truth.decisive_fact_ids(base)) + 1, 1)
