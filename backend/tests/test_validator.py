@@ -30,7 +30,7 @@ def test_validate_fails_when_a_hand_favors_pooled_winner() -> None:
     sally_ids = [f.id for f in scenario.facts if f.candidate_id == "sally" and f.valence == "pro"]
     # give dana only the strongest sally evidence -> her alone ballot flips to sally
     bad = scenario.model_copy(
-        update={"distribution": {**scenario.distribution, "dana": sally_ids[:5]}}
+        update={"distribution": {**scenario.distribution, "dana": sally_ids[4:9]}}
     )
     result = asyncio.run(validator.validate_scenario(bad, FakeClient(), model="fake", trials=5))
     assert not result.passed

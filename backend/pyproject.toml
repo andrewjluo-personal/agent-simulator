@@ -22,7 +22,9 @@ entrypoint = "app.main:app"
 
 [tool.ruff]
 line-length = 100
+exclude = ["scripts/probe"]
 
 [tool.mypy]
 python_version = "3.12"
 strict = true
+exclude = '(^|/)scripts/probe/'

@@ -104,6 +104,10 @@ header h1 {
   font-weight: 700;
   font-size: 16px;
 }
+.validation-badge {
+  font-size: 11px;
+  padding: 5px 8px;
+}
 
 /* stage */
 .stage {

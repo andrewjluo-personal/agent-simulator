@@ -17,7 +17,7 @@ HEARD = [
         round=0,
         agent_id="marcus",
         sentences=["Sally aced the debug.", "John was polished."],
-        cited=["S4", "J1"],
+        cited=["S13", "J1"],
         hallucinated=[],
         lean="sally",
         confidence=0.7,
@@ -35,32 +35,40 @@ HEARD = [
 ]
 
 LABELLED_FACT_LINES = (
-    "[S8] (about Sally) Sally maintains a small open-source Postgres migration tool with a few hundred stars.\n"
-    "[S9] (about Sally) Sally's written design sample was clear and well-structured.\n"
-    "[S10] (about Sally) Sally was visibly nervous in the panel round and rambled through two answers before recovering.\n"
-    "[S11] (about Sally) Sally has never written Go, which is our primary backend language.\n"
-    "[S12] (about Sally) Sally's most recent tenure was only 14 months.\n"
-    "[S13] (about Sally) Sally declined to use the whiteboard and asked to work in an editor instead.\n"
-    "[S14] (about Sally) Sally has no formal management experience and no direct reports.\n"
-    "[J1] (about John) John gave a polished, confident panel performance and answered every behavioural question crisply.\n"
-    "[J2] (about John) John has eight years of Go, our primary backend language.\n"
-    "[J3] (about John) John led a team of six engineers at his last company.\n"
-    "[J4] (about John) John comes from a top-tier, brand-name employer that everyone on the panel recognises.\n"
-    "[J5] (about John) John's take-home was submitted fast and the code was clean and idiomatic.\n"
-    "[J6] (about John) John already knows the fintech domain and used our vocabulary correctly throughout.\n"
-    "[J7] (about John) John is available to start immediately.\n"
-    "[S1] (about Sally) Sally single-handedly designed and shipped the ledger migration at her last company, moving 2B rows with zero downtime.\n"
-    "[S5] (about Sally) Sally's system design answer correctly anticipated the double-spend failure mode and proposed idempotency keys before being prompted.\n"
-    "[J9] (about John) John's take-home is near-identical to a public blog post solution, down to variable names and an unusual comment.\n"
-    "[J13] (about John) In the closing round John asked only about title and compensation and no questions about the product or users."
+    "[J1] (about John) John answered every behavioural question in the panel round without pausing and kept each answer under two minutes.\n"
+    "[J2] (about John) John has eight years of professional Go, which is the team's primary backend language.\n"
+    "[J3] (about John) John's CV lists him as team lead for six engineers at his current employer.\n"
+    "[J4] (about John) John's current employer is a payments company most of the panel has heard of.\n"
+    "[J5] (about John) John submitted the take-home within a day; the code follows standard Go project layout.\n"
+    "[J6] (about John) John used payments vocabulary (settlement, chargeback, reconciliation) correctly throughout the loop.\n"
+    "[J7] (about John) John is available to start in two weeks.\n"
+    "[J8] (about John) John holds a current AWS Solutions Architect certification.\n"
+    "[J9] (about John) John's take-home README omits setup and run instructions.\n"
+    "[J10] (about John) In the closing round John asked about title and compensation and did not ask about the product.\n"
+    "[J11] (about John) John's compensation ask is at the top of the posted band.\n"
+    "[S1] (about Sally) Sally's written design sample is organised into numbered sections with a stated assumptions list.\n"
+    "[S2] (about Sally) Sally has six years of backend work in Python and Java on data platforms.\n"
+    "[S3] (about Sally) Sally maintains an open-source Postgres migration tool with a few hundred GitHub stars.\n"
+    "[S4] (about Sally) In the closing round Sally asked about the on-call rotation and the team's last three incidents.\n"
+    "[S5] (about Sally) Sally has not written Go professionally; the team's services are in Go.\n"
+    "[S6] (about Sally) Sally paused for several seconds before two panel answers and asked to restart one of them.\n"
+    "[S7] (about Sally) Sally's most recent role lasted 14 months.\n"
+    "[S8] (about Sally) Sally has had no direct reports and no formal lead title.\n"
+    "[S9] (about Sally) Sally asked to work in an editor rather than on the whiteboard for the coding round.\n"
+    "[S10] (about Sally) Sally submitted the take-home about an hour before the deadline.\n"
+    "[S11] (about Sally) Sally's background is in logistics data platforms rather than payments.\n"
+    "[S12] (about Sally) At her last company Sally was the named lead on a ledger migration that moved 2B rows with no recorded downtime.\n"
+    "[S14] (about Sally) Sally's design answer covered the double-spend case and proposed idempotency keys before the interviewer raised it.\n"
+    "[J16] (about John) Asked about an outage on his service, John said it was not his; the public post-mortem lists him as owner.\n"
+    "[J17] (about John) John's former manager says he has met every delivery date they set together."
 )
 
 LABELLED_TRANSCRIPT = (
     "TRANSCRIPT SO FAR (what the panel has actually heard):\n"
-    "Round 1 — Marcus: Sally aced the debug. John was polished.  [cited: S4, J1]\n"
+    "Round 1 — Marcus: Sally aced the debug. John was polished.  [cited: S13, J1]\n"
     "Round 1 — Priya: Her postmortems were adopted.  [cited: S3]\n"
     "\n"
-    "FACTS ALREADY MENTIONED BY ANYONE: S4, J1, S3"
+    "FACTS ALREADY MENTIONED BY ANYONE: S13, J1, S3"
 )
 
 

@@ -49,7 +49,7 @@ async def _alone_votes(
         }
         async with sem:
             resp = await client.complete(
-                LLMRequest(system=system, user=user, model=model, max_tokens=200, meta=meta)
+                LLMRequest(system=system, user=user, model=model, max_tokens=400, meta=meta)
             )
         choice, _conf, _reason = validate.validate_vote(
             validate.parse_json_object(resp.text), candidate_ids
