@@ -4,6 +4,7 @@ import { getDemo, getRun, listScenarios, resetScenario } from './api'
 import { Controls, ResultsStrip, Transcript, VerdictBadges, VerdictCard, type StripRow } from './components/Panels'
 import { FlowTimeline } from './components/FlowTimeline'
 import { Table } from './components/Table'
+import { ResearchPage } from './ResearchPage'
 import { HighlightContext, useHighlightState } from './hooks/useHighlight'
 import { usePlayback } from './hooks/usePlayback'
 import { track } from './telemetry'
@@ -16,6 +17,15 @@ const PARADIGMS: { id: Paradigm; label: string }[] = [
 ]
 
 const DEFAULT_SCENARIO_ID = 'stasser-1985-hidden'
+
+function viewFromLocation(): 'bench' | 'research' {
+  return window.location.pathname === '/research' ? 'research' : 'bench'
+}
+
+function navigate(path: string) {
+  window.history.pushState({}, '', path)
+  window.dispatchEvent(new PopStateEvent('popstate'))
+}
 
 function defaultConfig(scenario: Scenario): RunConfig {
   return {
@@ -40,6 +50,7 @@ function App() {
   const [apiDown, setApiDown] = useState(false)
   const [config, setConfig] = useState<RunConfig | null>(null)
   const [batchError, setBatchError] = useState<string | null>(null)
+  const [view, setView] = useState<'bench' | 'research'>(viewFromLocation)
   const pb = usePlayback()
   const highlight = useHighlightState()
 
@@ -61,9 +72,16 @@ function App() {
     }
   }, [])
 
-  // The scenario list and the default scenario's snapshot are independent, so fetch both at once;
-  // first paint only waits on the snapshot.
   useEffect(() => {
+    const onPopState = () => setView(viewFromLocation())
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
+
+  // The scenario list and the default scenario's snapshot are independent, so fetch both at once;
+  // first paint only waits on the snapshot. Skipped entirely on the research page.
+  useEffect(() => {
+    if (view !== 'bench') return
     const demo = loadRecent(DEFAULT_SCENARIO_ID)
     listScenarios()
       .then(async (list) => {
@@ -76,17 +94,18 @@ function App() {
         track('scenarios.load_failed', { reason: String(cause) }, 'warning')
         if (!(await demo)) setApiDown(true)
       })
-  }, [loadRecent])
+  }, [view, loadRecent])
 
   // Live-first landing: kick off a real run once the default scenario resolves —
   // once per page load (ref). The server flag and per-IP rate limit bound cost.
   useEffect(() => {
+    if (view !== 'bench') return
     if (!scenario || !config) return
     if (autoRunStarted.current || autoRunAllowed.current !== true) return
     autoRunStarted.current = true
     track('autorun.start', { scenarioId: scenario.id })
     void pb.startLive({ ...defaultConfig(scenario), seed: Math.floor(Math.random() * 10000) })
-  }, [scenario, config, pb])
+  }, [view, scenario, config, pb])
 
   const openRun = useCallback(
     async (id: string) => {
@@ -179,6 +198,10 @@ function App() {
     [recentRuns, pb, openRun],
   )
 
+  if (view === 'research') {
+    return <ResearchPage onBack={() => navigate('/')} />
+  }
+
   if (!scenario || !config) {
     return (
       <main>
@@ -208,7 +231,12 @@ function App() {
     <HighlightContext.Provider value={highlight}>
     <main>
       <header>
-        <h1>Hidden Profile</h1>
+        <h1>
+          Hidden Profile
+          <button type="button" className="link header-link" onClick={() => navigate('/research')}>
+            Research brief
+          </button>
+        </h1>
         <p className="hero">
           {runScenario.agents.length} interviewers must pick between {runScenario.candidates.map((c) => c.name).join(' and ')}, but the
           evidence is split: what everyone knows favors {candidateName(runScenario, sharedOnlyVerdict(runScenario))}, and the facts that

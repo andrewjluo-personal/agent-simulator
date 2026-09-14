@@ -758,3 +758,88 @@ header h1 {
 .convergence-svg .dot.acc {
   fill: #10b981;
 }
+
+.header-link {
+  font-size: 13px;
+  font-weight: 400;
+  margin-left: 14px;
+  vertical-align: 4px;
+}
+
+.research {
+  max-width: 760px;
+}
+.research .back-link {
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.research-body {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 28px 36px;
+}
+.research-body h1 {
+  font-size: 24px;
+  letter-spacing: -0.3px;
+}
+.research-body h2 {
+  font-size: 18px;
+  margin-top: 28px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.research-body h3 {
+  font-size: 15px;
+  margin-top: 20px;
+}
+.research-body p,
+.research-body li {
+  color: var(--text);
+  font-size: 14.5px;
+}
+.research-body ul,
+.research-body ol {
+  padding-left: 22px;
+}
+.research-body code {
+  font: 12.5px var(--mono);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+.research-body pre {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  overflow-x: auto;
+}
+.research-body pre code {
+  background: none;
+  border: none;
+  padding: 0;
+}
+.research-body table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+  margin: 12px 0;
+}
+.research-body th,
+.research-body td {
+  border: 1px solid var(--border);
+  padding: 5px 9px;
+  text-align: left;
+}
+.research-body th {
+  background: var(--bg);
+  color: var(--text-h);
+}
+.research-body blockquote {
+  margin: 12px 0;
+  padding: 4px 14px;
+  border-left: 3px solid var(--border);
+  color: var(--text);
+}
