@@ -3,7 +3,7 @@ import { createRun, getRun } from '../api'
 import type { RunConfig, RunState, Turn, Vote } from '../types'
 
 export const TURN_MS = 2600
-const POLL_MS = 1500
+const POLL_MS = 750
 
 export type Derived = {
   revealedTurns: Turn[]
@@ -30,9 +30,11 @@ export function usePlayback() {
   useEffect(() => {
     runRef.current = run
   }, [run])
+  const lastRevealAt = useRef(0)
 
   const loadRun = useCallback((next: RunState, autoplay: boolean) => {
     setRun(next)
+    lastRevealAt.current = 0
     setRevealed(0)
     setPlaying(autoplay)
     setError(null)
@@ -92,7 +94,11 @@ export function usePlayback() {
       if (run.status === 'done' || run.status === 'error') setPlaying(false)
       return
     }
-    const timer = window.setTimeout(() => setRevealed((r) => r + 1), revealed === 0 ? 300 : TURN_MS)
+    const wait = revealed === 0 ? 300 : Math.max(0, TURN_MS - (Date.now() - lastRevealAt.current))
+    const timer = window.setTimeout(() => {
+      lastRevealAt.current = Date.now()
+      setRevealed((r) => r + 1)
+    }, wait)
     return () => window.clearTimeout(timer)
   }, [playing, revealed, run])
 
@@ -136,16 +142,19 @@ export function usePlayback() {
   }, [run, revealed])
 
   const skipToEnd = useCallback(() => {
+    lastRevealAt.current = Date.now()
     setRevealed(runRef.current?.turns?.length ?? 0)
   }, [])
 
   const restart = useCallback(() => {
+    lastRevealAt.current = 0
     setRevealed(0)
     setPlaying(true)
   }, [])
 
   const clear = useCallback(() => {
     setRun(null)
+    lastRevealAt.current = 0
     setRevealed(0)
     setPlaying(false)
     setError(null)

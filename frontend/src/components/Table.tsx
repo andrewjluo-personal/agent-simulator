@@ -60,9 +60,10 @@ type Props = {
   derived: Derived
   status: 'idle' | 'playing' | 'paused' | 'finished'
   round: number
+  live?: boolean
 }
 
-export function Table({ scenario, config, derived, status, round }: Props) {
+export function Table({ scenario, config, derived, status, round, live }: Props) {
   const [popover, setPopover] = useState<Popover | null>(null)
   const hl = useHighlight()
   const byId = useMemo(() => factsById(scenario), [scenario])
@@ -168,6 +169,7 @@ export function Table({ scenario, config, derived, status, round }: Props) {
           const agent = scenario.agents.find((a) => a.id === s.agentId)!
           const speaking = currentTurn?.agentId === s.agentId && status === 'playing'
           const vote = latestVotes.get(s.agentId)
+          const reading = !!live && !derived.revealedTurns.length && !vote
           return (
             <g
               key={s.agentId}
@@ -182,7 +184,7 @@ export function Table({ scenario, config, derived, status, round }: Props) {
                 )
               }}
             >
-              <circle cx={s.x} cy={s.y} r={26} className="avatar" />
+              <circle cx={s.x} cy={s.y} r={26} className={`avatar${reading ? ' reading' : ''}`} />
               <text x={s.x} y={s.y + 5} textAnchor="middle" className="avatar-initial">
                 {agent.name[0]}
               </text>
@@ -194,6 +196,7 @@ export function Table({ scenario, config, derived, status, round }: Props) {
               </text>
               {vote && (
                 <g
+                  key={vote.round}
                   className={`lean-badge ${vote.saidLean !== 'undecided' && vote.saidLean !== vote.choice ? 'lean-diverge' : ''}`}
                 >
                   {vote.saidLean !== 'undecided' && vote.saidLean !== vote.choice && (
@@ -215,7 +218,12 @@ export function Table({ scenario, config, derived, status, round }: Props) {
       <div className="center-box" style={{ left: CX - CENTER_W / 2, top: CY - 72, width: CENTER_W }}>
         <div className="center-round">
           {config ? (status === 'idle' ? 'Ready' : `Round ${round} / ${config.rounds}`) : 'Ready'}
-          {hasVotes && <span className="center-sub"> · private votes after round {derived.completedRounds}</span>}
+          {hasVotes && (
+            <span className="center-sub">
+              {' '}
+              · private votes {derived.completedRounds === 0 ? 'before discussion' : `after round ${derived.completedRounds}`}
+            </span>
+          )}
         </div>
         <div className="cand-row">
           {scenario.candidates.map((c) => (
