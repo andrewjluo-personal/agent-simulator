@@ -883,6 +883,235 @@ HIRING_PANEL_NULL = Scenario.model_validate(
     }
 )
 
+# Null v2: every kept flat-v2 item has a *paraphrased* counterpart for the other
+# candidate — same fact type and valence, different wording and details — so
+# hands are valence-matched without being visibly mirrored when read side by side
+# in discussion (the twin pool above was called out as "corrupted data" in group
+# runs). Counterparts avoid the Go / payments domain and direct contradictions
+# with the other candidate's own items. Keyed by base id; twin id = base id + "x".
+_NULL_V2_TWINS: dict[str, tuple[str, str, list[str]]] = {
+    # John base items -> Sally counterparts
+    "J1": (
+        "Sally handled the behavioural round smoothly, giving direct answers and never running over time.",
+        "Behavioural round: direct answers, never ran over time.",
+        ["behavioural round", "direct answers", "never ran over time"],
+    ),
+    "J3": (
+        "Sally's CV describes her as tech lead of a five-person squad at her current company.",
+        "Tech lead of a five-person squad.",
+        ["tech lead", "five-person squad"],
+    ),
+    "J5": (
+        "Sally's take-home is laid out as a conventional project with a clear module structure.",
+        "Take-home has a conventional layout with clear module structure.",
+        ["conventional layout", "module structure"],
+    ),
+    "J7": (
+        "Sally could start after a three-week notice period.",
+        "Could start after a three-week notice period.",
+        ["three-week notice", "notice period"],
+    ),
+    "J9": (
+        "Sally's take-home README does not list the dependencies needed to build it.",
+        "Take-home README does not list build dependencies.",
+        ["README", "dependencies"],
+    ),
+    "J10": (
+        "In the closing round Sally asked about the promotion process and remote-work policy and nothing about the product.",
+        "Closing questions were about promotion process and remote-work policy only.",
+        ["promotion process", "remote-work policy"],
+    ),
+    "J11": (
+        "Sally's compensation expectation is near the top of the posted band.",
+        "Compensation expectation near the top of the band.",
+        ["compensation expectation", "near the top of the band"],
+    ),
+    # Sally base items -> John counterparts
+    "S1": (
+        "John's design doc has a clear heading structure and lists its trade-offs up front.",
+        "Design doc has clear headings and lists trade-offs up front.",
+        ["clear headings", "trade-offs up front"],
+    ),
+    "S3": (
+        "John maintains a small open-source CLI for tailing Kubernetes logs that a few hundred people use.",
+        "Maintains an open-source Kubernetes log-tailing CLI.",
+        ["open-source", "log-tailing CLI", "Kubernetes"],
+    ),
+    "S4": (
+        "In the closing round John asked how often the team gets paged and what its last outage was.",
+        "Closing questions were about paging frequency and the last outage.",
+        ["gets paged", "last outage"],
+    ),
+    "S6": (
+        "John lost his train of thought once in the system design round and asked to restart his answer.",
+        "Lost his train of thought once in system design and restarted an answer.",
+        ["train of thought", "restart"],
+    ),
+    "S7": (
+        "John's current role began sixteen months ago.",
+        "Current role began sixteen months ago.",
+        ["sixteen months", "current role"],
+    ),
+    "S10": (
+        "John submitted his take-home about an hour after the stated deadline.",
+        "Take-home submitted about an hour after the deadline.",
+        ["an hour after", "deadline"],
+    ),
+    "F1": (
+        "John has been a participant in three post-incident reviews that spanned several teams.",
+        "Participated in three cross-team post-incident reviews.",
+        ["post-incident reviews", "three"],
+    ),
+    "F2": (
+        "Another team at John's company uses his log-tailing CLI day to day.",
+        "Another team uses his log-tailing CLI.",
+        ["another team", "log-tailing CLI"],
+    ),
+    "F3": (
+        "John located the seeded bug in the debugging exercise with time to spare.",
+        "Located the seeded bug in the debugging exercise with time to spare.",
+        ["seeded bug", "time to spare"],
+    ),
+    "F5": (
+        "An engineer John coached was promoted to senior last year.",
+        "An engineer he coached was promoted to senior last year.",
+        ["coached", "promoted to senior"],
+    ),
+    "F6": (
+        "John has written several sections of his team's operations runbook.",
+        "Has written several sections of his team's operations runbook.",
+        ["operations runbook", "several sections"],
+    ),
+    "F7": (
+        "A former director who worked with John called him reliable.",
+        "Former director calls him reliable.",
+        ["former director", "reliable"],
+    ),
+    "F9": (
+        "John's take-home came with a benchmark harness and numbers for the main endpoint.",
+        "His take-home came with a benchmark harness and numbers for the main endpoint.",
+        ["benchmark harness", "main endpoint"],
+    ),
+    "F10": (
+        "At a previous job John reverted a broken release in under fifteen minutes following a checklist he had written.",
+        "Reverted a broken release in under fifteen minutes using a checklist he wrote.",
+        ["reverted", "fifteen minutes", "checklist"],
+    ),
+    "F11": (
+        "John's design doc explicitly addressed how duplicate messages are handled.",
+        "His design doc explicitly addressed duplicate-message handling.",
+        ["duplicate messages", "explicitly addressed"],
+    ),
+    "F12": (
+        "A reference says John took ownership of the legacy notification service nobody else wanted.",
+        "Reference: he took ownership of the legacy notification service nobody wanted.",
+        ["took ownership", "legacy notification service"],
+    ),
+    "F13": (
+        "John has chaired his team's fortnightly operations review for about a year.",
+        "Has chaired his team's fortnightly operations review for about a year.",
+        ["chaired", "operations review"],
+    ),
+    "F14": (
+        "John wrote the developer setup docs that his team's new joiners still follow.",
+        "Wrote the developer setup docs new joiners still follow.",
+        ["setup docs", "new joiners"],
+    ),
+    "F15": (
+        "In the debugging round John wrote a failing test to reproduce the bug before fixing it.",
+        "Wrote a failing test to reproduce the bug before fixing it in the debugging round.",
+        ["failing test", "reproduce the bug"],
+    ),
+    # John cons -> Sally counterparts
+    "G1": (
+        "Two engineers on Sally's squad moved to other teams in the past year.",
+        "Two engineers on her squad moved to other teams in the past year.",
+        ["moved to other teams", "two engineers"],
+    ),
+    "G4": (
+        "One of Sally's previous roles ended after about a year.",
+        "One of her previous roles ended after about a year.",
+        ["ended after about a year", "previous roles"],
+    ),
+    "G5": (
+        "Sally cut off the hiring manager mid-question once during the panel round.",
+        "Cut off the hiring manager mid-question once in the panel round.",
+        ["cut off", "mid-question"],
+    ),
+    "G7": (
+        "Sally's take-home has no unit tests.",
+        "Her take-home has no unit tests.",
+        ["no unit tests", "take-home"],
+    ),
+    "G8": (
+        "Sally could not say why she chose the storage engine in her take-home.",
+        "Could not say why she chose the storage engine in her take-home.",
+        ["storage engine", "could not say"],
+    ),
+}
+# S8 ("no direct reports or lead title") would contradict its own counterpart of J3.
+_NULL_V2_EXCLUDE = _NULL_EXCLUDE | {"S8"}
+
+
+def _null_v2_twin(fact: dict[str, Any]) -> dict[str, Any]:
+    text, memo, keywords = _NULL_V2_TWINS[fact["id"]]
+    return {
+        **fact,
+        "id": fact["id"] + "x",
+        "candidateId": "sally" if fact["candidateId"] == "john" else "john",
+        "valence": "neutral",
+        "text": text,
+        "memoText": memo,
+        "keywords": keywords,
+    }
+
+
+def _null_v2_pool(facts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for fact in facts:
+        if fact["id"] in _NULL_V2_EXCLUDE:
+            continue
+        out.append({**fact, "valence": "neutral"})
+        out.append(_null_v2_twin(fact))
+    return out
+
+
+NULL_V2_SHARED = _null_v2_pool(FLAT_V2_SHARED)
+NULL_V2_UNIQUE = _null_v2_pool(FLAT_V2_UNIQUE)
+NULL_V2_SHARED_IDS = [fact["id"] for fact in NULL_V2_SHARED]
+
+
+def _null_v2_hand(ids: list[str]) -> list[str]:
+    kept = [i for i in ids if i not in _NULL_V2_EXCLUDE]
+    return NULL_V2_SHARED_IDS + kept + [i + "x" for i in kept]
+
+
+HIRING_PANEL_NULL_V2 = Scenario.model_validate(
+    {
+        "id": "hiring-panel-null-v2",
+        "title": "Hiring panel (null v2: valence-matched paraphrased pairs)",
+        "brief": HIRING_PANEL_NULL.brief,
+        "isSample": True,
+        "candidates": [
+            HIRING_PANEL_NULL_CANDIDATES[0],
+            {
+                "id": "sally",
+                "name": "Sally",
+                "blurb": "Backend engineer for seven years; senior engineer on an internal platform team",
+            },
+        ],
+        "agents": HIRING_PANEL_AGENTS,
+        "facts": NULL_V2_SHARED + NULL_V2_UNIQUE,
+        "distribution": {
+            "dana": _null_v2_hand(["F9", "F13", "F15", "G1", "G4"]),
+            "marcus": _null_v2_hand(["F7", "F11", "F12", "G5", "G7"]),
+            "priya": _null_v2_hand(["F1", "F3", "F5", "F6", "G8"]),
+            "tom": _null_v2_hand(["F2", "F8", "F10", "F14"]),
+        },
+        "validation": {},
+    }
+)
+
 HIRING_PANEL_FLAT_V2 = Scenario.model_validate(
     {
         "id": "hiring-panel-flat-v2",
@@ -1846,6 +2075,7 @@ VENDOR_SELECTION_V1 = Scenario.model_validate(
 ALL_SAMPLE_SCENARIOS: list[Scenario] = [
     HIRING_PANEL_FLAT_V2,
     HIRING_PANEL_NULL,
+    HIRING_PANEL_NULL_V2,
     INCIDENT_REVIEW_V1,
     VENDOR_SELECTION_V1,
     *PAPER_SCENARIOS,
