@@ -1,0 +1,294 @@
+{
+ "scenario": "hiring-panel-flat-v3",
+ "prompt": "naive",
+ "correct": "sally",
+ "shared_verdict": "john",
+ "pooled": {
+  "sally": 8
+ },
+ "pooled_right": 1.0,
+ "alone": {
+  "dana": {
+   "john": 8
+  },
+  "marcus": {
+   "john": 7,
+   "sally": 1
+  },
+  "priya": {
+   "john": 7,
+   "sally": 1
+  },
+  "tom": {
+   "john": 6,
+   "sally": 2
+  },
+  "omar": {
+   "sally": 7,
+   "john": 1
+  }
+ },
+ "alone_wrong": {
+  "dana": 1.0,
+  "marcus": 0.875,
+  "priya": 0.875,
+  "tom": 0.75,
+  "omar": 0.125
+ },
+ "order": "random",
+ "reasons": {
+  "pooled": [
+   {
+    "seed": 0,
+    "vote": "sally",
+    "reason": "Sally demonstrates stronger engineering judgment through proactive bug discovery, disciplined take-home practices, and a track record of mentoring and incident leadership that indicates deeper platform ownership, while John shows technical gaps (missing test coverage, unexplained design choices) and concerning accountability patterns."
+   },
+   {
+    "seed": 1,
+    "vote": "sally",
+    "reason": "Sally demonstrates stronger ownership patterns, proactive debugging instincts (finding the race condition unprompted), mentorship impact, and incident response discipline, while John shows concerning gaps in accountability and technical communication despite relevant high-throughput experience."
+   },
+   {
+    "seed": 2,
+    "vote": "sally",
+    "reason": "Sally demonstrates stronger ownership patterns (proactive incident participation, mentoring outcomes, service maintenance), better attention to detail (comprehensive take-home with load tests and edge-case awareness), and more reliable execution (no missed deadlines, successful major migrations), despite John's good debugging skills and incident response speed."
+   },
+   {
+    "seed": 3,
+    "vote": "sally",
+    "reason": "Sally demonstrates superior production judgment and systematic rigor: she proactively load-tested, documented known issues, caught a subtle race condition, led a massive migration flawlessly, and mentored four people into leadership roles, while John shows pattern of accountability gaps (deflecting on outage ownership, incomplete documentation) despite some strong technical moments."
+   },
+   {
+    "seed": 4,
+    "vote": "sally",
+    "reason": "Sally demonstrates stronger judgment in production systems (ledger migration, race condition discovery, runbook discipline) and mentorship impact (four promotions, two now leading teams), while John shows concerning pattern of deflecting accountability and gaps in ownership culture."
+   },
+   {
+    "seed": 5,
+    "vote": "sally",
+    "reason": "Sally demonstrates stronger ownership patterns (mentoring four promotions, proactive bug-finding, documented runbooks), better execution discipline (load-testing, known issues flagged), and more consistent reliability despite a minor deadline miss, while John shows gaps in fundamentals (no tests, missing documentation, unexplained technical choices) and ownership clarity issues."
+   },
+   {
+    "seed": 6,
+    "vote": "sally",
+    "reason": "Sally demonstrates stronger operational maturity through proactive incident ownership, mentorship impact, and attention to production reliability (runbooks, load testing, race condition discovery), while John shows gaps in accountability and code quality (missing tests, unexplained design choices, missed deadlines)."
+   },
+   {
+    "seed": 7,
+    "vote": "sally",
+    "reason": "Sally demonstrates stronger ownership patterns (ledger migration lead, maintains inherited service, mentors effectively) and better engineering practices (load tests, runbook creation, proactive bug detection), while John shows some concerning gaps (missing setup docs, no tests, attribution avoidance on outages)."
+   }
+  ],
+  "dana": [
+   {
+    "seed": 0,
+    "vote": "john",
+    "reason": "John demonstrates stronger operational maturity\u2014he proactively owned the most critical work, leads incident reviews, ships with deliberate attention to production concerns like idempotency, and has proven ability to mentor and develop others at scale."
+   },
+   {
+    "seed": 1,
+    "vote": "john",
+    "reason": "John demonstrates stronger production impact (led outage recovery, halved page rate on critical service) and proactive ownership, though his take-home documentation gap and recent job tenure concern me slightly."
+   },
+   {
+    "seed": 2,
+    "vote": "john",
+    "reason": "John demonstrates stronger incident leadership (runs weekly reviews, led outage response), proactive ownership (volunteered for unpopular service, mentored two promotions), and technical depth (unprompted idempotency thinking, regression test mindset), despite minor process gaps that are less critical than Sally's pattern of delays and reluctance to seek help."
+   },
+   {
+    "seed": 3,
+    "vote": "john",
+    "reason": "John demonstrates stronger initiative and ownership (halving page rates, volunteering for unpopular work, leading incident response) plus better communication patterns, though Sally's methodical approach and reliability are solid\u2014this is close but John's proactive impact tips it."
+   },
+   {
+    "seed": 4,
+    "vote": "john",
+    "reason": "John's demonstrated impact on high-throughput systems, production incident leadership, mentorship track record, and proactive bug-fixing with regression tests outweigh his deadline miss and job tenure concern, while Sally's slower decision-making and missed deadline on her take-home present execution risks."
+   },
+   {
+    "seed": 5,
+    "vote": "john",
+    "reason": "John demonstrates stronger operational excellence with proactive regression testing, proven incident leadership, mentorship impact, and ownership mindset, while Sally shows some execution gaps (late submission, blocked communication style, known test failures) that concern me for a senior role."
+   },
+   {
+    "seed": 6,
+    "vote": "john",
+    "reason": "John demonstrates superior incident response leadership, proactive problem-solving (halving page rate, adding regression tests), and clear communication; while Sally shows conscientiousness, John's track record of owning high-impact work and mentoring others outweighs concerns about his tenure gaps and take-home documentation."
+   },
+   {
+    "seed": 7,
+    "vote": "john",
+    "reason": "John demonstrates stronger ownership patterns (halved page rate, led outage response, mentored promotions) and proactive problem-solving (unprompted idempotency thinking, added regression test), which outweigh Sally's slower help-seeking tendency despite her solid technical execution."
+   }
+  ],
+  "marcus": [
+   {
+    "seed": 0,
+    "vote": "john",
+    "reason": "John demonstrates stronger operational ownership (halved page rate, led production response, runs incident reviews) and proactive problem-solving (added regression test, unprompted idempotency consideration), despite submission quality issues that pale against Sally's slower help-seeking pattern and deadline miss."
+   },
+   {
+    "seed": 1,
+    "vote": "john",
+    "reason": "John demonstrates superior incident response capability, proactive ownership of high-impact work, and stronger testing discipline despite minor process lapses, while Sally shows concerning patterns of missed deadlines and reluctance to seek help when blocked."
+   },
+   {
+    "seed": 2,
+    "vote": "sally",
+    "reason": "Sally demonstrates stronger engineering fundamentals (caught undiscovered race condition, proactive learning, thorough design documentation) despite minor execution issues, while John shows concerning gaps (missing test coverage, incomplete documentation, interview etiquette missteps) that outweigh his operational leadership."
+   },
+   {
+    "seed": 3,
+    "vote": "john",
+    "reason": "John demonstrates stronger execution consistency (met deadlines, led rapid incident response, mentored successfully) and proactive initiative (owned unpopular service, improved metrics), while Sally shows promise but has execution gaps (late submission, slower to seek help, shorter recent tenure) that matter for a senior role requiring reliability."
+   },
+   {
+    "seed": 4,
+    "vote": "john",
+    "reason": "John demonstrates stronger production impact (outage leadership, incident review ownership, measurable optimizations) and deeper systems knowledge (high-throughput services, proactive idempotency thinking), though Sally shows more careful engineering practices and better communication discipline."
+   },
+   {
+    "seed": 5,
+    "vote": "john",
+    "reason": "John demonstrates stronger ownership patterns (volunteered for unpopular work, led incident reviews, mentored promotions) and higher-stakes production experience, while Sally's late take-home submission and slow-to-ask-for-help tendency present execution risks despite her solid technical fundamentals."
+   },
+   {
+    "seed": 6,
+    "vote": "john",
+    "reason": "John demonstrates stronger production impact (outage leadership, measurable performance improvements) and better debugging practices (proactive regression testing), though Sally shows solid fundamentals with fewer red flags around process discipline."
+   },
+   {
+    "seed": 7,
+    "vote": "john",
+    "reason": "John demonstrates stronger production engineering fundamentals: he proactively added regression tests, led incident response to resolution, and shows consistent ownership of systems including unpopular services, whereas Sally's strengths are more in learning and code review despite her slower help-seeking pattern being a notable gap."
+   }
+  ],
+  "priya": [
+   {
+    "seed": 0,
+    "vote": "john",
+    "reason": "John demonstrates stronger ownership and incident response leadership (led outage response, runs weekly reviews, mentored two promotions), while Sally's tendency to be slow asking for help and late deadline submission raise concerns about independence and reliability in a senior role."
+   },
+   {
+    "seed": 1,
+    "vote": "john",
+    "reason": "John's proactive ownership, incident response leadership, and mentoring track record suggest stronger team impact and reliability, despite the take-home README gap which seems minor compared to Sally's deadline miss and noted reluctance to seek help."
+   },
+   {
+    "seed": 2,
+    "vote": "john",
+    "reason": "John demonstrates stronger ownership instincts and production leadership (halving page rates, leading outage response, mentoring), which aligns better with senior engineer expectations, despite minor process gaps like the README omission."
+   },
+   {
+    "seed": 3,
+    "vote": "john",
+    "reason": "John demonstrates stronger team leadership through mentoring outcomes and proactive incident management, while Sally shows concerning patterns with missed deadlines and slower help-seeking that could impact senior-level effectiveness."
+   },
+   {
+    "seed": 4,
+    "vote": "john",
+    "reason": "John demonstrates stronger proactive ownership (volunteering for unpopular work, mentoring with promotions), better technical depth (unprompted idiopotency insights, production incident leadership), and more polished communication, though Sally shows commendable initiative and learning investment that makes this closer than the confidence suggests."
+   },
+   {
+    "seed": 5,
+    "vote": "john",
+    "reason": "John demonstrates stronger operational excellence through proactive incident leadership, measurable impact on high-throughput systems, and thoughtful design decisions like unprompted idempotency consideration, though Sally shows solid fundamentals and good mentorship instincts."
+   },
+   {
+    "seed": 6,
+    "vote": "john",
+    "reason": "John demonstrates stronger ownership, proactive problem-solving (regression test addition, service optimization), and leadership maturity (mentoring, incident review running) despite minor gaps in documentation, while Sally shows conscientiousness but delays in asking for help and deadline adherence could be team friction points."
+   },
+   {
+    "seed": 7,
+    "vote": "sally",
+    "reason": "Sally demonstrates stronger team integration through proactive knowledge-sharing (code reviews, incident participation), better attention to detail (load-testing, thorough documentation), and more reliable accountability, while John shows concerning patterns with missed deadlines and dismissive closing questions that suggest lower team-fit orientation."
+   }
+  ],
+  "tom": [
+   {
+    "seed": 0,
+    "vote": "john",
+    "reason": "John's proactive bug-fixing with regression tests, proven incident leadership, and mentorship track record outweigh Sally's deadline miss and incomplete take-home explanations, though her ledger migration delivery is impressive."
+   },
+   {
+    "seed": 1,
+    "vote": "john",
+    "reason": "John's proactive problem-solving (halving page rate, leading incident response, adding regression tests) and demonstrated mentorship track record outweigh Sally's deadline miss and reluctance to seek help, though her ledger migration work and debugging speed are impressive."
+   },
+   {
+    "seed": 2,
+    "vote": "john",
+    "reason": "John's proactive incident leadership, measurable impact on service reliability, and unprompted design insights outweigh concerns about tenure stability and take-home documentation gaps, while Sally's slower help-seeking and deadline miss are organizational red flags for a senior role."
+   },
+   {
+    "seed": 3,
+    "vote": "sally",
+    "reason": "John's inability to explain his concurrency model choice and missing sprint deadline raise concerns about follow-through and technical depth, while Sally's ownership of complex migrations, incident participation, and proactive documentation practices suggest more reliable execution despite minor deadline slip."
+   },
+   {
+    "seed": 4,
+    "vote": "sally",
+    "reason": "Sally demonstrated better judgment under pressure (flagged her own test failure, submitted near deadline but owned it) and owns the most critical production system (two-billion-row migration with zero downtime), whereas John's incomplete take-home documentation and inability to explain key technical decisions raise red flags for a role requiring independent ownership."
+   },
+   {
+    "seed": 5,
+    "vote": "john",
+    "reason": "John demonstrates stronger production incident leadership, proactive debugging (regression test), and clear communication in behavioral rounds, though his take-home documentation gaps and inability to explain concurrency decisions are concerning QA red flags."
+   },
+   {
+    "seed": 6,
+    "vote": "john",
+    "reason": "John demonstrated stronger ownership and incident response under pressure, though his take-home documentation gaps and inability to explain design choices are concerning red flags that could cause problems in code review situations."
+   },
+   {
+    "seed": 7,
+    "vote": "john",
+    "reason": "John's proactive bug-fixing with regression tests, demonstrated incident command experience, and ability to improve high-impact systems outweighs Sally's slower decision-making patterns and deadline compliance issues."
+   }
+  ],
+  "omar": [
+   {
+    "seed": 0,
+    "vote": "sally",
+    "reason": "Sally demonstrates stronger ownership patterns, proactive mentorship outcomes, and more reliable delivery discipline, while John shows concerning signs like deflecting accountability on the second outage and incomplete take-home documentation."
+   },
+   {
+    "seed": 1,
+    "vote": "sally",
+    "reason": "Sally demonstrates stronger ownership patterns, proactive mentorship with tangible team impact, and better attention to process details, while John shows some concerning signs like misattributing responsibility and inconsistent follow-through on documentation."
+   },
+   {
+    "seed": 2,
+    "vote": "sally",
+    "reason": "Sally demonstrates stronger mentorship impact (four mentees promoted, two leading teams vs. John's two), better ownership patterns (proactively taking on maintenance work, attending incident reviews), and more thoughtful problem-solving despite some minor execution issues, whereas John shows concerning patterns like deflecting accountability on the second outage and incomplete documentation."
+   },
+   {
+    "seed": 3,
+    "vote": "sally",
+    "reason": "Sally demonstrates stronger mentorship impact (four mentees, two now leading teams vs John's two promoted), more thoughtful incident involvement across teams, and better learning orientation despite minor execution gaps, while John's accountability concerns on the second outage and closing-questions focus on compensation raise red flags for a senior role."
+   },
+   {
+    "seed": 4,
+    "vote": "sally",
+    "reason": "Sally demonstrates more consistent judgment and ownership patterns\u2014her mentees' advancement (two now leading teams) and proactive incident participation outweigh John's stronger technical moments, which are offset by tenure instability, a concerning post-mortem ownership denial, and incomplete deliverables."
+   },
+   {
+    "seed": 5,
+    "vote": "sally",
+    "reason": "Sally demonstrates stronger ownership patterns, proactive mentorship with four promotions, and consistent reliability on core engineering tasks, while John shows some concerning gaps in accountability and communication despite strong technical debugging skills."
+   },
+   {
+    "seed": 6,
+    "vote": "john",
+    "reason": "John demonstrates stronger ownership and incident response capability (led outage resolution, added regression tests, ran incident reviews), while Sally's slower help-seeking and deadline miss outweigh her excellent mentoring track record."
+   },
+   {
+    "seed": 7,
+    "vote": "sally",
+    "reason": "Sally demonstrates stronger mentorship impact (four mentees, two now leading teams vs. two), more thorough technical execution (found bug, submitted organized design with logging/metrics), and better ownership patterns (proactive service maintenance, reviewing new hires), while John shows some concerning signals like attribution gaps on outages and incomplete documentation."
+   }
+  ]
+ },
+ "pass": false
+}

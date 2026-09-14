@@ -280,3 +280,17 @@ def test_candidate_order_fixed_is_unchanged() -> None:
         SCENARIO, base, DANA, HAND, PARADIGM
     )
     assert prompts.alone_vote_message(SCENARIO, cfg) == prompts.alone_vote_message(SCENARIO)
+
+
+def test_candidate_order_alternate_flips_on_odd_seeds() -> None:
+    from app.prompts import ordered_candidates
+    from app.samples import HIRING_PANEL_FLAT_V3 as s
+
+    ids = [c.id for c in s.candidates]
+    assert [
+        c.id for c in ordered_candidates(s, RunConfig(seed=0, candidate_order="alternate"))
+    ] == ids
+    assert [
+        c.id for c in ordered_candidates(s, RunConfig(seed=1, candidate_order="alternate"))
+    ] == ids[::-1]
+    assert [c.id for c in ordered_candidates(s, RunConfig(seed=1))] == ids

@@ -58,7 +58,9 @@ async def cell_votes(
         v = raw.get("vote")
         return v if isinstance(v, str) and v in ids else truth.UNDECIDED
 
-    votes = await asyncio.gather(*(one(s * 1000 + j) for s in range(seeds) for j in range(samples)))
+    votes = await asyncio.gather(
+        *(one(s * samples + j) for s in range(seeds) for j in range(samples))
+    )
     return [Counter(votes[s * samples : (s + 1) * samples]) for s in range(seeds)]
 
 
@@ -112,7 +114,7 @@ async def main() -> int:
     parser.add_argument("--prompt", nargs="+", default=["naive", "default"])
     parser.add_argument("--samples", type=int, default=10)
     parser.add_argument("--seeds", type=int, default=2)
-    parser.add_argument("--order", choices=["random", "fixed"], default="random")
+    parser.add_argument("--order", choices=["random", "fixed", "alternate"], default="random")
     parser.add_argument("--lo", type=float, default=0.35)
     parser.add_argument("--hi", type=float, default=0.65)
     parser.add_argument("--out", default="scripts/probe/out/gate_null")

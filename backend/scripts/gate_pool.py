@@ -54,6 +54,9 @@ POOLED = AgentPersona(
 )
 
 
+REASONS: dict[str, list[dict[str, Any]]] = {}
+
+
 async def votes(
     client: LLMClient,
     scenario: Scenario,
@@ -63,28 +66,50 @@ async def votes(
     samples: int,
 ) -> Counter[str]:
     spec = get_paradigm(cfg.paradigm)
-    user = prompts.alone_vote_message(scenario, cfg)
     ids = {c.id for c in scenario.candidates}
 
-    async def one(seed: int) -> str:
-        # one seed per sample so memo shuffle + run nonce vary as they do in real runs
-        system = prompts.system_prompt(
-            scenario, cfg.model_copy(update={"seed": seed}), agent, hand, spec
-        )
+    async def one(seed: int) -> tuple[str, str]:
+        # one seed per sample so memo shuffle, candidate order + run nonce vary as in real runs
+        cell_cfg = cfg.model_copy(update={"seed": seed})
+        system = prompts.system_prompt(scenario, cell_cfg, agent, hand, spec)
         resp = await client.complete(
-            LLMRequest(system=system, user=user, model=MODEL, max_tokens=200)
+            LLMRequest(
+                system=system,
+                user=prompts.alone_vote_message(scenario, cell_cfg),
+                model=MODEL,
+                max_tokens=200,
+            )
         )
         raw = validate.parse_json_object(resp.text) or {}
         v = raw.get("vote")
-        return v if isinstance(v, str) and v in ids else truth.UNDECIDED
+        reason = raw.get("reason")
+        return (
+            v if isinstance(v, str) and v in ids else truth.UNDECIDED,
+            reason if isinstance(reason, str) else "",
+        )
 
-    return Counter(await asyncio.gather(*(one(i) for i in range(samples))))
+    results = await asyncio.gather(*(one(i) for i in range(samples)))
+    REASONS.setdefault(agent.id, []).extend(
+        {"seed": i, "vote": v, "reason": r} for i, (v, r) in enumerate(results)
+    )
+    return Counter(v for v, _ in results)
 
 
 async def gate(
-    client: LLMClient, scenario: Scenario, style: PromptStyle, samples: int, fact_style: str
+    client: LLMClient,
+    scenario: Scenario,
+    style: PromptStyle,
+    samples: int,
+    fact_style: str,
+    order: str = "fixed",
 ) -> dict[str, Any]:
-    cfg = RunConfig(prompt_style=style, fact_style=fact_style, seed=0)  # type: ignore[arg-type]
+    REASONS.clear()
+    cfg = RunConfig(
+        prompt_style=style,
+        fact_style=fact_style,  # type: ignore[arg-type]
+        seed=0,
+        candidate_order=order,  # type: ignore[arg-type]
+    )
     correct = truth.verdict(scenario, truth.pooled_fact_ids(scenario))
     shared_v = truth.verdict(scenario, truth.shared_fact_ids(scenario))
     pooled = await votes(
@@ -96,6 +121,19 @@ async def gate(
     }
     pooled_right = pooled[correct] / samples
     alone_wrong = {a: c[shared_v] / samples for a, c in alone.items()}
+    # alone->shared-verdict split by which candidate was listed first (even seeds keep
+    # scenario order, odd seeds reverse it under "alternate")
+    by_order = {
+        a: {
+            "first_listed_" + scenario.candidates[0].id: sum(
+                r["vote"] == shared_v for r in REASONS[a] if r["seed"] % 2 == 0
+            ),
+            "first_listed_" + scenario.candidates[1].id: sum(
+                r["vote"] == shared_v for r in REASONS[a] if r["seed"] % 2 == 1
+            ),
+        }
+        for a in alone
+    }
     return {
         "scenario": scenario.id,
         "prompt": style,
@@ -105,6 +143,9 @@ async def gate(
         "pooled_right": pooled_right,
         "alone": {a: dict(c) for a, c in alone.items()},
         "alone_wrong": alone_wrong,
+        "order": order,
+        "alone_wrong_by_order": by_order,
+        "reasons": dict(REASONS),
         "pass": pooled_right >= 0.8 and all(v >= 0.8 for v in alone_wrong.values()),
     }
 
@@ -115,6 +156,7 @@ async def main() -> int:
     parser.add_argument("--prompt", nargs="+", default=["naive", "default"])
     parser.add_argument("--samples", type=int, default=10)
     parser.add_argument("--fact-style", default="memo")
+    parser.add_argument("--order", choices=["random", "fixed", "alternate"], default="fixed")
     parser.add_argument("--out", default="scripts/probe/out/gate")
     args = parser.parse_args()
     client = CountingClient(AnthropicClient())
@@ -122,12 +164,15 @@ async def main() -> int:
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
     for style in args.prompt:
-        res = await gate(client, scenario, style, args.samples, args.fact_style)
+        res = await gate(client, scenario, style, args.samples, args.fact_style, args.order)
         (out_dir / f"{scenario.id}_{style}.json").write_text(json.dumps(res, indent=1))
         print(
             f"{scenario.id} [{style}] correct={res['correct']} pooled={res['pooled']} "
             f"pooled_right={res['pooled_right']:.2f} alone_wrong="
-            + " ".join(f"{a}={v:.1f}" for a, v in res["alone_wrong"].items())
+            + " ".join(
+                f"{a}={v:.1f}({'/'.join(str(n) for n in res['alone_wrong_by_order'][a].values())})"
+                for a, v in res["alone_wrong"].items()
+            )
             + f" -> {'PASS' if res['pass'] else 'FAIL'}"
         )
     print(f"~${cost_usd(client.input_tokens, client.output_tokens):.2f}")

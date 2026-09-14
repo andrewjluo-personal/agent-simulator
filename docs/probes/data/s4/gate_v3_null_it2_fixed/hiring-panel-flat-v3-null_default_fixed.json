@@ -1,0 +1,242 @@
+{
+ "scenario": "hiring-panel-flat-v3-null",
+ "prompt": "default",
+ "order": "fixed",
+ "target": "sally",
+ "lo": 0.35,
+ "hi": 0.65,
+ "cells": {
+  "pooled": {
+   "n": 8,
+   "counts": {
+    "john": 7,
+    "sally": 1
+   },
+   "per_seed": [
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "sally": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    }
+   ],
+   "rate": 0.125,
+   "ci": [
+    0.02241690886329617,
+    0.4708948057698615
+   ],
+   "pass": false
+  },
+  "dana": {
+   "n": 8,
+   "counts": {
+    "john": 8
+   },
+   "per_seed": [
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    }
+   ],
+   "rate": 0.0,
+   "ci": [
+    0.0,
+    0.3244156195108769
+   ],
+   "pass": false
+  },
+  "marcus": {
+   "n": 8,
+   "counts": {
+    "john": 8
+   },
+   "per_seed": [
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    }
+   ],
+   "rate": 0.0,
+   "ci": [
+    0.0,
+    0.3244156195108769
+   ],
+   "pass": false
+  },
+  "priya": {
+   "n": 8,
+   "counts": {
+    "sally": 4,
+    "john": 4
+   },
+   "per_seed": [
+    {
+     "sally": 1
+    },
+    {
+     "sally": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "sally": 1
+    },
+    {
+     "sally": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    }
+   ],
+   "rate": 0.5,
+   "ci": [
+    0.21521252682444186,
+    0.7847874731755582
+   ],
+   "pass": true
+  },
+  "tom": {
+   "n": 8,
+   "counts": {
+    "john": 8
+   },
+   "per_seed": [
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    }
+   ],
+   "rate": 0.0,
+   "ci": [
+    0.0,
+    0.3244156195108769
+   ],
+   "pass": false
+  },
+  "omar": {
+   "n": 8,
+   "counts": {
+    "john": 6,
+    "sally": 2
+   },
+   "per_seed": [
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "sally": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "john": 1
+    },
+    {
+     "sally": 1
+    }
+   ],
+   "rate": 0.25,
+   "ci": [
+    0.07147768885802763,
+    0.5907301208974108
+   ],
+   "pass": false
+  }
+ },
+ "pass": false
+}
