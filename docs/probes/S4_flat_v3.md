@@ -64,10 +64,12 @@ Tests: `test_flat_v3_shared_type_sign_balance`, `test_flat_v3_uniques_type_match
 
 ## 2. Candidate order: a prior larger than name
 
-`RunConfig.candidate_order` now has three values. `fixed` (default, byte-identical to before),
-`random` (S3's seeded shuffle), and `alternate` (even seed → scenario order, odd → reversed),
-so 8 seeds give exactly 4 John-first / 4 Sally-first per cell. The seeded `random` shuffle
-puts Sally first on 6 of seeds 0–7, which is why it was replaced for the gate.
+The gate runs used a local `alternate` order (even seed → scenario order, odd → reversed);
+after merging S3's PR #27 this is `candidate_order="balanced"` (now the `RunConfig` default;
+`fixed` kept for byte-identical replay), with identical per-sample semantics — 8 seeds give
+exactly 4 John-first / 4 Sally-first per cell. The seeded `random` shuffle puts Sally first
+on 6 of seeds 0–7, which is why it was replaced for the gate. "alternate" in the tables and
+raw JSON below ≡ balanced.
 
 The v3 twin null (every v3 item once per candidate, pronouns swapped, all neutral) makes the
 position effect plain (Sally votes out of 8, Wilson 95% CI):
@@ -185,6 +187,11 @@ identical evidence: naive votes the **last-listed** candidate (Sally 7/8), defau
 naive below ~3/8 or lifts default above ~4/8, and every ablation moves toward the middle
 mainly by shortening the memo. Under `alternate` these two opposite biases average to the
 6–7/8 pooled Sally seen in §2, which is why balancing order does not fix the pooled null.
+
+This matches S3's order-split diagnostic (`docs/probes/S3_leak_report.md` §3d, symmetric
+twin null): reversing only the memo paragraphs → Sally ~97%; reversing only the candidate
+list or only the ballot options → John ~90%. The position effect lives in the memo
+paragraph order.
 
 Implication for re-selection: item re-selection alone will not pass the pooled null. The
 memo assembly needs a position-neutral form (e.g. interleave the two candidates' notes in
