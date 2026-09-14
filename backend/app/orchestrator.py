@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import asyncio
 import uuid
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from random import Random
 from typing import Any
@@ -51,11 +52,57 @@ def new_run(
     )
 
 
-def turn_order(run: RunState, round_idx: int) -> list[str]:
+@dataclass(frozen=True)
+class Plant:
+    """Probe hook: use `text` verbatim as `speaker`'s turn in `round_idx` instead of
+    calling the model. With `first=True` the speaker is moved to the front of that
+    round's order. Never set in production paths."""
+
+    round_idx: int
+    speaker: str
+    text: str
+    first: bool = True
+
+
+Plants = tuple[Plant, ...]
+
+
+def turn_order(run: RunState, round_idx: int, plants: Plants = ()) -> list[str]:
     order = [a.id for a in run.scenario.agents]
     if run.config.turn_order == "random":
         Random(run.config.seed * 1000 + round_idx).shuffle(order)
+    for plant in plants:
+        if plant.round_idx == round_idx and plant.first and plant.speaker in order:
+            order.remove(plant.speaker)
+            order.insert(0, plant.speaker)
     return order
+
+
+def _plant_for(plants: Plants, round_idx: int, agent_id: str) -> Plant | None:
+    return next((p for p in plants if p.round_idx == round_idx and p.speaker == agent_id), None)
+
+
+def _planted_turn(
+    run: RunState, plant: Plant, seq: int, round_idx: int, common_ground: set[str]
+) -> Turn:
+    scenario = run.scenario
+    sentences = [s.strip() for s in plant.text.replace("\n", " ").split(". ") if s.strip()]
+    sentences = [s if s.endswith((".", "!", "?")) else s + "." for s in sentences]
+    cited = truth.match_facts(sentences, scenario.facts)
+    return Turn(
+        seq=seq,
+        round=round_idx,
+        agent_id=plant.speaker,
+        sentences=sentences,
+        cited=cited,
+        hallucinated=[],
+        lean=truth.UNDECIDED,
+        confidence=0.0,
+        latency_ms=0,
+        input_tokens=0,
+        output_tokens=0,
+        heard_before=sorted(common_ground),
+    )
 
 
 def _meta(
@@ -90,7 +137,9 @@ async def _call(
     )
 
 
-async def run_round(store: Store, client: LLMClient, run_id: str, round_idx: int) -> RunState:
+async def run_round(
+    store: Store, client: LLMClient, run_id: str, round_idx: int, plants: Plants = ()
+) -> RunState:
     run = store.get_run(run_id)
     if run is None:
         raise KeyError(f"unknown run {run_id}")
@@ -114,13 +163,18 @@ async def run_round(store: Store, client: LLMClient, run_id: str, round_idx: int
             if not any(v.round == -1 for v in pre.votes):
                 await collect_votes(store, client, pre, -1)
                 run = store.get_run(run_id) or run
-        for position, agent_id in enumerate(turn_order(run, round_idx)):
+        for position, agent_id in enumerate(turn_order(run, round_idx, plants)):
             seq = round_idx * n_agents + position
             if store.turn_exists(run_id, seq):
                 continue
             run = store.get_run(run_id) or run
             heard_turns = run.turns
             common_ground = {f for t in heard_turns for f in t.cited}
+            plant = _plant_for(plants, round_idx, agent_id)
+            if plant is not None:
+                store.insert_turn(run_id, _planted_turn(run, plant, seq, round_idx, common_ground))
+                emit("info", "agent.turn_planted", runId=run_id, round=round_idx, agentId=agent_id)
+                continue
             hand = list(scenario.distribution[agent_id])
             agent = next(a for a in scenario.agents if a.id == agent_id)
             system = prompts.system_prompt(scenario, cfg, agent, hand, spec)
@@ -364,10 +418,12 @@ def compute_metrics(run: RunState) -> Metrics:
     )
 
 
-async def run_to_completion(store: Store, client: LLMClient, run_id: str) -> RunState:
+async def run_to_completion(
+    store: Store, client: LLMClient, run_id: str, plants: Plants = ()
+) -> RunState:
     run = store.get_run(run_id)
     if run is None:
         raise KeyError(f"unknown run {run_id}")
     while run.status in ("queued", "running") and run.current_round < total_rounds(run):
-        run = await run_round(store, client, run_id, run.current_round)
+        run = await run_round(store, client, run_id, run.current_round, plants)
     return run

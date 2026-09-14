@@ -18,6 +18,7 @@ Paradigm = Literal["free_discussion", "share_first"]
 TurnOrder = Literal["clockwise", "random"]
 TieBreak = Literal["none", "runoff", "chair"]
 FactStyle = Literal["memo", "labelled"]
+PromptStyle = Literal["default", "naive"]
 DecisionRule = Literal["majority", "consensus"]
 RunStatus = Literal["queued", "running", "done", "error"]
 LlmProvider = Literal["anthropic", "fake"]
@@ -117,6 +118,7 @@ class RunConfig(Model):
     fact_style: FactStyle = "memo"
     model: str = "claude-haiku-4-5"
     seed: int = 0
+    prompt_style: PromptStyle = "default"
 
 
 class AgentLean(Model):

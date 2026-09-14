@@ -43,6 +43,37 @@ def _memo_lines(
     return "\n\n".join(blocks)
 
 
+def naive_system_prompt(
+    scenario: Scenario,
+    cfg: RunConfig,
+    agent: AgentPersona,
+    hand_fact_ids: list[str],
+) -> str:
+    """HiddenBench-style minimal prompt: no asymmetry sentence, no evidence rules,
+    memo notes only, 'one or two sentences'. Used by the mechanism probes."""
+    notes = _memo_lines(scenario, cfg, agent, hand_fact_ids)
+    schema = (
+        f'{{"sentences": string[], "current_lean": "{_lean_options(scenario)}", '
+        f'"confidence": 0..1}}'
+    )
+    return f"""You are {agent.name}, {agent.role} on the panel. Style: {agent.style}.
+The panel has {len(scenario.agents)} interviewers and must recommend exactly one candidate:
+{_candidate_lines(scenario)}
+
+{scenario.brief}
+The panel will discuss and then each of you will give a private recommendation.
+
+Here is some information available to you:
+{notes}
+
+Keep your response concise, just one or two sentences.
+
+Run nonce: {cfg.seed}
+
+Respond with JSON only:
+{schema}"""
+
+
 def system_prompt(
     scenario: Scenario,
     cfg: RunConfig,
@@ -50,6 +81,8 @@ def system_prompt(
     hand_fact_ids: list[str],
     paradigm: ParadigmSpec,
 ) -> str:
+    if cfg.prompt_style == "naive":
+        return naive_system_prompt(scenario, cfg, agent, hand_fact_ids)
     extra = paradigm.system_rules(cfg)
     extra_block = f"\n{extra}" if extra else ""
     labelled = cfg.fact_style == "labelled"
