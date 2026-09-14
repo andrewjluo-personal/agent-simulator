@@ -25,6 +25,7 @@ def test_new_run_stamps_engine_version() -> None:
 def test_demo_snapshot_filters_stale_versions() -> None:
     store = MemoryStore()
     fresh = orchestrator.new_run(store, RunConfig(), provider="fake", is_demo=True)
+    fresh.status = "done"
     stale = fresh.model_copy(deep=True, update={"id": "stale-id", "engine_version": "old"})
     store.create_run(fresh)
     store.create_run(stale)

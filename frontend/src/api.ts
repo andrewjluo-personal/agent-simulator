@@ -14,6 +14,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
   })
   if (!response.ok) {
+    if (response.status === 429) {
+      const body = (await response.json().catch(() => null)) as { detail?: string } | null
+      throw new Error(body?.detail ?? `Request rate-limited: ${response.status}`)
+    }
     throw new Error(`${init?.method ?? 'GET'} ${path} failed: ${response.status}`)
   }
   return (await response.json()) as T
