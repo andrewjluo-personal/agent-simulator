@@ -1746,11 +1746,17 @@ SAMPLES_BY_ID: dict[str, Scenario] = {s.id: s for s in SAMPLE_SCENARIOS}
 
 
 def ensure_samples(store: Store) -> int:
-    """Insert samples that are missing; never overwrite an existing row."""
-    existing = {s.id for s in store.list_scenarios()}
-    inserted = 0
+    """Upsert samples that are missing or whose stored body differs from the code.
+
+    Samples are code-owned: a stored row with a sample's id is refreshed whenever
+    its content no longer matches the code definition. Non-sample ids are never
+    touched. Returns the number of rows inserted or updated.
+    """
+    existing = {s.id: s for s in store.list_scenarios()}
+    changed = 0
     for sample in SAMPLE_SCENARIOS:
-        if sample.id not in existing:
+        stored = existing.get(sample.id)
+        if stored is None or stored.model_dump() != sample.model_dump():
             store.upsert_scenario(sample)
-            inserted += 1
-    return inserted
+            changed += 1
+    return changed

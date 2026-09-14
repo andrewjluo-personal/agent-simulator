@@ -7,7 +7,7 @@ import pytest
 from app import truth, validator
 from app.llm import FakeClient
 from app.models import Scenario
-from app.samples import SAMPLE_SCENARIOS
+from app.samples import SAMPLE_SCENARIOS, ensure_samples
 from app.scenarios.papers import PAPER_SCENARIOS
 
 NON_PAPER_SAMPLE_SCENARIOS = [
@@ -47,3 +47,43 @@ def test_sample_passes_fake_validation(scenario: Scenario) -> None:
         validator.validate_scenario(scenario, FakeClient(), model="fake", trials=3)
     )
     assert result.passed
+
+
+class _StubStore:
+    def __init__(self, scenarios: list[Scenario] | None = None) -> None:
+        self._scenarios = {s.id: s for s in scenarios or []}
+        self.upserted: list[str] = []
+
+    def list_scenarios(self) -> list[Scenario]:
+        return list(self._scenarios.values())
+
+    def get_scenario(self, scenario_id: str) -> Scenario | None:
+        return self._scenarios.get(scenario_id)
+
+    def upsert_scenario(self, scenario: Scenario) -> None:
+        self._scenarios[scenario.id] = scenario
+        self.upserted.append(scenario.id)
+
+
+def test_ensure_samples_inserts_missing() -> None:
+    store = _StubStore()
+    assert ensure_samples(store) == len(SAMPLE_SCENARIOS)  # type: ignore[arg-type]
+    assert {s.id for s in store.list_scenarios()} == {s.id for s in SAMPLE_SCENARIOS}
+
+
+def test_ensure_samples_leaves_identical_rows_untouched() -> None:
+    store = _StubStore(list(SAMPLE_SCENARIOS))
+    assert ensure_samples(store) == 0  # type: ignore[arg-type]
+    assert store.upserted == []
+
+
+def test_ensure_samples_overwrites_stale_rows() -> None:
+    stale = SAMPLE_SCENARIOS[0].model_copy(update={"title": "stale"})
+    custom = Scenario.model_validate(
+        {**SAMPLE_SCENARIOS[0].model_dump(by_alias=True), "id": "custom-1", "isSample": False}
+    )
+    store = _StubStore([stale, *SAMPLE_SCENARIOS[1:], custom])
+    assert ensure_samples(store) == 1  # type: ignore[arg-type]
+    assert store.upserted == [stale.id]
+    assert store.get_scenario(stale.id) == SAMPLE_SCENARIOS[0]
+    assert store.get_scenario("custom-1") == custom
