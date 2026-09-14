@@ -146,6 +146,33 @@ header h1 {
   stroke-width: 2;
   transition: stroke 0.3s, stroke-width 0.3s, fill 0.3s;
 }
+.avatar.reading {
+  animation: reading-pulse 1.4s ease-in-out infinite;
+}
+@keyframes reading-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+.lean-badge {
+  animation: badge-in 0.25s ease-out;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes badge-in {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
 .seat.speaking .avatar {
   stroke: #0f172a;
   stroke-width: 4;

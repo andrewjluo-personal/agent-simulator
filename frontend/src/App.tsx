@@ -295,7 +295,14 @@ function App() {
 
       <section className="stage">
         <div className="stage-left">
-          <Table scenario={runScenario} config={pb.run?.config ?? null} derived={pb.derived} status={status} round={Math.max(roundShown, 0)} />
+          <Table
+            scenario={runScenario}
+            config={pb.run?.config ?? null}
+            derived={pb.derived}
+            status={status}
+            round={Math.max(roundShown, 0)}
+            live={!!pb.run && pb.run.status !== 'done'}
+          />
           {pb.run && pb.derived.finished && <VerdictCard run={pb.run} commonGround={pb.derived.commonGround} />}
           {pb.run &&
             !pb.derived.finished &&
