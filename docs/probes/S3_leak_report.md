@@ -20,7 +20,9 @@ system prompt and the vote option string:
 n = 10 per cell, naive prompt, memo style, one seed per sample. Ballot reasons
 confabulate a difference between identical hands and hand the favourable reading to the
 first-listed candidate (see §3a). Names, gender and persona text add nothing measurable
-once blurbs are symmetric.
+once blurbs are symmetric. Splitting the surfaces (§3d) shows the effect is carried by
+the **order of the notes paragraphs** (memo-only reversal → Sally ~97%), not by the
+candidate list or the ballot option string (each alone → John ~90%).
 
 Implication: every earlier run on v1 / v2 / flat pools used a fixed John-first order,
 so all prior alone→John passes were partly a position effect (~±45 pt on a close hand),
