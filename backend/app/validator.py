@@ -45,9 +45,7 @@ async def _alone_votes(
             "candidates": [c.id for c in scenario.candidates],
             "alone": True,
             "fact_candidate": {f.id: f.candidate_id for f in scenario.facts},
-            "fact_signed_weight": {
-                f.id: f.weight if f.valence == "pro" else -f.weight for f in scenario.facts
-            },
+            "fact_signed_weight": {f.id: truth.signed_weight(f) for f in scenario.facts},
         }
         async with sem:
             resp = await client.complete(

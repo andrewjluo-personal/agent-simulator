@@ -5,16 +5,27 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 import uuid
+from datetime import UTC, datetime, timedelta
 from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from . import db, llm, orchestrator, queues
+from . import db, llm, orchestrator, queues, truth, validation_jobs
 from .engine_version import ENGINE_VERSION
-from .models import BatchState, DemoSnapshot, RunConfig, RunSummary, summary
+from .models import (
+    BatchState,
+    DemoSnapshot,
+    Model,
+    RunConfig,
+    RunSummary,
+    Scenario,
+    ValidationJob,
+    summary,
+)
 from .paradigms import PARADIGMS
 from .samples import SAMPLES_BY_ID, ensure_samples
 from .scenario import DEFAULT_SCENARIO_ID, load_scenario
@@ -43,6 +54,10 @@ _store: Store | None = None
 _background_tasks: set[asyncio.Task[Any]] = set()
 
 RUN_RATE_LIMIT_PER_MIN = int(os.getenv("RUN_RATE_LIMIT_PER_MIN", "6"))
+VALIDATE_RATE_LIMIT_PER_HOUR = int(os.getenv("VALIDATE_RATE_LIMIT_PER_HOUR", "2"))
+FORK_RATE_LIMIT_PER_HOUR = int(os.getenv("FORK_RATE_LIMIT_PER_HOUR", "10"))
+VALIDATION_JOB_STALE_MIN = int(os.getenv("VALIDATION_JOB_STALE_MIN", "30"))
+CUSTOM_SCENARIOS_LISTED = int(os.getenv("CUSTOM_SCENARIOS_LISTED", "20"))
 AUTO_RUN_ON_LOAD = os.getenv("AUTO_RUN_ON_LOAD", "1") not in ("0", "false", "off")
 
 
@@ -65,6 +80,22 @@ def _check_rate_limit(store: Store, request: Request, n: int) -> None:
                 "please wait a moment and try again."
             ),
         )
+
+
+def _check_hourly_limit(store: Store, request: Request, kind: str, limit: int, what: str) -> None:
+    if limit <= 0:
+        return
+    total = store.record_run_requests(f"{kind}:{_client_key(request)}", 1, 3600)
+    if total > limit:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Too many {what} from this address in the last hour — limit is {limit}/hour.",
+        )
+
+
+def _validation_job_is_fresh(job: ValidationJob) -> bool:
+    updated = datetime.fromisoformat(job.updated_at)
+    return updated > datetime.now(UTC) - timedelta(minutes=VALIDATION_JOB_STALE_MIN)
 
 
 def get_store() -> Store:
@@ -100,6 +131,12 @@ class ClientEvent(BaseModel):
     sessionId: str = Field(min_length=1, max_length=64)
     level: Literal["info", "warning", "error"] = "info"
     context: dict[str, Any] = Field(default_factory=dict)
+
+
+class ForkIn(Model):
+    base_id: str
+    scenario: Scenario
+    slug: str | None = None
 
 
 @app.get("/api/health")
@@ -171,7 +208,14 @@ def get_scenario() -> dict[str, Any]:
 
 @app.get("/api/scenarios")
 def list_scenarios() -> list[dict[str, Any]]:
-    return [s.model_dump(by_alias=True) for s in get_store().list_scenarios()]
+    scenarios = get_store().list_scenarios()
+    listed = [s for s in scenarios if s.source.kind != "custom"]
+    customs = [s for s in scenarios if s.source.kind == "custom"]
+    customs.sort(
+        key=lambda s: (s.created_at is not None, s.created_at or ""),
+        reverse=True,
+    )
+    return [s.model_dump(by_alias=True) for s in [*listed, *customs[:CUSTOM_SCENARIOS_LISTED]]]
 
 
 @app.get("/api/scenarios/{scenario_id}")
@@ -180,6 +224,151 @@ def get_scenario_by_id(scenario_id: str) -> dict[str, Any]:
     if scenario is None:
         raise HTTPException(status_code=404, detail="scenario not found")
     return scenario.model_dump(by_alias=True)
+
+
+@app.get("/api/scenarios/{scenario_id}/analysis")
+def get_scenario_analysis(scenario_id: str) -> dict[str, Any]:
+    scenario = get_store().get_scenario(scenario_id)
+    if scenario is None:
+        raise HTTPException(status_code=404, detail="scenario not found")
+    return truth.analysis(scenario).model_dump(by_alias=True)
+
+
+@app.post("/api/scenarios/analyze")
+def analyze_scenario(scenario: Scenario) -> dict[str, Any]:
+    return truth.analysis(scenario).model_dump(by_alias=True)
+
+
+@app.post("/api/scenarios", status_code=201)
+def fork_scenario(payload: ForkIn, request: Request) -> dict[str, Any]:
+    store = get_store()
+    base = store.get_scenario(payload.base_id)
+    if base is None:
+        raise HTTPException(status_code=404, detail="base scenario not found")
+    _check_hourly_limit(store, request, "fork", FORK_RATE_LIMIT_PER_HOUR, "scenarios saved")
+    if payload.slug is not None:
+        if not re.fullmatch(r"[a-z0-9][a-z0-9-]{1,63}", payload.slug):
+            raise HTTPException(status_code=422, detail="invalid scenario slug")
+        if store.get_scenario(payload.slug) is not None:
+            raise HTTPException(status_code=409, detail="scenario already exists")
+        scenario_id = payload.slug
+    else:
+        stem = re.sub(r"-v\d+$", "", payload.base_id)
+        n = 2
+        while store.get_scenario(f"{stem}-v{n}") is not None:
+            n += 1
+        scenario_id = f"{stem}-v{n}"
+    source = base.source.model_copy(update={"kind": "custom", "fidelity": "modified"})
+    scenario = payload.scenario.model_copy(
+        update={
+            "id": scenario_id,
+            "is_sample": False,
+            "parent_id": payload.base_id,
+            "created_at": datetime.now(UTC).isoformat(),
+            "validation": None,
+            "source": source,
+        }
+    )
+    store.upsert_scenario(scenario)
+    return scenario.model_dump(by_alias=True)
+
+
+@app.post("/api/scenarios/{scenario_id}/validate", status_code=202)
+async def validate_scenario(
+    scenario_id: str,
+    request: Request,
+    discussion: bool = False,
+    model: str = "claude-haiku-4-5",
+) -> dict[str, Any]:
+    store = get_store()
+    if store.get_scenario(scenario_id) is None:
+        raise HTTPException(status_code=404, detail="scenario not found")
+    latest = store.latest_validation_job(scenario_id)
+    if (
+        latest is not None
+        and latest.status in ("queued", "running")
+        and _validation_job_is_fresh(latest)
+    ):
+        raise HTTPException(status_code=409, detail="validation already running")
+    active = store.active_validation_job(VALIDATION_JOB_STALE_MIN * 60)
+    if active is not None:
+        raise HTTPException(
+            status_code=429,
+            detail=(
+                f"A validation is already running (scenario {active.scenario_id}); "
+                "try again in a few minutes."
+            ),
+        )
+    _check_hourly_limit(
+        store, request, "validate", VALIDATE_RATE_LIMIT_PER_HOUR, "validations started"
+    )
+    now = datetime.now(UTC).isoformat()
+    job = ValidationJob(
+        id=str(uuid.uuid4()),
+        scenario_id=scenario_id,
+        model=model,
+        status="queued",
+        trials=10,
+        discussion_runs=10 if discussion else 0,
+        created_at=now,
+        updated_at=now,
+    )
+    store.upsert_validation_job(job)
+
+    async def run() -> None:
+        client = llm.get_client()
+        await validation_jobs.run_job(
+            store,
+            client,
+            job.id,
+            lambda run_id: start_run(run_id, request),
+        )
+        current = store.get_validation_job(job.id)
+        if current is not None:
+            validation_jobs.finalize_if_ready(store, current)
+
+    mode = os.getenv("RUN_MODE", "")
+    if mode == "sync":
+        await run()
+    else:
+        try:
+            await queues.send(
+                queues.SIMULATION_TOPIC,
+                {"kind": "validate", "jobId": job.id},
+                idempotency_key=f"validate-{job.id}",
+                token=queues.oidc_token(request),
+            )
+        except queues.QueueNotConfigured:
+            task = asyncio.create_task(run())
+            _background_tasks.add(task)
+            task.add_done_callback(_background_tasks.discard)
+        except Exception as exc:  # noqa: BLE001 - queue outage falls back to inline
+            emit("warning", "validation.enqueue_failed", jobId=job.id, reason=str(exc))
+            task = asyncio.create_task(run())
+            _background_tasks.add(task)
+            task.add_done_callback(_background_tasks.discard)
+    current = store.get_validation_job(job.id) or job
+    return current.model_dump(by_alias=True)
+
+
+@app.get("/api/validation-jobs/{job_id}")
+def get_validation_job(job_id: str) -> dict[str, Any]:
+    store = get_store()
+    job = store.get_validation_job(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="validation job not found")
+    return validation_jobs.finalize_if_ready(store, job).model_dump(by_alias=True)
+
+
+@app.get("/api/scenarios/{scenario_id}/validation-job")
+def get_scenario_validation_job(scenario_id: str) -> dict[str, Any]:
+    store = get_store()
+    if store.get_scenario(scenario_id) is None:
+        raise HTTPException(status_code=404, detail="scenario not found")
+    job = store.latest_validation_job(scenario_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="validation job not found")
+    return validation_jobs.finalize_if_ready(store, job).model_dump(by_alias=True)
 
 
 @app.post("/api/scenarios/{scenario_id}/reset")
@@ -340,27 +529,57 @@ async def _consume_simulation(request: Request, message_id: str) -> dict[str, st
     store = get_store()
     client = llm.get_client()
     payload = message["payload"]
-    run_id = payload["runId"]
+    run_id = payload.get("runId")
+    job_id = payload.get("jobId")
     try:
-        if payload.get("kind") != "round":
+        if payload.get("kind") == "validate":
+            if not isinstance(job_id, str):
+                raise ValueError("validation payload missing jobId")
+            await validation_jobs.run_job(
+                store,
+                client,
+                job_id,
+                lambda validation_run_id: start_run(validation_run_id, request),
+            )
+            job = store.get_validation_job(job_id)
+            if job is not None:
+                validation_jobs.finalize_if_ready(store, job)
+            emit("info", "simulation.validation_done", jobId=job_id)
+            run = None
+        elif payload.get("kind") != "round":
             raise ValueError(f"unknown simulation payload kind {payload.get('kind')!r}")
-        run = await orchestrator.run_round(store, client, run_id, int(payload["round"]))
-        emit(
-            "info",
-            "simulation.round_done",
-            runId=run_id,
-            round=payload["round"],
-            status=run.status,
-        )
+        else:
+            if not isinstance(run_id, str):
+                raise ValueError("round payload missing runId")
+            run = await orchestrator.run_round(store, client, run_id, int(payload["round"]))
+            emit(
+                "info",
+                "simulation.round_done",
+                runId=run_id,
+                round=payload["round"],
+                status=run.status,
+            )
     except Exception as exc:
         if (message.get("deliveryCount") or 0) > 3:
-            emit("warning", "simulation.giving_up", runId=run_id, reason=str(exc))
-            store.set_status(run_id, "error", error=str(exc))
+            emit("warning", "simulation.giving_up", runId=run_id, jobId=job_id, reason=str(exc))
+            if isinstance(job_id, str):
+                job = store.get_validation_job(job_id)
+                if job is not None:
+                    job.status = "error"
+                    job.error = str(exc)
+                    job.updated_at = datetime.now(UTC).isoformat()
+                    store.upsert_validation_job(job)
+            elif isinstance(run_id, str):
+                store.set_status(run_id, "error", error=str(exc))
         else:
             raise
     else:
-        next_round = run.current_round
-        if run.status == "running" and next_round < orchestrator.total_rounds(run):
+        next_round = run.current_round if run is not None else 0
+        if (
+            run is not None
+            and run.status == "running"
+            and next_round < orchestrator.total_rounds(run)
+        ):
             await queues.send(
                 queues.SIMULATION_TOPIC,
                 {"kind": "round", "runId": run_id, "round": next_round},
