@@ -19,9 +19,7 @@ def main() -> int:
     args = parser.parse_args()
     original = load_scenario_arg(args.scenario)
     result = twin_null(original)
-    changed = sum(
-        result.fact(f"{fact.id}~1").text != fact.text for fact in original.facts
-    )
+    changed = sum(result.fact(f"{fact.id}~1").text != fact.text for fact in original.facts)
     print(
         f"{original.id}: rotation_1_changed_facts={changed}/{len(original.facts)}",
         file=sys.stderr,

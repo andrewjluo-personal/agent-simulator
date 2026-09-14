@@ -10,7 +10,9 @@ from app.llm import FakeClient
 from app.models import RunConfig, Scenario
 from app.samples import (
     ALL_SAMPLE_SCENARIOS,
-    FLAT_V3_TYPE,
+    FLAT_V3_A,
+    FLAT_V3_D,
+    FLAT_V3_FILLER,
     HIDDEN_SAMPLE_IDS,
     HIRING_PANEL_FLAT_V2,
     HIRING_PANEL_FLAT_V3,
@@ -21,6 +23,8 @@ from app.samples import (
     SAMPLE_SCENARIOS,
     SAMPLES_BY_ID,
     _null_swap,
+    _v3_john,
+    _v3_sally,
     ensure_samples,
 )
 from app.scenarios.papers import PAPER_SCENARIOS
@@ -34,45 +38,6 @@ NON_PAPER_SAMPLE_SCENARIOS = [
     if scenario.id not in {s.id for s in PAPER_SCENARIOS}
     and all(scenario is not n for n in NULL_POOLS)
 ]
-
-
-def _type_sign_histogram(s: Scenario, ids: set[str], candidate: str) -> dict[tuple[str, str], int]:
-    hist: dict[tuple[str, str], int] = {}
-    for f in s.facts:
-        if f.id in ids and f.candidate_id == candidate:
-            key = (FLAT_V3_TYPE[f.id], f.valence)
-            hist[key] = hist.get(key, 0) + 1
-    return hist
-
-
-def test_flat_v3_shared_type_sign_balance() -> None:
-    s = HIRING_PANEL_FLAT_V3
-    shared = truth.shared_fact_ids(s)
-    assert all(f.id in FLAT_V3_TYPE for f in s.facts)
-    john = _type_sign_histogram(s, shared, "john")
-    sally = _type_sign_histogram(s, shared, "sally")
-    assert john == sally
-    assert {t for t, _ in john} == set(FLAT_V3_TYPE.values())
-    # shared leans John by strength only
-    assert truth.shared_only_verdict(s) == "john"
-
-
-def test_flat_v3_uniques_type_matched_by_john_shared_pros() -> None:
-    s = HIRING_PANEL_FLAT_V3
-    shared = truth.shared_fact_ids(s)
-    john_pro_types = {
-        FLAT_V3_TYPE[f.id]
-        for f in s.facts
-        if f.id in shared and f.candidate_id == "john" and f.valence == "pro"
-    }
-    uniques = [f for f in s.facts if f.id not in shared]
-    assert 5 <= len(uniques) <= 8
-    for f in uniques:
-        assert f.candidate_id == "sally" and f.valence == "pro"
-        assert FLAT_V3_TYPE[f.id] in john_pro_types
-    for hand in s.distribution.values():
-        assert 1 <= len([i for i in hand if i not in shared]) <= 2
-    assert truth.pooled_verdict(s) == "sally"
 
 
 @pytest.mark.parametrize("s", NULL_POOLS, ids=lambda s: s.id)
@@ -241,9 +206,39 @@ def test_symmetric_candidates_and_brief(s: Scenario) -> None:
         assert cands[0].blurb != ""
 
 
+def test_flat_v3_is_cut_from_null_v2_bank() -> None:
+    s = HIRING_PANEL_FLAT_V3
+    bank = {f.id: f for f in HIRING_PANEL_NULL_V2.facts}
+    assert all(f.id in bank for f in s.facts)
+    for f in s.facts:
+        twin = bank[f.id]
+        assert (f.text, f.memo_text, f.keywords) == (twin.text, twin.memo_text, twin.keywords)
+    shared = truth.shared_fact_ids(s)
+    for base in FLAT_V3_A:
+        assert _v3_john(base) in shared
+        assert _v3_sally(base) not in shared
+    for base in FLAT_V3_D:
+        assert _v3_sally(base) not in shared
+        assert _v3_john(base) not in {f.id for f in s.facts}
+    for base in FLAT_V3_FILLER:
+        assert base in shared and base + "x" in shared
+    uniques = [f for f in s.facts if f.id not in shared]
+    assert all(f.candidate_id == "sally" and f.valence == "pro" for f in uniques)
+    for hand in s.distribution.values():
+        assert len([i for i in hand if i not in shared]) == 3
+    assert truth.shared_only_verdict(s) == "john"
+    assert truth.pooled_verdict(s) == "sally"
+    assert all(truth.verdict(s, hand) == "john" for hand in s.distribution.values())
+
+
 def test_flat_v3_null_mirrors_every_v3_item() -> None:
     v3, null = HIRING_PANEL_FLAT_V3, HIRING_PANEL_FLAT_V3_NULL
-    assert len(null.facts) == 2 * len(v3.facts)
+    pairs = set(FLAT_V3_A) | set(FLAT_V3_D) | set(FLAT_V3_FILLER)
+    assert len(null.facts) == 2 * len(pairs) == 40
     assert null.brief == v3.brief and null.candidates == v3.candidates
     ids = {f.id for f in null.facts}
-    assert all(f.id in ids and f.id + "x" in ids for f in v3.facts)
+    assert all(b in ids and b + "x" in ids for b in pairs)
+    assert all(f.id in ids for f in v3.facts)
+    assert all(f.valence == "neutral" for f in null.facts)
+    assert all(truth.verdict(null, hand) == "undecided" for hand in null.distribution.values())
+    assert truth.pooled_verdict(null) == "undecided"

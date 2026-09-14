@@ -117,8 +117,7 @@ def vercel_identity_token() -> str:
     token = vercel_oidc_token.get() or os.getenv("VERCEL_OIDC_TOKEN")
     if not token:
         raise RuntimeError(
-            "no Vercel OIDC token: expected x-vercel-oidc-token request header or "
-            "VERCEL_OIDC_TOKEN"
+            "no Vercel OIDC token: expected x-vercel-oidc-token request header or VERCEL_OIDC_TOKEN"
         )
     return token
 

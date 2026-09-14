@@ -1151,452 +1151,82 @@ HIRING_PANEL_FLAT_V2 = Scenario.model_validate(
 
 
 # ---------------------------------------------------------------------------
-# hiring-panel-flat-v3 — type-balanced hidden profile (docs/probes/S4_flat_v3.md).
-# Haiku's ballot is not additive over items: behavioural stories and rigour cons
-# outweigh credentials whatever the per-item rating says. So the shared set has
-# the SAME type x sign histogram for both candidates and leans John only by
-# strength of wording; Sally's uniques are of types John already holds shared
-# pros in, so the hidden profile comes from distribution alone. Brief/blurbs are
-# the symmetric null-pool ones (no domain match for either candidate).
+# hiring-panel-flat-v3 — hidden profile cut from the null-v2 paraphrase bank.
+# Every item is a null-v2 pair (same type and valence, one wording per candidate):
+#   A pairs: John's version shared, Sally's version unique (hidden Sally pro);
+#   D pairs: Sally's version unique, John's version omitted;
+#   filler pairs: both versions shared.
+# Shared therefore leans John only through which side of a pair is hidden; the
+# union of hands favours Sally. docs/probes/S4_flat_v3.md.
 # ---------------------------------------------------------------------------
-V3_TYPES = ("credential", "behavioural", "rigour", "teamwork", "communication")
+_NULL_V2_BY_ID = {f["id"]: f for f in NULL_V2_SHARED + NULL_V2_UNIQUE}
+_FLAT_V2_BY_ID = {f["id"]: f for f in FLAT_V2_SHARED + FLAT_V2_UNIQUE}
 
-# id -> item type; sign is the fact's valence.
-FLAT_V3_TYPE: dict[str, str] = {}
-
-
-def _v3(
-    rows: list[tuple[str, str, str, str, int, str, str, list[str]]],
-) -> list[dict[str, Any]]:
-    out = []
-    for fact_id, item_type, candidate_id, valence, weight, text, memo, keywords in rows:
-        assert item_type in V3_TYPES, item_type
-        FLAT_V3_TYPE[fact_id] = item_type
-        out.append(_fact(fact_id, candidate_id, valence, weight, text, memo, keywords))
-    return out
+FLAT_V3_A = ["J1", "J3", "F9", "F10", "F11", "F12", "F13", "F15"]
+FLAT_V3_D = ["F1", "F3", "F5", "F6"]
+FLAT_V3_FILLER = ["J7", "S1", "S4", "J9", "J10", "S6", "S7", "S10"]
 
 
-FLAT_V3_SHARED: list[dict[str, Any]] = _v3(
-    [
-        # --- John: strong pros, mild cons ---
-        (
-            "VJ1",
-            "credential",
-            "john",
-            "pro",
-            1,
-            "John has seven years of professional backend work, five of them on high-throughput services.",
-            "Seven years of backend work, five on high-throughput services.",
-            ["seven years", "high-throughput", "backend"],
-        ),
-        (
-            "VJ2",
-            "credential",
-            "john",
-            "pro",
-            1,
-            "John holds a current cloud architecture certification.",
-            "Holds a current cloud architecture certification.",
-            ["certification", "cloud architecture"],
-        ),
-        (
-            "VJ3",
-            "behavioural",
-            "john",
-            "pro",
-            2,
-            "John led the response to a production outage last year and had the service restored in under twenty minutes.",
-            "Led a production outage response; service restored in under twenty minutes.",
-            ["outage", "led the response", "twenty minutes"],
-        ),
-        (
-            "VJ4",
-            "behavioural",
-            "john",
-            "pro",
-            2,
-            "John volunteered to own his team's least popular service and halved its page rate within a quarter.",
-            "Volunteered to own the least popular service and halved its page rate in a quarter.",
-            ["least popular service", "page rate", "volunteered"],
-        ),
-        (
-            "VJ5",
-            "behavioural",
-            "john",
-            "pro",
-            1,
-            "John has run his team's weekly incident review for the past year.",
-            "Has run his team's weekly incident review for the past year.",
-            ["incident review", "weekly", "past year"],
-        ),
-        (
-            "VJ6",
-            "rigour",
-            "john",
-            "pro",
-            2,
-            "In the debugging round John found the planted bug and added a regression test before fixing it.",
-            "Found the planted bug and added a regression test before fixing it.",
-            ["regression test", "debugging round", "planted bug"],
-        ),
-        (
-            "VJ7",
-            "rigour",
-            "john",
-            "pro",
-            1,
-            "John's design answer called out the idempotency of retries without being prompted.",
-            "Design answer called out idempotency of retries unprompted.",
-            ["idempotency", "retries", "design answer"],
-        ),
-        (
-            "VJ8",
-            "teamwork",
-            "john",
-            "pro",
-            1,
-            "Two engineers John mentored were promoted within two years.",
-            "Two mentees promoted within two years.",
-            ["mentored", "promoted", "two engineers"],
-        ),
-        (
-            "VJ9",
-            "communication",
-            "john",
-            "pro",
-            1,
-            "John answered every behavioural question concisely and directly.",
-            "Answered every behavioural question concisely and directly.",
-            ["behavioural questions", "concise", "direct"],
-        ),
-        (
-            "VJ10",
-            "credential",
-            "john",
-            "con",
-            1,
-            "One of John's last three roles lasted under eighteen months.",
-            "One of his last three roles lasted under eighteen months.",
-            ["eighteen months", "tenure", "one role"],
-        ),
-        (
-            "VJ11",
-            "behavioural",
-            "john",
-            "con",
-            1,
-            "John missed one sprint deadline last year when a library he owned shipped late.",
-            "Missed one sprint deadline last year when a library he owned shipped late.",
-            ["sprint deadline", "shipped late", "library"],
-        ),
-        (
-            "VJ12",
-            "rigour",
-            "john",
-            "con",
-            1,
-            "John's take-home README omits setup and run instructions.",
-            "Take-home README omits setup instructions.",
-            ["README", "setup instructions", "take-home"],
-        ),
-        (
-            "VJ13",
-            "teamwork",
-            "john",
-            "con",
-            1,
-            "John started answering before one interviewer had finished the question.",
-            "Started answering before one interviewer finished the question.",
-            ["started answering", "interviewer", "question"],
-        ),
-        (
-            "VJ14",
-            "communication",
-            "john",
-            "con",
-            1,
-            "In the closing round John asked about title and compensation and did not ask about the product.",
-            "Closing questions were about title and compensation only.",
-            ["closing round", "title", "compensation"],
-        ),
-        # --- Sally: mild pros, sharper cons ---
-        (
-            "VS1",
-            "credential",
-            "sally",
-            "pro",
-            1,
-            "Sally has seven years of professional backend work on internal platform services.",
-            "Seven years of backend work on internal platform services.",
-            ["seven years", "platform services", "backend"],
-        ),
-        (
-            "VS2",
-            "credential",
-            "sally",
-            "pro",
-            1,
-            "Sally completed an online course on distributed systems last year.",
-            "Completed an online distributed-systems course last year.",
-            ["online course", "distributed systems"],
-        ),
-        (
-            "VS3",
-            "behavioural",
-            "sally",
-            "pro",
-            1,
-            "Sally has taken part in two cross-team incident reviews at her current company.",
-            "Took part in two cross-team incident reviews.",
-            ["incident reviews", "cross-team", "took part"],
-        ),
-        (
-            "VS4",
-            "behavioural",
-            "sally",
-            "pro",
-            1,
-            "Sally picked up maintenance of a small internal service when its owner left.",
-            "Picked up maintenance of a small internal service when its owner left.",
-            ["small internal service", "maintenance", "owner left"],
-        ),
-        (
-            "VS5",
-            "behavioural",
-            "sally",
-            "pro",
-            1,
-            "Sally attends her team's weekly incident review.",
-            "Attends her team's weekly incident review.",
-            ["incident review", "weekly", "attends"],
-        ),
-        (
-            "VS6",
-            "rigour",
-            "sally",
-            "pro",
-            1,
-            "In the debugging round Sally found the planted bug within the allotted time.",
-            "Found the planted bug in the debugging round within the allotted time.",
-            ["debugging round", "planted bug", "allotted time"],
-        ),
-        (
-            "VS7",
-            "rigour",
-            "sally",
-            "pro",
-            1,
-            "Sally's design answer included a short section on logging and metrics.",
-            "Design answer included a short section on logging and metrics.",
-            ["logging", "metrics", "design answer"],
-        ),
-        (
-            "VS8",
-            "teamwork",
-            "sally",
-            "pro",
-            1,
-            "Sally reviews new hires' first pull requests on her team.",
-            "Reviews new hires' first pull requests on her team.",
-            ["new hires", "pull requests", "reviews"],
-        ),
-        (
-            "VS9",
-            "communication",
-            "sally",
-            "pro",
-            1,
-            "Sally's written design sample is organised into numbered sections.",
-            "Design sample is organised into numbered sections.",
-            ["design sample", "numbered sections"],
-        ),
-        (
-            "VS10",
-            "credential",
-            "sally",
-            "con",
-            2,
-            "Sally's most recent role lasted fourteen months.",
-            "Most recent tenure was fourteen months.",
-            ["fourteen months", "tenure", "recent role"],
-        ),
-        (
-            "VS11",
-            "behavioural",
-            "sally",
-            "con",
-            1,
-            "Sally submitted her take-home a day after the deadline without warning the recruiter.",
-            "Take-home submitted a day late without warning the recruiter.",
-            ["take-home", "a day late", "without warning"],
-        ),
-        (
-            "VS12",
-            "rigour",
-            "sally",
-            "con",
-            2,
-            "One edge-case test in Sally's take-home fails; her notes flag it as known.",
-            "One take-home edge-case test fails; flagged as known in her notes.",
-            ["edge-case", "failing test", "take-home"],
-        ),
-        (
-            "VS13",
-            "teamwork",
-            "sally",
-            "con",
-            1,
-            "A reference said Sally sat on a blocking bug for a week before telling anyone.",
-            "Reference: sat on a blocking bug for a week before telling anyone.",
-            ["blocking bug", "a week", "before telling anyone"],
-        ),
-        (
-            "VS14",
-            "communication",
-            "sally",
-            "con",
-            2,
-            "Sally paused for several seconds before two panel answers and asked to restart one of them.",
-            "Paused before two panel answers and restarted one.",
-            ["paused", "restart", "panel answers"],
-        ),
-    ]
-)
+def _v3_john(base: str) -> str:
+    return base if _NULL_V2_BY_ID[base]["candidateId"] == "john" else base + "x"
 
-# Uniques: all Sally-positive, each of a type in which John already holds shared
-# pros (behavioural, rigour, teamwork). One or two per agent.
-FLAT_V3_UNIQUE: list[dict[str, Any]] = _v3(
-    [
-        (
-            "VU1",
-            "behavioural",
-            "sally",
-            "pro",
-            2,
-            "At a previous job Sally rolled back a bad deploy within ten minutes using a runbook she wrote.",
-            "Rolled back a bad deploy within ten minutes using a runbook she wrote.",
-            ["rolled back", "ten minutes", "runbook"],
-        ),
-        (
-            "VU2",
-            "rigour",
-            "sally",
-            "pro",
-            2,
-            "In the debugging round Sally also located a race condition causing silent data loss that was not part of the exercise.",
-            "Also located a race condition causing silent data loss that was not part of the exercise.",
-            ["race condition", "data loss", "not part of the exercise"],
-        ),
-        (
-            "VU3",
-            "rigour",
-            "sally",
-            "pro",
-            2,
-            "Sally's take-home included a load-test script and its results for the hot path.",
-            "Her take-home included a load-test script and results for the hot path.",
-            ["load-test", "take-home", "hot path"],
-        ),
-        (
-            "VU4",
-            "behavioural",
-            "sally",
-            "pro",
-            2,
-            "Sally was the named lead on a ledger migration that moved two billion rows with no recorded downtime.",
-            "Named lead on a two-billion-row ledger migration with no recorded downtime.",
-            ["ledger migration", "two billion rows", "no downtime"],
-        ),
-        (
-            "VU5",
-            "teamwork",
-            "sally",
-            "pro",
-            2,
-            "Sally brokered an API contract between two teams that had been blocked on each other for a month.",
-            "Brokered an API contract between two teams blocked on each other for a month.",
-            ["brokered", "API contract", "blocked"],
-        ),
-        (
-            "VU6",
-            "behavioural",
-            "sally",
-            "pro",
-            2,
-            "Sally's on-call rotation had the lowest repeat-page rate on her team; she wrote the team's post-mortem template.",
-            "Lowest repeat-page rate on her team; wrote the post-mortem template.",
-            ["repeat-page rate", "post-mortem template", "on-call"],
-        ),
-        (
-            "VU7",
-            "rigour",
-            "sally",
-            "pro",
-            2,
-            "In the design round Sally spotted a single point of failure in the reference architecture that the interviewer had not noticed.",
-            "Spotted a single point of failure in the reference architecture the interviewer had missed.",
-            ["single point of failure", "design round", "reference architecture"],
-        ),
-    ]
-)
-FLAT_V3_SHARED_IDS = [fact["id"] for fact in FLAT_V3_SHARED]
+
+def _v3_sally(base: str) -> str:
+    return base if _NULL_V2_BY_ID[base]["candidateId"] == "sally" else base + "x"
+
+
+def _v3_fact(fact_id: str) -> dict[str, Any]:
+    base = fact_id.removesuffix("x")
+    return {
+        **_NULL_V2_BY_ID[fact_id],
+        "valence": _FLAT_V2_BY_ID[base]["valence"],
+        "weight": 1,
+    }
+
+
+FLAT_V3_SHARED_IDS = [_v3_john(b) for b in FLAT_V3_A] + [
+    v for b in FLAT_V3_FILLER for v in (b, b + "x")
+]
+FLAT_V3_UNIQUE_IDS = [_v3_sally(b) for b in FLAT_V3_A] + [_v3_sally(b) for b in FLAT_V3_D]
+FLAT_V3_SHARED: list[dict[str, Any]] = [_v3_fact(i) for i in FLAT_V3_SHARED_IDS]
+FLAT_V3_UNIQUE: list[dict[str, Any]] = [_v3_fact(i) for i in FLAT_V3_UNIQUE_IDS]
 
 HIRING_PANEL_FLAT_V3 = Scenario.model_validate(
     {
         "id": "hiring-panel-flat-v3",
-        "title": "Hiring panel (flat items, type-balanced)",
-        "brief": HIRING_PANEL_NULL.brief,
+        "title": "Hiring panel (flat items, hidden profile from the null-v2 bank)",
+        "brief": HIRING_PANEL_NULL_V2.brief,
         "isSample": True,
-        "candidates": HIRING_PANEL_NULL_CANDIDATES,
+        "candidates": HIRING_PANEL_NULL_V2.candidates,
         "agents": HIRING_PANEL_AGENTS,
         "facts": FLAT_V3_SHARED + FLAT_V3_UNIQUE,
         "distribution": {
-            "dana": FLAT_V3_SHARED_IDS + ["VU1", "VU6"],
-            "marcus": FLAT_V3_SHARED_IDS + ["VU2", "VU5"],
-            "priya": FLAT_V3_SHARED_IDS + ["VU3"],
-            "tom": FLAT_V3_SHARED_IDS + ["VU4", "VU7"],
+            "dana": FLAT_V3_SHARED_IDS + [_v3_sally("F10"), _v3_sally("F13"), _v3_sally("F1")],
+            "marcus": FLAT_V3_SHARED_IDS + [_v3_sally("F11"), _v3_sally("F12"), _v3_sally("F3")],
+            "priya": FLAT_V3_SHARED_IDS + [_v3_sally("J3"), _v3_sally("J1"), _v3_sally("F5")],
+            "tom": FLAT_V3_SHARED_IDS + [_v3_sally("F15"), _v3_sally("F9"), _v3_sally("F6")],
         },
-        # gate_pool.py, seeds 0-7, order=balanced (4 John-first / 4 Sally-first per cell),
-        # default prompt. naive passed (dana 1.0, marcus .875, priya 1.0, tom 1.0, omar 1.0);
-        # default fails on priya (6/8). See docs/probes/S4_flat_v3.md.
-        "validation": {
-            "claude-haiku-4-5": {
-                "aloneWrongRate": {
-                    "dana": 0.875,
-                    "marcus": 0.875,
-                    "priya": 0.75,
-                    "tom": 1.0,
-                    "omar": 0.875,
-                },
-                "pooledRightRate": 1.0,
-                "trials": 8,
-                "date": "2026-09-14",
-                "passed": False,
-            }
-        },
+        "validation": {},
     }
 )
 
-# Twin null of v3: every v3 item once per candidate (pronouns swapped), all
-# valences neutral. Sally rate here is the residual name/order/type bias.
-FLAT_V3_NULL_SHARED = _null_pool(FLAT_V3_SHARED)
-FLAT_V3_NULL_UNIQUE = _null_pool(FLAT_V3_UNIQUE)
-FLAT_V3_NULL_SHARED_IDS = [fact["id"] for fact in FLAT_V3_NULL_SHARED]
-
-
-def _v3_null_hand(ids: list[str]) -> list[str]:
-    return FLAT_V3_NULL_SHARED_IDS + ids + [i + "x" for i in ids]
-
+# Twin null of v3: both versions of every pair v3 draws on, all neutral. The
+# null hands mirror v3's structure — A and filler pairs shared, each agent's
+# D pair held only by them — so the Sally rate is the residual name/order bias.
+_V3_NULL_D_PAIR = {"dana": "F1", "marcus": "F3", "priya": "F5", "tom": "F6"}
+FLAT_V3_NULL_FACTS: list[dict[str, Any]] = [
+    _NULL_V2_BY_ID[i] for b in FLAT_V3_A + FLAT_V3_D + FLAT_V3_FILLER for i in (b, b + "x")
+]
+FLAT_V3_NULL_SHARED_IDS = [i for b in FLAT_V3_A + FLAT_V3_FILLER for i in (b, b + "x")]
 
 HIRING_PANEL_FLAT_V3_NULL = Scenario.model_validate(
     {
         **HIRING_PANEL_FLAT_V3.model_dump(by_alias=True, exclude={"facts", "distribution"}),
         "id": "hiring-panel-flat-v3-null",
         "title": "Hiring panel (flat v3 twin null, zero margin)",
-        "facts": FLAT_V3_NULL_SHARED + FLAT_V3_NULL_UNIQUE,
+        "facts": FLAT_V3_NULL_FACTS,
         "distribution": {
-            a: _v3_null_hand([i for i in hand if i not in FLAT_V3_SHARED_IDS])
-            for a, hand in HIRING_PANEL_FLAT_V3.distribution.items()
+            a: FLAT_V3_NULL_SHARED_IDS + [d, d + "x"] for a, d in _V3_NULL_D_PAIR.items()
         },
         "validation": {},
     }
