@@ -1172,7 +1172,7 @@ _V3_SALLY_UNIQUE = {
     "dana": ["F9", "F13"],
     "marcus": ["F11", "F12"],
     "priya": ["F1", "F3"],
-    "tom": ["F2", "F10"],
+    "tom": ["F2", "F5"],
 }
 
 
