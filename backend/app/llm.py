@@ -14,6 +14,7 @@ from typing import Any, Protocol
 
 import httpx
 
+from .anthropic_auth import WIFTokenSource
 from .telemetry import emit
 from .truth import UNDECIDED
 
@@ -48,11 +49,21 @@ class LLMClient(Protocol):
 class AnthropicClient:
     provider = "anthropic"
 
-    def __init__(self, api_key: str | None = None) -> None:
+    def __init__(
+        self, api_key: str | None = None, token_source: WIFTokenSource | None = None
+    ) -> None:
         key = api_key or os.getenv("ANTHROPIC_API_KEY")
-        if not key:
-            raise RuntimeError("ANTHROPIC_API_KEY is not set")
-        self._key = key
+        if key:
+            self._key: str | None = key
+            self._token_source: WIFTokenSource | None = None
+        elif token_source is not None or os.getenv("ANTHROPIC_FEDERATION_RULE_ID"):
+            self._key = None
+            self._token_source = token_source or WIFTokenSource.from_env()
+        else:
+            raise RuntimeError(
+                "no Anthropic credentials: set ANTHROPIC_API_KEY or the "
+                "ANTHROPIC_FEDERATION_RULE_ID/… WIF env vars"
+            )
 
     async def complete(self, req: LLMRequest) -> LLMResponse:
         body = {
@@ -62,13 +73,17 @@ class AnthropicClient:
             "messages": [{"role": "user", "content": req.user}],
             "temperature": 1.0,
         }
-        headers = {
-            "x-api-key": self._key,
-            "anthropic-version": API_VERSION,
-            "content-type": "application/json",
-        }
         last_exc: Exception | None = None
+        saw_401 = False
         for attempt in range(3):
+            headers = {
+                "anthropic-version": API_VERSION,
+                "content-type": "application/json",
+            }
+            if self._token_source is not None:
+                headers["authorization"] = f"Bearer {await self._token_source.token()}"
+            else:
+                headers["x-api-key"] = self._key or ""
             started = time.perf_counter()
             try:
                 async with httpx.AsyncClient(timeout=60) as client:
@@ -111,6 +126,15 @@ class AnthropicClient:
                     exc.response.status_code == 429 or exc.response.status_code >= 500
                 )
                 if not isinstance(exc, httpx.HTTPStatusError):
+                    retryable = True
+                if (
+                    isinstance(exc, httpx.HTTPStatusError)
+                    and exc.response.status_code == 401
+                    and self._token_source is not None
+                    and not saw_401
+                ):
+                    saw_401 = True
+                    self._token_source.invalidate()
                     retryable = True
                 if not retryable or attempt == 2:
                     raise
@@ -240,7 +264,10 @@ def get_client() -> LLMClient:
     provider = os.getenv("LLM_PROVIDER")
     if provider == "fake":
         _client = FakeClient()
-    elif provider == "anthropic" or (provider is None and os.getenv("ANTHROPIC_API_KEY")):
+    elif provider == "anthropic" or (
+        provider is None
+        and (os.getenv("ANTHROPIC_API_KEY") or os.getenv("ANTHROPIC_FEDERATION_RULE_ID"))
+    ):
         _client = AnthropicClient()
     elif provider is None:
         _client = FakeClient()
