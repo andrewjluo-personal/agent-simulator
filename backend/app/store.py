@@ -3,6 +3,7 @@ Neon; `MemoryStore` backs local development and tests, `PgStore` (app.db) Neon."
 
 from __future__ import annotations
 
+import time
 from typing import Protocol
 
 from .engine_version import ENGINE_VERSION
@@ -36,11 +37,15 @@ class Store(Protocol):
     ) -> None: ...
     def finish_run(self, run_id: str, metrics: Metrics) -> None: ...
     def delete_demo_runs(self) -> int: ...
+    def record_run_requests(self, client_key: str, n: int, window_s: int) -> int:
+        """Record n run creations for client_key and return the total in the last
+        window_s seconds (including these)."""
 
 
 class MemoryStore:
     def __init__(self) -> None:
         self._runs: dict[str, RunState] = {}
+        self._requests: list[tuple[str, float]] = []
         self._scenarios: dict[str, Scenario] = {}
         from .samples import SAMPLE_SCENARIOS
 
@@ -76,9 +81,9 @@ class MemoryStore:
             return None
         return scenario, [
             s
-            for s in self.list_runs(is_demo=True, scenario_id=scenario_id)
-            if s.engine_version == ENGINE_VERSION
-        ][:100]
+            for s in self.list_runs(scenario_id=scenario_id)
+            if s.engine_version == ENGINE_VERSION and s.status == "done"
+        ][:40]
 
     def list_runs(
         self,
@@ -146,3 +151,9 @@ class MemoryStore:
         for rid in doomed:
             del self._runs[rid]
         return len(doomed)
+
+    def record_run_requests(self, client_key: str, n: int, window_s: int) -> int:
+        now = time.monotonic()
+        self._requests = [e for e in self._requests if now - e[1] <= 3600]
+        self._requests.extend((client_key, now) for _ in range(n))
+        return sum(1 for k, ts in self._requests if k == client_key and now - ts <= window_s)

@@ -42,6 +42,30 @@ app.add_middleware(
 _store: Store | None = None
 _background_tasks: set[asyncio.Task[Any]] = set()
 
+RUN_RATE_LIMIT_PER_MIN = int(os.getenv("RUN_RATE_LIMIT_PER_MIN", "6"))
+AUTO_RUN_ON_LOAD = os.getenv("AUTO_RUN_ON_LOAD", "1") not in ("0", "false", "off")
+
+
+def _client_key(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for", "")
+    if forwarded.strip():
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+def _check_rate_limit(store: Store, request: Request, n: int) -> None:
+    if RUN_RATE_LIMIT_PER_MIN <= 0:
+        return
+    total = store.record_run_requests(_client_key(request), n, 60)
+    if total > RUN_RATE_LIMIT_PER_MIN:
+        raise HTTPException(
+            status_code=429,
+            detail=(
+                "Too many runs started from this address in the last minute — "
+                "please wait a moment and try again."
+            ),
+        )
+
 
 def get_store() -> Store:
     global _store
@@ -91,6 +115,7 @@ def health(request: Request) -> dict[str, Any]:
         "checks": checks,
         "env": os.getenv("VERCEL_ENV", "development"),
         "engineVersion": ENGINE_VERSION,
+        "autoRunOnLoad": AUTO_RUN_ON_LOAD,
     }
 
 
@@ -204,6 +229,7 @@ async def start_run(run_id: str, request: Request) -> None:
 @app.post("/api/runs", status_code=201)
 async def create_run(cfg: RunConfig, request: Request) -> dict[str, Any]:
     store = get_store()
+    _check_rate_limit(store, request, 1)
     try:
         run = orchestrator.new_run(store, cfg, provider=llm.get_client().provider)
     except KeyError as exc:
@@ -217,6 +243,7 @@ async def create_run(cfg: RunConfig, request: Request) -> dict[str, Any]:
 @app.post("/api/runs/batch", status_code=201)
 async def create_batch(payload: BatchIn, request: Request) -> dict[str, Any]:
     store = get_store()
+    _check_rate_limit(store, request, payload.n)
     batch_id = str(uuid.uuid4())
     summaries: list[RunSummary] = []
     for i in range(payload.n):
@@ -260,13 +287,19 @@ def get_batch(batch_id: str) -> dict[str, Any]:
 
 @app.get("/api/demo")
 def get_demo(scenario_id: str | None = Query(default=None, alias="scenarioId")) -> dict[str, Any]:
-    """Scenario plus demo run *summaries*; the client fetches full transcripts via
-    GET /api/runs/{id} on demand."""
+    """Scenario plus recent finished run *summaries* (demo or live, current engine
+    version); the client fetches full transcripts via GET /api/runs/{id} on demand."""
+
     snap = get_store().demo_snapshot(scenario_id or DEFAULT_SCENARIO_ID)
     if snap is None:
         raise HTTPException(status_code=404, detail="scenario not found")
     scenario, runs = snap
-    snapshot = DemoSnapshot(scenario=scenario, runs=runs, engine_version=ENGINE_VERSION)
+    snapshot = DemoSnapshot(
+        scenario=scenario,
+        runs=runs,
+        engine_version=ENGINE_VERSION,
+        auto_run_on_load=AUTO_RUN_ON_LOAD,
+    )
     return snapshot.model_dump(by_alias=True, mode="json")
 
 
