@@ -55,6 +55,13 @@ create table if not exists validation_jobs (
 create index if not exists validation_jobs_scenario_idx
     on validation_jobs (scenario_id, updated_at desc);
 
+create table if not exists run_requests (
+    id bigserial primary key,
+    client_key text not null,
+    created_at timestamptz not null default now()
+);
+create index if not exists run_requests_key_idx on run_requests (client_key, created_at);
+
 create table if not exists scenarios (
     id text primary key,
     title text not null,
@@ -360,9 +367,9 @@ class PgStore:
             if row is None:
                 return None
             rows = conn.execute(
-                "select * from runs where is_demo and scenario_id = %s "
-                "and engine_version = %s "
-                "order by created_at desc limit 100",
+                "select * from runs where scenario_id = %s "
+                "and engine_version = %s and status = 'done' "
+                "order by created_at desc limit 40",
                 (scenario_id, ENGINE_VERSION),
             ).fetchall()
         return Scenario.model_validate(row["body"]), [_summary_from_row(r) for r in rows]
@@ -488,3 +495,18 @@ class PgStore:
                 (engine_version,),
             )
             return cur.rowcount
+
+    def record_run_requests(self, client_key: str, n: int, window_s: int) -> int:
+        with connection() as conn:
+            conn.execute(
+                "insert into run_requests (client_key) select %s from generate_series(1, %s)",
+                (client_key, n),
+            )
+            conn.execute("delete from run_requests where created_at < now() - interval '1 hour'")
+            row = conn.execute(
+                "select count(*) from run_requests where client_key = %s "
+                "and created_at > now() - make_interval(secs => %s)",
+                (client_key, window_s),
+            ).fetchone()
+            assert row is not None
+            return int(row["count"])

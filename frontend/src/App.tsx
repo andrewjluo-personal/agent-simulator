@@ -34,7 +34,7 @@ function defaultConfig(scenario: Scenario): RunConfig {
 function App() {
   const [scenarios, setScenarios] = useState<Scenario[]>([])
   const [scenario, setScenario] = useState<Scenario | null>(null)
-  const [demoRuns, setDemoRuns] = useState<RunSummary[]>([])
+  const [recentRuns, setRecentRuns] = useState<RunSummary[]>([])
   // Full transcripts are fetched on demand (GET /api/runs/{id}) and kept here so replays are instant.
   const fullRuns = useRef(new Map<string, RunState>())
   const [apiDown, setApiDown] = useState(false)
@@ -46,11 +46,15 @@ function App() {
   const pb = usePlayback()
   const highlight = useHighlightState()
 
-  const loadDemo = useCallback(async (scenarioId: string): Promise<boolean> => {
+  const autoRunAllowed = useRef<boolean | null>(null)
+  const autoRunStarted = useRef(false)
+
+  const loadRecent = useCallback(async (scenarioId: string): Promise<boolean> => {
     try {
       const snap = await getDemo(scenarioId)
       setScenario(snap.scenario)
-      setDemoRuns(snap.runs)
+      setRecentRuns(snap.runs)
+      if (scenarioId === DEFAULT_SCENARIO_ID) autoRunAllowed.current = snap.autoRunOnLoad !== false
       setConfig((c) => (c ? { ...c, scenarioId: snap.scenario.id } : defaultConfig(snap.scenario)))
       setApiDown(false)
       return true
@@ -63,19 +67,31 @@ function App() {
   // The scenario list and the default scenario's snapshot are independent, so fetch both at once;
   // first paint only waits on the snapshot.
   useEffect(() => {
-    const demo = loadDemo(DEFAULT_SCENARIO_ID)
+    const demo = loadRecent(DEFAULT_SCENARIO_ID)
     listScenarios()
       .then(async (list) => {
         setScenarios(list)
         if (await demo) return
         const fallback = list.find((s) => s.id !== DEFAULT_SCENARIO_ID)
-        if (!fallback || !(await loadDemo(fallback.id))) setApiDown(true)
+        if (!fallback || !(await loadRecent(fallback.id))) setApiDown(true)
       })
       .catch(async (cause: unknown) => {
         track('scenarios.load_failed', { reason: String(cause) }, 'warning')
         if (!(await demo)) setApiDown(true)
       })
-  }, [loadDemo])
+  }, [loadRecent])
+
+  // Live-first landing: kick off a real run once the default scenario resolves —
+  // once per page load (ref) and once per browser session (sessionStorage).
+  useEffect(() => {
+    if (!scenario || !config) return
+    if (autoRunStarted.current || autoRunAllowed.current !== true) return
+    if (sessionStorage.getItem('hp.autoRun') === '1') return
+    autoRunStarted.current = true
+    sessionStorage.setItem('hp.autoRun', '1')
+    track('autorun.start', { scenarioId: scenario.id })
+    void pb.startLive({ ...defaultConfig(scenario), seed: Math.floor(Math.random() * 10000) })
+  }, [scenario, config, pb])
 
   const openRun = useCallback(
     async (id: string) => {
@@ -98,7 +114,7 @@ function App() {
   // Warm the cache with one finished run per paradigm so the first ▶ Play is instant.
   useEffect(() => {
     for (const p of PARADIGMS) {
-      const pick = demoRuns.find((r) => r.config.paradigm === p.id && r.status === 'done')
+      const pick = recentRuns.find((r) => r.config.paradigm === p.id && r.status === 'done')
       if (!pick || fullRuns.current.has(pick.id)) continue
       getRun(pick.id)
         .then((full) => fullRuns.current.set(full.id, full))
@@ -106,17 +122,24 @@ function App() {
           /* best effort; openRun refetches */
         })
     }
-  }, [demoRuns])
+  }, [recentRuns])
+
+  // A finished live run joins the recent list — refetch so the strip + stats include it.
+  useEffect(() => {
+    if (pb.run && pb.run.status === 'done' && pb.run.scenarioId === scenario?.id) {
+      void loadRecent(pb.run.scenarioId)
+    }
+  }, [pb.run?.status, pb.run?.id, pb.run?.scenarioId, scenario?.id, loadRecent])
 
   const selectScenario = useCallback(
     (id: string) => {
       setConfig((c) => (c ? { ...c, scenarioId: id } : defaultConfig(scenarios.find((s) => s.id === id)!)))
       pb.clear()
-      void loadDemo(id).then((ok) => {
+      void loadRecent(id).then((ok) => {
         if (!ok) setApiDown(true)
       })
     },
-    [scenarios, pb, loadDemo],
+    [scenarios, pb, loadRecent],
   )
 
   const resetCurrent = useCallback(async () => {
@@ -127,11 +150,11 @@ function App() {
       setScenarios((prev) => prev.map((s) => (s.id === restored.id ? restored : s)))
       setConfig(defaultConfig(restored))
       pb.clear()
-      void loadDemo(restored.id)
+      void loadRecent(restored.id)
     } catch (cause) {
       setBatchError(cause instanceof Error ? cause.message : String(cause))
     }
-  }, [scenario, pb, loadDemo])
+  }, [scenario, pb, loadRecent])
 
   // Poll in-flight batches so the strip fills in as round jobs complete.
   const pendingBatchIds = useMemo(
@@ -154,8 +177,8 @@ function App() {
   }, [pendingBatchIds])
 
   const cachedForParadigm = useMemo(
-    () => demoRuns.filter((r) => r.config.paradigm === config?.paradigm && r.status === 'done'),
-    [demoRuns, config?.paradigm],
+    () => recentRuns.filter((r) => r.config.paradigm === config?.paradigm && r.status === 'done'),
+    [recentRuns, config?.paradigm],
   )
 
   const playCached = useCallback(() => {
@@ -181,11 +204,13 @@ function App() {
   }, [config, n])
 
   const rows: StripRow[] = useMemo(() => {
-    const all: RunSummary[] = [...demoRuns, ...Object.values(batchRuns).flat()]
+    const byId = new Map<string, RunSummary>()
+    for (const r of [...Object.values(batchRuns).flat(), ...recentRuns]) byId.set(r.id, r)
+    const all = [...byId.values()]
     return PARADIGMS.map((p) => ({ paradigm: p.id, label: p.label, runs: all.filter((r) => r.config.paradigm === p.id) })).filter(
       (row) => row.runs.length > 0,
     )
-  }, [demoRuns, batchRuns])
+  }, [recentRuns, batchRuns])
 
   const pending = useMemo(() => {
     const all = Object.values(batchRuns).flat()
@@ -195,10 +220,10 @@ function App() {
 
   const pickRun = useCallback(
     (id: string) => {
-      if (demoRuns.some((r) => r.id === id)) void openRun(id)
+      if (recentRuns.some((r) => r.id === id)) void openRun(id)
       else void pb.replayById(id)
     },
-    [demoRuns, pb, openRun],
+    [recentRuns, pb, openRun],
   )
 
   if (!scenario || !config) {
@@ -269,11 +294,21 @@ function App() {
         <div className="stage-left">
           <Table scenario={runScenario} config={pb.run?.config ?? null} derived={pb.derived} status={status} round={Math.max(roundShown, 0)} />
           {pb.run && pb.derived.finished && <VerdictCard run={pb.run} commonGround={pb.derived.commonGround} />}
-          {pb.run && !pb.derived.finished && pb.run.status !== 'done' && pb.revealed >= pb.run.turns.length && status !== 'idle' && (
-            <div className="waiting">
-              {pb.run.status === 'error' ? `Run failed: ${pb.run.error ?? 'unknown error'}` : 'Waiting for the next turn from the agents…'}
-            </div>
-          )}
+          {pb.run &&
+            !pb.derived.finished &&
+            pb.run.status !== 'done' &&
+            pb.revealed >= (pb.run.turns ?? []).length && (
+              <div className="waiting live">
+                <span className="live-dot" />
+                {pb.run.status === 'error'
+                  ? `Run failed: ${pb.run.error ?? 'unknown error'}`
+                  : (pb.run.turns ?? []).length === 0
+                    ? 'Live — agents are reading their notes and casting a pre-discussion ballot…'
+                    : pb.run.currentRound >= pb.run.config.rounds
+                      ? 'Live — runoff round, waiting on agents…'
+                      : `Live — round ${Math.min(pb.run.currentRound + 1, pb.run.config.rounds)} of ${pb.run.config.rounds}, waiting on agents…`}
+              </div>
+            )}
           {pb.run && pb.derived.finished && (
             <button className="link" onClick={pb.restart}>
               ↺ Replay this run
@@ -287,7 +322,7 @@ function App() {
             <div className="transcript">
               <h3>Transcript</h3>
               <p className="muted">
-                Press ▶ Play to replay a cached run, ⚡ Run live to start a new one, or click an agent or a fact chip to inspect it.
+                A live run starts automatically. Press ▶ Play to replay a recent run, ⚡ Run live to start another, or click an agent or a fact chip to inspect it.
               </p>
             </div>
           )}

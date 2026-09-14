@@ -275,6 +275,7 @@ class DemoSnapshot(Model):
     scenario: Scenario
     runs: list[RunSummary]
     engine_version: str
+    auto_run_on_load: bool = True
 
 
 def summary(run: RunState) -> RunSummary:

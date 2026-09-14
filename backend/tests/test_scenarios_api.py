@@ -5,6 +5,7 @@ import os
 os.environ["LLM_PROVIDER"] = "fake"
 os.environ["RUN_MODE"] = "sync"
 os.environ.pop("DATABASE_URL", None)
+os.environ["RUN_RATE_LIMIT_PER_MIN"] = "0"
 
 from fastapi.testclient import TestClient
 
