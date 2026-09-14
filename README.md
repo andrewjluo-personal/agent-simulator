@@ -45,6 +45,16 @@ npm install
 npm run dev
 ```
 
+### Anthropic auth
+
+The backend authenticates to Anthropic either with a static `ANTHROPIC_API_KEY` or, when the
+key is empty, via Anthropic Workload Identity Federation. In Devin sessions the federated
+identity comes from `devin-oidc` (falling back to the Devin OIDC token exchange endpoint);
+the `ANTHROPIC_FEDERATION_RULE_ID`, `ANTHROPIC_ORGANIZATION_ID`, `ANTHROPIC_SERVICE_ACCOUNT_ID`,
+and optional `ANTHROPIC_WORKSPACE_ID` values come from the blueprint environment and are not
+secrets. `backend/scripts/anthropic_token.sh` mints a short-lived access token on stdout for
+curl experiments.
+
 ## Endpoints
 
 - `GET /api/health` — API, Neon, and queue configuration status
