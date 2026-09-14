@@ -3,7 +3,7 @@
 Status: **re-scoped**. The planned P1 planted-turn experiment (5 cells × 30 runs) was not run,
 because the leak hunt and the hidden-profile gate below show the flat pool it was to run on is
 not a hidden profile *for the model*. Every number here comes from runs executed in this session
-(model `claude-haiku-4-5`, memo fact style, local memory store). Total spend ≈ $0.61.
+(model `claude-haiku-4-5`, memo fact style, local memory store). Total spend ≈ $0.85.
 
 Artifacts: `backend/scripts/probe/out/perceived/*.{json,md}` (leak hunt),
 `backend/scripts/probe/out/gate/*.json` (gate votes).
@@ -111,11 +111,34 @@ pool no group result discriminates the hypotheses. What the data do support:
   mirror pool, JSONL summary — ready for `probe_free_discussion.py` / `summarize_probe.py`, which were
   not finished under the re-scope.
 
-## 5. Recommended next step (not executed)
+## 5. `hiring-panel-flat-v2` — rebuilt against perceived weights (executed)
 
-Build `hiring-panel-flat-v2` against the *perceived* profile: keep shared as-is (perceived John +9.2
-margin), replace S10, drop/replace F3/F4 and the ≈0 G items, and add Sally uniques until the perceived
-pooled margin is ≥ +8 with every hand still John under the neutral prompt; then re-run `gate_pool.py`
-under both prompts. Only then run P1 (a)–(d) with `--order random`. Under the naive prompt G2 says
-individuals already lean Sally on v1-style uniques, so P1 must also include the `hiring-panel-null`
-bias baseline before any cell is interpreted.
+Changes vs flat: S10 replaced ("submitted twenty minutes *after* the deadline", perceived −1.2);
+F4, G2, G3, G6 (perceived ≈0) dropped; J17/J18/S20 counters dropped; seven new Sally uniques
+F9–F15 and two John cons G7/G8 added (memo texts carry a pronoun so attribution is unambiguous).
+39 items; designed pooled Sally +11 / John 0; designed hands John +4 / Sally 0..−1.
+
+Perceived profile (neutral prompt, 5 samples/item, $0.15): **no item disagrees in sign**; only
+J11/J7/S1/S2/S4 read ≈0 as before. Largest single items: J2 +2.0, F9/F10/F11 +2.0, G7 −2.0 —
+all within the ≤2.5 ceiling.
+
+| tally | designed | perceived (neutral) |
+|---|---|---|
+| shared | John +5 / Sally −3 → John | John +6.2 / Sally −5.2 → John |
+| hands (5) | all John (+4 vs 0..−1) | all John (+4.2..+5.2 vs −1.2..−3.0) |
+| **pooled** | John 0 / Sally +11 → Sally | **John +0.2 / Sally +12.0 → Sally** |
+
+Gate (10 samples each, $0.09):
+
+| prompt | pooled reviewer | alone (dana/marcus/priya/tom/omar) → John | gate |
+|---|---|---|---|
+| naive | Sally 10/10 | 10, 10, 10, 8, 10 | **PASS** |
+| default | Sally 10/10 | 10, 10, 10, 10, 10 | **PASS** |
+
+flat-v2 is a hidden profile for Haiku under both prompts and is the pool P1 should run on.
+
+## 6. Recommended next step (not executed)
+
+Run P1 (a)–(d) + mirror on `hiring-panel-flat-v2` with `--order random`, plus the pooled-reviewer
+baseline per cell and a `hiring-panel-null` bias baseline. Note the mirror control needs a mirrored
+*brief* as well as mirrored names (§1a), or a symmetric role description.

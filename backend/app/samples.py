@@ -679,6 +679,133 @@ def _facts(rows: list[tuple[str, str, str, int, str, str, list[str]]]) -> list[d
     return [_fact(*row) for row in rows]
 
 
+# Flat pool rebuilt against Haiku's *perceived* item valences (docs/probes/S1_report.md):
+# S10 (perceived +1 for Sally) replaced; F4 and G2/G3/G6 (perceived ~0) dropped; J17/J18/S20
+# counters dropped; small Sally uniques added so the perceived pooled margin clears the noise
+# floor while every hand still favours John on shared items.
+_FLAT_V2_S10 = _fact(
+    "S10",
+    "sally",
+    "con",
+    1,
+    "Sally submitted her take-home twenty minutes after the deadline.",
+    "Take-home submitted twenty minutes after the deadline.",
+    ["take-home", "after the deadline", "twenty minutes"],
+)
+FLAT_V2_SHARED: list[dict[str, Any]] = [
+    _FLAT_V2_S10 if fact["id"] == "S10" else fact for fact in FLAT_SHARED
+]
+FLAT_V2_SHARED_IDS = [fact["id"] for fact in FLAT_V2_SHARED]
+_FLAT_V2_KEEP = {"F1", "F2", "F3", "F5", "F6", "F7", "F8", "G1", "G4", "G5"}
+FLAT_V2_UNIQUE: list[dict[str, Any]] = [
+    fact for fact in FLAT_DECISIVE if fact["id"] in _FLAT_V2_KEEP
+] + _facts(
+    [
+        (
+            "F9",
+            "sally",
+            "pro",
+            1,
+            "Sally's take-home included a load-test script and its results for the hot path.",
+            "Her take-home included a load-test script and results for the hot path.",
+            ["load-test", "take-home", "hot path"],
+        ),
+        (
+            "F10",
+            "sally",
+            "pro",
+            1,
+            "At a previous job Sally rolled back a bad deploy within ten minutes using a runbook she wrote.",
+            "Rolled back a bad deploy within ten minutes using a runbook she wrote.",
+            ["rolled back", "ten minutes", "runbook"],
+        ),
+        (
+            "F11",
+            "sally",
+            "pro",
+            1,
+            "Sally's design sample called out the idempotency of retries explicitly.",
+            "Her design sample called out the idempotency of retries explicitly.",
+            ["idempotency", "retries", "design sample"],
+        ),
+        (
+            "F12",
+            "sally",
+            "pro",
+            1,
+            "A reference says Sally volunteered to own the least popular service on her team.",
+            "Reference: she volunteered to own the least popular service on the team.",
+            ["volunteered", "least popular service", "reference"],
+        ),
+        (
+            "F13",
+            "sally",
+            "pro",
+            1,
+            "Sally has run her team's weekly incident review meeting for the past year.",
+            "Has run her team's weekly incident review for the past year.",
+            ["incident review", "weekly", "past year"],
+        ),
+        (
+            "F14",
+            "sally",
+            "pro",
+            1,
+            "Sally wrote the onboarding guide that new hires on her team still use.",
+            "Wrote the onboarding guide new hires on her team still use.",
+            ["onboarding guide", "new hires", "wrote"],
+        ),
+        (
+            "F15",
+            "sally",
+            "pro",
+            1,
+            "In the debugging round Sally added a regression test before fixing the bug.",
+            "Added a regression test before fixing the bug in the debugging round.",
+            ["regression test", "debugging round", "before fixing"],
+        ),
+        (
+            "G7",
+            "john",
+            "con",
+            1,
+            "John's take-home has no tests.",
+            "His take-home has no tests.",
+            ["take-home", "no tests"],
+        ),
+        (
+            "G8",
+            "john",
+            "con",
+            1,
+            "John could not explain why he chose the concurrency model in his take-home.",
+            "Could not explain why he chose the concurrency model in his take-home.",
+            ["concurrency model", "could not explain", "take-home"],
+        ),
+    ]
+)
+
+HIRING_PANEL_FLAT_V2 = Scenario.model_validate(
+    {
+        "id": "hiring-panel-flat-v2",
+        "title": "Hiring panel (flat items, perceived-calibrated)",
+        "brief": HIRING_PANEL_V1.brief,
+        "isSample": True,
+        "candidates": HIRING_PANEL_CANDIDATES,
+        "agents": HIRING_PANEL_AGENTS,
+        "facts": FLAT_V2_SHARED + FLAT_V2_UNIQUE,
+        "distribution": {
+            "dana": FLAT_V2_SHARED_IDS + ["F1", "F5", "F9", "G1"],
+            "marcus": FLAT_V2_SHARED_IDS + ["F2", "F6", "F10", "G4"],
+            "priya": FLAT_V2_SHARED_IDS + ["F3", "F7", "F11", "G5"],
+            "tom": FLAT_V2_SHARED_IDS + ["F8", "F12", "F13", "G7"],
+            "omar": FLAT_V2_SHARED_IDS + ["F14", "F15", "G8"],
+        },
+        "validation": {},
+    }
+)
+
+
 def _haiku(
     agent_ids: list[str], pooled: float, passed: bool, *, alone: dict[str, float] | None = None
 ) -> dict[str, Any]:
@@ -1739,6 +1866,7 @@ SAMPLE_SCENARIOS: list[Scenario] = [
     HIRING_WEAK_PROFILE_V1,
     HIRING_ADVERSARIAL_V1,
     HIRING_PANEL_FLAT,
+    HIRING_PANEL_FLAT_V2,
     *PAPER_SCENARIOS,
 ]
 
