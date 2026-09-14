@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { aloneVotes, candidateName, decisiveFactIds, pooledVerdict, sharedFactIds, tally, tallyText } from '../truth'
 import type { Paradigm, RunConfig, RunState, RunSummary, Scenario, Turn, TurnOrder } from '../types'
 import { candidateColor } from './Table'
@@ -136,8 +136,22 @@ export function Controls(p: ControlsProps) {
 export function Transcript({ run, turns }: { run: RunState; turns: Turn[] }) {
   const shared = useMemo(() => sharedFactIds(run.scenario), [run.scenario])
   const agents = new Map(run.scenario.agents.map((a) => [a.id, a]))
+  const ref = useRef<HTMLDivElement>(null)
+  const followRef = useRef(true)
+  useEffect(() => {
+    const el = ref.current
+    if (turns.length === 0) followRef.current = true
+    if (el && followRef.current) el.scrollTop = el.scrollHeight
+  }, [turns.length])
   return (
-    <div className="transcript">
+    <div
+      className="transcript"
+      ref={ref}
+      onScroll={(e) => {
+        const el = e.currentTarget
+        followRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40
+      }}
+    >
       <h3>
         Transcript <span className="muted">· {run.llmProvider === 'fake' ? 'synthetic agents' : run.config.model}</span>
       </h3>
