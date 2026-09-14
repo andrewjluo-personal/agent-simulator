@@ -234,7 +234,7 @@ export function ScenarioLab({ scenario, onSaved, onClose }: Props) {
     const poll = async () => {
       try {
         const next = await getValidationJob(job.id)
-        setJob(next)
+        setJob((prev) => (prev && prev.id === next.id && prev.status === next.status ? prev : next))
         if (next.status === 'done') {
           setAnalysis(await getScenarioAnalysis(scenario.id))
         } else if (next.status === 'error') {
@@ -385,7 +385,7 @@ export function ScenarioLab({ scenario, onSaved, onClose }: Props) {
       {analysis && <div className="hardness">{analysis.pooledVerdict === 'undecided' ? 'Pooled evidence is undecided (margin 0).' : `${pooledName} wins pooled by +${analysis.margin} of ${analysis.totalWeight}; ${analysis.flipK} of ${analysis.hiddenDecisiveFactIds.length} hidden facts must surface to flip the panel.`} <span className="lab-pill">{analysis.isHiddenProfile ? 'hidden profile' : 'NOT a hidden profile'}</span></div>}
 
       <footer className="lab-footer">
-        <label>Slug <input value={slug} placeholder={`${scenario.id.replace(/-v\\d+$/, '')}-v2`} onChange={(e) => setSlug(e.target.value)} /></label>
+        <label>Slug <input value={slug} placeholder={`${scenario.id.replace(/-v\d+$/, '')}-v2`} onChange={(e) => setSlug(e.target.value)} /></label>
         <button type="button" onClick={() => void save()} disabled={!dirty || saving}>{saving ? 'Saving…' : 'Save as new scenario'}</button>
         <button type="button" className="link" onClick={() => setDraft(copyScenario(scenario))} disabled={!dirty}>Discard changes</button>
       </footer>
