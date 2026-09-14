@@ -1209,7 +1209,7 @@ FLAT_V3_UNIQUE: list[dict[str, Any]] = [_v3_fact(i) for i in FLAT_V3_UNIQUE_IDS]
 HIRING_PANEL_FLAT_V3 = Scenario.model_validate(
     {
         "id": "hiring-panel-flat-v3",
-        "title": "Hiring panel (flat items, hidden profile from the null-v2 bank)",
+        "title": "Hiring panel — hidden profile",
         "brief": HIRING_PANEL_NULL_V2.brief,
         "isSample": True,
         "candidates": HIRING_PANEL_NULL_V2.candidates,
@@ -2204,6 +2204,7 @@ ALL_SAMPLE_SCENARIOS: list[Scenario] = [
 
 HIDDEN_SAMPLE_IDS: frozenset[str] = frozenset(
     {
+        "hiring-panel-null-v2",
         "incident-review-v1",
         "vendor-selection-v1",
         "stasser-1985-shared",

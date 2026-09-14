@@ -35,12 +35,15 @@ ENGINE_VERSION: str = _compute()
 def scenario_engine_version(scenario: Scenario) -> str:
     """Per-scenario run stamp: engine hash plus the scenario definition.
 
-    Fields that don't affect run validity (validation results, provenance) are
-    excluded, so recording a validation doesn't orphan seeded demo runs. The
-    JSON is canonicalised (sorted keys) so a scenario round-tripped through
-    Postgres jsonb, which reorders object keys, stamps identically."""
+    Fields that don't affect run validity (validation results, provenance,
+    title — never shown to agents) are excluded, so recording a validation or
+    retitling a scenario doesn't orphan seeded demo runs. The JSON is
+    canonicalised (sorted keys) so a scenario round-tripped through Postgres
+    jsonb, which reorders object keys, stamps identically."""
     h = hashlib.sha256()
     h.update(ENGINE_VERSION.encode())
-    payload = scenario.model_dump(mode="json", exclude={"validation", "created_at", "is_sample"})
+    payload = scenario.model_dump(
+        mode="json", exclude={"validation", "created_at", "is_sample", "title"}
+    )
     h.update(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode())
     return h.hexdigest()[:12]
