@@ -63,11 +63,7 @@ def test_sample_distribution_round_trips(scenario: Scenario) -> None:
     assert round_trip == scenario
 
 
-@pytest.mark.parametrize(
-    "scenario",
-    [s for s in SAMPLE_SCENARIOS if s is not HIRING_PANEL_NULL_V2],
-    ids=lambda scenario: scenario.id,
-)
+@pytest.mark.parametrize("scenario", SAMPLE_SCENARIOS, ids=lambda scenario: scenario.id)
 def test_sample_facts_have_memo_metadata(scenario: Scenario) -> None:
     assert all(fact.memo_text and 2 <= len(fact.keywords) <= 3 for fact in scenario.facts)
 
