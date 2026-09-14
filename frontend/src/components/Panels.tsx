@@ -121,7 +121,7 @@ export function Controls(p: ControlsProps) {
       ) : p.status === 'paused' ? (
         <button onClick={p.onResume}>▶ Resume</button>
       ) : (
-        <button className="primary" onClick={p.onPlayCached} disabled={!p.hasCached} title="Replay a cached run for this paradigm">
+        <button className="primary" onClick={p.onPlayCached} disabled={!p.hasCached} title="Replay a recent run for this paradigm">
           ▶ Play
         </button>
       )}
@@ -219,7 +219,7 @@ export function ResultsStrip({
   return (
     <div className="strip">
       <div className="strip-head">
-        <h3>Paradigm comparison</h3>
+        <h3>Recent runs</h3>
         <span className="muted">one dot per run · green = panel chose the correct candidate · click a dot to replay</span>
         {pending && pending.done < pending.total && (
           <span className="progress">

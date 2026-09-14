@@ -57,7 +57,8 @@ npm run dev
 Two Vercel projects share this repo:
 
 - frontend → root directory `frontend`, env `VITE_API_BASE_URL` = backend URL
-- backend → root directory `backend`, env `DATABASE_URL`, `ALLOWED_ORIGINS`, `VERCEL_QUEUE_REGION`
+- backend → root directory `backend`, env `DATABASE_URL`, `ALLOWED_ORIGINS`, `VERCEL_QUEUE_REGION`,
+  optional `RUN_RATE_LIMIT_PER_MIN` (default 6, 0 disables), `AUTO_RUN_ON_LOAD` (default 1)
 
 `VERCEL_OIDC_TOKEN` is injected by Vercel at runtime and authenticates queue calls; pull it locally
 with `vercel env pull` if you want to exercise queues outside Vercel.
@@ -66,10 +67,13 @@ with `vercel env pull` if you want to exercise queues outside Vercel.
 
 Every run is stamped with `ENGINE_VERSION` (`backend/app/engine_version.py`) — the first 12 hex of
 sha256 over `app/prompts.py`, `app/orchestrator.py`, `app/truth.py`, `app/paradigms.py`, and
-`app/samples.py`. `/api/demo` only returns demo runs stamped with the current version, so any deploy
-that touches those files makes old demo runs invisible on the landing page until reseeded.
+`app/samples.py`. The landing page is live-first: it auto-starts a real run on load (once per
+browser session, unless `AUTO_RUN_ON_LOAD=0`), and `/api/demo` lists the most recent *finished*
+runs — demo or live — stamped with the current version. Any deploy touching those files makes
+older runs disappear from the recent list until new ones finish.
 
-After such a deploy, reseed with (idempotent — tops up to N done runs per paradigm and deletes
+`scripts/seed_demo.py` is optional/manual — nothing in deploy calls it. Use it to pre-fill the
+recent list before a review or demo (idempotent — tops up to N done runs per paradigm and deletes
 stale-version demo rows; `--keep-stale` to keep them, `--reset-demo` to wipe all demos):
 
 ```

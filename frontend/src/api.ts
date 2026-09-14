@@ -32,6 +32,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
   })
   if (!response.ok) {
+    if (response.status === 429) {
+      const body = (await response.json().catch(() => null)) as { detail?: string } | null
+      const error = new ApiError(init?.method ?? 'GET', path, response.status)
+      error.message = body?.detail ?? error.message
+      throw error
+    }
     throw new ApiError(init?.method ?? 'GET', path, response.status)
   }
   return (await response.json()) as T
