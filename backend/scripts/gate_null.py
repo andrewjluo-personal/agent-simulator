@@ -157,9 +157,16 @@ async def main() -> int:
     parser.add_argument("--out", default="scripts/probe/out/gate_null")
     args = parser.parse_args()
     client = CountingClient(AnthropicClient())
-    scenario = load_scenario_arg(args.scenario)
+    original = load_scenario_arg(args.scenario)
+    scenario = original
     if args.twin:
         scenario = twin_null(scenario)
+        changed = sum(
+            scenario.fact(f"{fact.id}~1").text != fact.text for fact in original.facts
+        )
+        print(
+            f"{original.id}: rotation_1_changed_facts={changed}/{len(original.facts)}"
+        )
     samples = samples_for(len(scenario.candidates), args.samples)
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)

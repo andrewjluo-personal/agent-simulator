@@ -17,7 +17,15 @@ def main() -> int:
     parser.add_argument("scenario")
     parser.add_argument("--out", type=Path)
     args = parser.parse_args()
-    result = twin_null(load_scenario_arg(args.scenario))
+    original = load_scenario_arg(args.scenario)
+    result = twin_null(original)
+    changed = sum(
+        result.fact(f"{fact.id}~1").text != fact.text for fact in original.facts
+    )
+    print(
+        f"{original.id}: rotation_1_changed_facts={changed}/{len(original.facts)}",
+        file=sys.stderr,
+    )
     text = result.model_dump_json(indent=2, by_alias=True)
     if args.out:
         args.out.write_text(text + "\n")

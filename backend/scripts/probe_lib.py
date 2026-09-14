@@ -149,24 +149,32 @@ def twin_null(scenario: Scenario) -> Scenario:
     """Expand each fact over cyclic candidate renamings to make a symmetric pool."""
     candidates = scenario.candidates
     k = len(candidates)
-    names = [candidate.name for candidate in candidates]
-    ids = [candidate.id for candidate in candidates]
     index_by_id = {candidate.id: index for index, candidate in enumerate(candidates)}
-    replacement_values: dict[str, list[str]] = {
-        **{name: names for name in names},
-        **{candidate_id: ids for candidate_id in ids},
-    }
-    replacement_indices = {
-        value: next(
-            index
-            for index, candidate in enumerate(candidates)
-            if value in (candidate.id, candidate.name)
-        )
-        for value in replacement_values
-    }
-    alternatives = sorted(replacement_values, key=len, reverse=True)
-    pattern = re.compile(r"(?<!\w)(?:" + "|".join(re.escape(value) for value in alternatives) + r")(?!\w)")
-    id_values = set(ids)
+    aliases: list[dict[str, str]] = []
+    alias_targets: dict[str, str] = {}
+    alias_indices: dict[str, int] = {}
+    alias_kinds: dict[str, str] = {}
+    for index, candidate in enumerate(candidates):
+        values: dict[str, str] = {}
+        for kind, value in (
+            ("name", candidate.name),
+            ("prefix", candidate.name.split(":")[0].strip()),
+            ("id", candidate.id),
+        ):
+            if value and value not in values.values():
+                values[kind] = value
+                alias_indices[value] = index
+                alias_kinds[value] = kind
+        aliases.append(values)
+    for index, values in enumerate(aliases):
+        for kind, value in values.items():
+            target_values = aliases[(index + 1) % k]
+            alias_targets[value] = target_values.get(kind, target_values["name"])
+    alternatives = sorted(alias_targets, key=len, reverse=True)
+    pattern = re.compile(
+        r"(?<!\w)(?:" + "|".join(re.escape(value) for value in alternatives) + r")(?!\w)"
+    )
+    id_values = {candidate.id for candidate in candidates}
 
     def rotate_text(text: str, rotation: int) -> str:
         def replace(match: re.Match[str]) -> str:
@@ -178,8 +186,11 @@ def twin_null(scenario: Scenario) -> Scenario:
                     r"(?:candidate|id)\s*$", before, re.IGNORECASE
                 ):
                     return value
-            index = replacement_indices[value]
-            return replacement_values[value][(index + rotation) % k]
+            index = alias_indices[value]
+            kind = alias_kinds[value]
+            return aliases[(index + rotation) % k].get(
+                kind, aliases[(index + rotation) % k]["name"]
+            )
 
         return pattern.sub(replace, text)
 
