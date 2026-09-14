@@ -6,6 +6,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from .models import Scenario
+from .scenarios.papers import PAPER_SCENARIOS
 
 if TYPE_CHECKING:
     from .store import Store
@@ -386,7 +387,8 @@ SAMPLE_SCENARIOS: list[Scenario] = [
                 ],
             },
         }
-    )
+    ),
+    *PAPER_SCENARIOS,
 ]
 
 SAMPLES_BY_ID: dict[str, Scenario] = {s.id: s for s in SAMPLE_SCENARIOS}
