@@ -7,7 +7,7 @@ import json
 import os
 import re
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException, Query, Request
@@ -54,6 +54,10 @@ _store: Store | None = None
 _background_tasks: set[asyncio.Task[Any]] = set()
 
 RUN_RATE_LIMIT_PER_MIN = int(os.getenv("RUN_RATE_LIMIT_PER_MIN", "6"))
+VALIDATE_RATE_LIMIT_PER_HOUR = int(os.getenv("VALIDATE_RATE_LIMIT_PER_HOUR", "2"))
+FORK_RATE_LIMIT_PER_HOUR = int(os.getenv("FORK_RATE_LIMIT_PER_HOUR", "10"))
+VALIDATION_JOB_STALE_MIN = int(os.getenv("VALIDATION_JOB_STALE_MIN", "30"))
+CUSTOM_SCENARIOS_LISTED = int(os.getenv("CUSTOM_SCENARIOS_LISTED", "20"))
 AUTO_RUN_ON_LOAD = os.getenv("AUTO_RUN_ON_LOAD", "1") not in ("0", "false", "off")
 
 
@@ -76,6 +80,22 @@ def _check_rate_limit(store: Store, request: Request, n: int) -> None:
                 "please wait a moment and try again."
             ),
         )
+
+
+def _check_hourly_limit(store: Store, request: Request, kind: str, limit: int, what: str) -> None:
+    if limit <= 0:
+        return
+    total = store.record_run_requests(f"{kind}:{_client_key(request)}", 1, 3600)
+    if total > limit:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Too many {what} from this address in the last hour — limit is {limit}/hour.",
+        )
+
+
+def _validation_job_is_fresh(job: ValidationJob) -> bool:
+    updated = datetime.fromisoformat(job.updated_at)
+    return updated > datetime.now(UTC) - timedelta(minutes=VALIDATION_JOB_STALE_MIN)
 
 
 def get_store() -> Store:
@@ -188,7 +208,14 @@ def get_scenario() -> dict[str, Any]:
 
 @app.get("/api/scenarios")
 def list_scenarios() -> list[dict[str, Any]]:
-    return [s.model_dump(by_alias=True) for s in get_store().list_scenarios()]
+    scenarios = get_store().list_scenarios()
+    listed = [s for s in scenarios if s.source.kind != "custom"]
+    customs = [s for s in scenarios if s.source.kind == "custom"]
+    customs.sort(
+        key=lambda s: (s.created_at is not None, s.created_at or ""),
+        reverse=True,
+    )
+    return [s.model_dump(by_alias=True) for s in [*listed, *customs[:CUSTOM_SCENARIOS_LISTED]]]
 
 
 @app.get("/api/scenarios/{scenario_id}")
@@ -213,11 +240,12 @@ def analyze_scenario(scenario: Scenario) -> dict[str, Any]:
 
 
 @app.post("/api/scenarios", status_code=201)
-def fork_scenario(payload: ForkIn) -> dict[str, Any]:
+def fork_scenario(payload: ForkIn, request: Request) -> dict[str, Any]:
     store = get_store()
     base = store.get_scenario(payload.base_id)
     if base is None:
         raise HTTPException(status_code=404, detail="base scenario not found")
+    _check_hourly_limit(store, request, "fork", FORK_RATE_LIMIT_PER_HOUR, "scenarios saved")
     if payload.slug is not None:
         if not re.fullmatch(r"[a-z0-9][a-z0-9-]{1,63}", payload.slug):
             raise HTTPException(status_code=422, detail="invalid scenario slug")
@@ -256,8 +284,24 @@ async def validate_scenario(
     if store.get_scenario(scenario_id) is None:
         raise HTTPException(status_code=404, detail="scenario not found")
     latest = store.latest_validation_job(scenario_id)
-    if latest is not None and latest.status in ("queued", "running"):
+    if (
+        latest is not None
+        and latest.status in ("queued", "running")
+        and _validation_job_is_fresh(latest)
+    ):
         raise HTTPException(status_code=409, detail="validation already running")
+    active = store.active_validation_job(VALIDATION_JOB_STALE_MIN * 60)
+    if active is not None:
+        raise HTTPException(
+            status_code=429,
+            detail=(
+                f"A validation is already running (scenario {active.scenario_id}); "
+                "try again in a few minutes."
+            ),
+        )
+    _check_hourly_limit(
+        store, request, "validate", VALIDATE_RATE_LIMIT_PER_HOUR, "validations started"
+    )
     now = datetime.now(UTC).isoformat()
     job = ValidationJob(
         id=str(uuid.uuid4()),

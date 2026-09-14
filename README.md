@@ -58,7 +58,10 @@ Two Vercel projects share this repo:
 
 - frontend → root directory `frontend`, env `VITE_API_BASE_URL` = backend URL
 - backend → root directory `backend`, env `DATABASE_URL`, `ALLOWED_ORIGINS`, `VERCEL_QUEUE_REGION`,
-  optional `RUN_RATE_LIMIT_PER_MIN` (default 6, 0 disables), `AUTO_RUN_ON_LOAD` (default 1)
+  optional `RUN_RATE_LIMIT_PER_MIN` (default 6, 0 disables), `VALIDATE_RATE_LIMIT_PER_HOUR`
+  (default 2, 0 disables), `FORK_RATE_LIMIT_PER_HOUR` (default 10, 0 disables),
+  `VALIDATION_JOB_STALE_MIN` (default 30), `CUSTOM_SCENARIOS_LISTED` (default 20),
+  `AUTO_RUN_ON_LOAD` (default 1)
 
 `VERCEL_OIDC_TOKEN` is injected by Vercel at runtime and authenticates queue calls; pull it locally
 with `vercel env pull` if you want to exercise queues outside Vercel.

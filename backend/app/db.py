@@ -320,6 +320,17 @@ class PgStore:
             ).fetchone()
         return ValidationJob.model_validate(row["body"]) if row else None
 
+    def active_validation_job(self, stale_after_s: int) -> ValidationJob | None:
+        with connection() as conn:
+            row = conn.execute(
+                "select body from validation_jobs "
+                "where status in ('queued', 'running') "
+                "and updated_at > now() - make_interval(secs => %s) "
+                "order by updated_at desc limit 1",
+                (stale_after_s,),
+            ).fetchone()
+        return ValidationJob.model_validate(row["body"]) if row else None
+
     def create_run(self, run: RunState) -> None:
         with connection() as conn:
             conn.execute(
