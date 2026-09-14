@@ -1,5 +1,5 @@
-"""Simulation orchestrator. One queue job = one round; every step is idempotent
-so at-least-once delivery is safe."""
+"""Simulation orchestrator. One step = one turn; every step is idempotent so
+at-least-once delivery is safe. Queue jobs still run whole rounds."""
 
 from __future__ import annotations
 
@@ -142,7 +142,12 @@ async def _call(
 
 
 async def run_round(
-    store: Store, client: LLMClient, run_id: str, round_idx: int, plants: Plants = ()
+    store: Store,
+    client: LLMClient,
+    run_id: str,
+    round_idx: int,
+    plants: Plants = (),
+    max_turns: int | None = None,
 ) -> RunState:
     run = store.get_run(run_id)
     if run is None:
@@ -167,6 +172,7 @@ async def run_round(
             if not any(v.round == -1 for v in pre.votes):
                 await collect_votes(store, client, pre, -1)
                 run = store.get_run(run_id) or run
+        made = 0
         for position, agent_id in enumerate(turn_order(run, round_idx, plants)):
             seq = round_idx * n_agents + position
             if store.turn_exists(run_id, seq):
@@ -178,6 +184,11 @@ async def run_round(
             if plant is not None:
                 store.insert_turn(run_id, _planted_turn(run, plant, seq, round_idx, common_ground))
                 emit("info", "agent.turn_planted", runId=run_id, round=round_idx, agentId=agent_id)
+                made += 1
+                if max_turns is not None and made >= max_turns:
+                    result = store.get_run(run_id)
+                    assert result is not None
+                    return result
                 continue
             hand = list(scenario.distribution[agent_id])
             agent = next(a for a in scenario.agents if a.id == agent_id)
@@ -253,6 +264,11 @@ async def run_round(
                 cited=len(turn.cited),
                 hallucinated=len(turn.hallucinated),
             )
+            made += 1
+            if max_turns is not None and made >= max_turns:
+                result = store.get_run(run_id)
+                assert result is not None
+                return result
 
         run = store.get_run(run_id) or run
         await collect_votes(store, client, run, round_idx)
