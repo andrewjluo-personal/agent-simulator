@@ -1216,7 +1216,27 @@ HIRING_PANEL_FLAT_V3 = Scenario.model_validate(
         "agents": HIRING_PANEL_AGENTS,
         "facts": FLAT_V3_SHARED + FLAT_V3_UNIQUE,
         "distribution": {a: FLAT_V3_SHARED_IDS + _v3_uniques(a) for a in _V3_SALLY_UNIQUE},
-        "validation": {},
+        # gate_pool.py, n=20/cell, balanced order, naive+default prompts:
+        # pooled->Sally 1.00 on both; alone->John below is the naive prompt
+        # (default: dana .95, marcus 1.00, priya .95, tom 1.00). Null gate:
+        # pooled in band (0.50 naive / 0.45 default Sally) but agent cells out
+        # (naive dana .70, marcus .75, tom .25; default tom .30 of 0.35-0.65).
+        # See docs/probes/S4_flat_v3.md.
+        "validation": {
+            "claude-haiku-4-5": {
+                "aloneWrongRate": {
+                    "dana": 0.85,
+                    "marcus": 0.95,
+                    "priya": 0.85,
+                    "tom": 1.0,
+                },
+                "pooledRightRate": 1.0,
+                "trials": 20,
+                "date": "2026-09-14",
+                "passed": True,
+                "nullGate": False,
+            }
+        },
     }
 )
 

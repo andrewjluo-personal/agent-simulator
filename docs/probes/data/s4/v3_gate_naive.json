@@ -1,0 +1,701 @@
+{
+ "scenario": "hiring-panel-flat-v3",
+ "prompt": "naive",
+ "correct": "sally",
+ "shared_verdict": "john",
+ "samples": 20,
+ "cells": {
+  "pooled": {
+   "n": 20,
+   "counts": {
+    "sally": 20
+   },
+   "by_first_listed": {
+    "john": {
+     "sally": 10
+    },
+    "sally": {
+     "sally": 10
+    }
+   },
+   "rate": 1.0,
+   "ci": [
+    0.8388698745050667,
+    1.0
+   ],
+   "shared_rate": 0.0,
+   "shared_ci": [
+    0.0,
+    0.16113012549493322
+   ],
+   "reasons": [
+    "Sally demonstrates stronger operational maturity through incident leadership, cross-team collaboration, mentorship impact, and thoughtful technical decisions (idempotency awareness, load testing), des",
+    "Sally demonstrates stronger operational excellence (incident review leadership, mentorship outcomes, tool adoption) and more thorough technical rigor (explicit idempotency consideration, load-testing "
+   ],
+   "ballots": [
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger operational maturity through incident leadership, cross-team collaboration, mentorship impact, and thoughtful technical decisions (idempotency awareness, load testing), despite the late submission."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger operational excellence (incident review leadership, mentorship outcomes, tool adoption) and more thorough technical rigor (explicit idempotency consideration, load-testing validation), though John shows solid reliability and documentation skills."
+    },
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger operational maturity through incident management leadership, cross-team collaboration, and attention to production details (idempotency, load testing), while John shows reliability but focuses closing questions on compensation rather than technical growth."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger ownership and technical depth through concrete contributions (mentee promotion, adopted migration tool, explicit idempotency analysis) despite minor process issues, while John shows reliability but less evidence of initiative or technical problem-solving."
+    },
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger operational excellence (bug finding, incident leadership, load testing) and ownership mindset despite the late submission, while John shows solid fundamentals but less evidence of going beyond expectations."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "sally",
+     "reason": "Sally demonstrates superior operational excellence through leading incident reviews, finding bugs under pressure, and thoughtfully designing for production concerns like idempotency, while John's strengths center on documentation and team leadership rather than hands-on engineering depth."
+    },
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger technical depth through proactive debugging skills, operational leadership via incident reviews, and initiative in tool adoption and mentorship, while John shows solid reliability but more conventional performance."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger operational excellence (incident review leadership, mentoring outcomes, cross-team incident participation, debugging performance) and attention to detail in technical work (explicit idempotency thinking, load-test validation), despite minor submission timing and documentation issues that are less critical than John's weaker operational focus."
+    },
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger operational ownership (incident reviews, debugging, load-testing), cross-team impact (adopted migration tool, mentee promotion), and attention to detail in design (explicit assumptions, idempotency), while John shows solid execution but less evidence of proactive problem-solving and knowledge-sharing beyond his immediate team."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger operational ownership through incident review leadership, proactive performance testing, and tool adoption across teams, while John's incomplete documentation and focus on compensation/logistics in closing questions suggest lesser engagement with the role itself."
+    },
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger technical depth through debugging skills, production-ready code (load testing, explicit assumptions), cross-team impact, and operational excellence (incident reviews, mentorship), while John shows good fundamentals but with gaps in documentation completeness and less evidence of senior-level scope."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger operational maturity through incident review leadership, explicit attention to production concerns like idempotency, and proactive ownership of unpopular work, while her take-home performance and mentorship impact outweigh the documentation gaps both candidates share."
+    },
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger operational excellence (incident review leadership, debugging skills, cross-team collaboration) and better engineering practices (explicit idempotency design, load testing), though both candidates are strong performers near compensation band ceiling."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "sally",
+     "reason": "Sally demonstrates deeper operational maturity through running incident reviews, cross-team incident participation, and explicit attention to production concerns like idempotency and load testing, while John's closing questions and compensation focus suggest less alignment with the role's senior responsibilities."
+    },
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger operational maturity through incident leadership, cross-team collaboration, and production-focused debugging skills, despite the late submission, while John's notes suggest competence but less direct evidence of senior-level ownership of system reliability."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger operational excellence (incident review leadership, cross-team incident participation, mentorship track record) and attention to detail in design (explicit idempotency reasoning, numbered sections with assumptions), though both candidates are strong and John's documentation work is valuable."
+    },
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger technical depth (load-testing, idempotency analysis, bug-finding), greater operational maturity (incident review leadership, cross-team involvement), and higher quality collaboration (mentoring, service ownership), though her deadline miss and incomplete documentation are concerns."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger operational maturity through consistent incident review leadership, explicit consideration of production concerns like idempotency, and proactive performance validation, while John's interview signals suggest compensation and title focus over technical depth."
+    },
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger technical depth (explicit idiopotency analysis, load-testing, debugging proficiency) and proven leadership impact (incident reviews, mentee promotion, cross-team adoption of her tools), while John shows solid reliability but less evidence of technical initiative beyond documentation."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger operational maturity through hands-on incident leadership, mentorship impact, and thoughtful technical decisions (idempotency, load testing), while John's closing questions focused on compensation and title rather than technical depth or team challenges."
+    }
+   ]
+  },
+  "dana": {
+   "n": 20,
+   "counts": {
+    "john": 17,
+    "sally": 3
+   },
+   "by_first_listed": {
+    "john": {
+     "john": 8,
+     "sally": 2
+    },
+    "sally": {
+     "john": 9,
+     "sally": 1
+    }
+   },
+   "rate": 0.85,
+   "ci": [
+    0.6395767041130426,
+    0.9476322080405041
+   ],
+   "shared_rate": 0.85,
+   "shared_ci": [
+    0.6395767041130426,
+    0.9476322080405041
+   ],
+   "reasons": [
+    "John demonstrates better execution quality (complete documentation, on-time delivery, clear design communication) and stronger leveling signals (team lead experience, developer setup ownership) despit",
+    "John demonstrates stronger execution fundamentals with timely delivery, clear documentation practices, and proven leadership of a larger team, while Sally's late submission and incomplete README sugge"
+   ],
+   "ballots": [
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrates better execution quality (complete documentation, on-time delivery, clear design communication) and stronger leveling signals (team lead experience, developer setup ownership) despite Sally's stronger operational mindset."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates stronger execution fundamentals with timely delivery, clear documentation practices, and proven leadership of a larger team, while Sally's late submission and incomplete README suggest less attention to detail despite her incident management experience."
+    },
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrates deeper operational excellence through incident review leadership and performance validation (load-testing), while John's omitted setup docs and compensation positioning at band-top raise concerns about attention to detail and negotiation expectations."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates superior execution across multiple dimensions\u2014he delivered his take-home on time with standard practices, has proven leadership of a team, and shows genuine interest in the role's operational responsibilities, while Sally's late submission, missing documentation, and interview focus on benefits rather than technical engagement raise execution and motivation concerns."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrates stronger documentation practices (developer setup docs still in use, clear design doc with trade-offs) and explicit team leadership experience (listed as lead for six engineers), though Sally's incident management and load-testing rigor are notable strengths."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's documentation of developer setup, demonstrated reliability from director reference, clear communication of trade-offs, and immediate availability outweigh Sally's incident review experience, particularly given both submitted incomplete take-home READMEs."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrates stronger documentation practices (developer setup docs still in use, better take-home README structure) and operational reliability (director reference, on-call engagement questions), though Sally shows slightly better technical depth with performance testing."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "sally",
+     "reason": "Sally demonstrates deeper operational maturity through leading incident reviews and proactive performance testing, while John's focus on title/compensation questions and missing setup documentation raise execution concerns despite his strong behavioral performance."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrates stronger operational maturity through leading six engineers, writing foundational documentation, and asking probing technical questions about system reliability, while Sally's late submission and missing build dependencies suggest less attention to detail despite her load-testing rigor."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates superior documentation practices (developer setup docs, clear design structure with trade-offs), operational maturity (engaged on incidents and paging), and leadership experience managing six engineers, while Sally's missed deadline and incomplete README raise execution concerns despite her incident review leadership."
+    },
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger engineering rigor with load-test validation and clear documentation of assumptions, while her operational experience running incident reviews shows the maturity we need for a senior role."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates superior documentation practices (developer setup docs, clear design with trade-offs) and operational maturity (reliability reference, lead experience), while Sally's late submission and incomplete README suggest execution gaps despite her incident review expertise."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrates stronger execution fundamentals with timely delivery, clear documentation practices, and focused closing questions about technical depth, while Sally's late submission and incomplete README suggest attention-to-detail gaps that concern me in a senior role."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates stronger execution fundamentals (timely submission, clear documentation practices, proven leadership) and his former director's reliability assessment outweighs Sally's incident management experience, though her technical depth on the hot path is notable."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrates superior documentation practices (developer setup docs still in use), better attention to detail (complete design doc with trade-offs), and stronger professional judgment in closing questions focused on technical substance rather than compensation."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates superior operational maturity through documented onboarding practices and proactive performance analysis, while Sally's missed deadline and incomplete documentation raise execution concerns despite her incident review experience."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrates better operational maturity with thoughtful closing questions about system reliability, comprehensive documentation practices, and faster execution, while Sally's late submission and incomplete README raise concerns about attention to detail."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates stronger execution fundamentals with timely delivery, clear documentation practices (design doc trade-offs, standard layouts), and proven leadership of six engineers, while Sally's late submission and incomplete README suggest attention-to-detail gaps critical for a senior role."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrates stronger operational leadership (team lead for six engineers, reliable reference, incident knowledge) and better attention to detail in deliverables, despite Sally's stronger technical depth in load testing."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates stronger operational maturity with clear documentation practices, leadership of a team of six, and focused incident management questions, while Sally's late submission and incomplete README suggest less attention to detail despite relevant load-testing work."
+    }
+   ]
+  },
+  "marcus": {
+   "n": 20,
+   "counts": {
+    "john": 19,
+    "sally": 1
+   },
+   "by_first_listed": {
+    "john": {
+     "john": 9,
+     "sally": 1
+    },
+    "sally": {
+     "john": 10
+    }
+   },
+   "rate": 0.95,
+   "ci": [
+    0.7638641064874331,
+    0.9911187805671268
+   ],
+   "shared_rate": 0.95,
+   "shared_ci": [
+    0.7638641064874331,
+    0.9911187805671268
+   ],
+   "reasons": [
+    "John demonstrates superior execution discipline (on-time submission, complete documentation, standard practices) and stronger operational thinking (asked about paging and outages), while Sally's late ",
+    "John demonstrates stronger operational ownership (wrote setup docs still in use, explicit concern with paging/incidents) and clearer communication patterns (trade-offs listed upfront, standard layouts"
+   ],
+   "ballots": [
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrates superior execution discipline (on-time submission, complete documentation, standard practices) and stronger operational thinking (asked about paging and outages), while Sally's late submission and incomplete README suggest less reliability for a senior role."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates stronger operational ownership (wrote setup docs still in use, explicit concern with paging/incidents) and clearer communication patterns (trade-offs listed upfront, standard layouts), while Sally's late submission and incomplete documentation raise execution concerns despite good design thinking."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrates stronger execution fundamentals: timely, complete take-home submission with clear documentation practices; thoughtful design approach listing trade-offs; and evidence of technical leadership through documented developer onboarding that's still in use."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates stronger operational mindset (asked about paging and outages), better documentation practices (developer setup docs still in use), and clearer design communication (explicit trade-offs), though Sally's deadline miss and incomplete README are concerns for both candidates."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrates stronger operational maturity through documented setup processes for new joiners, comprehensive design documentation with explicit trade-off analysis, and reliable reference validation, despite Sally's commendable ownership mindset and explicit attention to idempotency concerns."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates superior engineering fundamentals (clear design documentation with explicit trade-offs, proper Go layout, documented setup processes) and reliability signals (former director vouches for reliability, led six engineers), while Sally's deadline miss and incomplete documentation raise execution concerns despite her service ownership initiative."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's documentation work (developer setup docs still in use), clear design doc with explicit trade-offs, and reliable reference outweigh Sally's thoughtful design choices, despite her late submission and missing build dependencies suggesting less attention to detail."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates superior execution consistency (on-time delivery, clear documentation patterns, fluent communication) and has concrete evidence of leadership impact (wrote docs still used by team, managed six engineers, director reference), while Sally's late submission and incomplete documentation suggest execution gaps despite strong ownership mindset."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's demonstrated ownership (team lead for six engineers, developer setup docs still in use) and attention to process (design doc trade-offs upfront, complete README) show the senior-level systems thinking needed, whereas Sally's late submission and incomplete documentation suggest gaps in execution discipline despite strong technical judgment on idempotency."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates better execution discipline (README with setup, on-time submission, clear documentation that influenced team practices) and deeper operational thinking (asked about paging and incidents), while Sally's late submission and incomplete README suggest attention-to-detail gaps concerning for a senior role."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's design doc with explicit trade-offs, comprehensive take-home submission, established documentation legacy, and director reference demonstrating reliability provide stronger evidence of senior-level engineering maturity than Sally's deadline miss and incomplete take-home documentation, despite her good technical judgment on idempotency."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates stronger engineering fundamentals (clear documentation practices, explicit trade-off analysis, standard layouts) and leadership experience with a team of six, while Sally's late submission and missing build dependencies in the take-home suggest execution gaps despite good design thinking."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrates stronger operational judgment (asking about paging and outages), better documentation practices (developer setup docs), and clear evidence of technical leadership, while Sally's late submission and incomplete README suggest less attention to delivery details despite solid technical thinking."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates stronger documentation practices (developer setup docs still in use, standard layouts), clearer design thinking (explicit trade-offs), and leadership experience with a reference from a former director, while Sally's take-home submission was late with incomplete documentation."
+    },
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrated stronger engineering fundamentals (explicit idempotency consideration, clear assumptions documentation) and better judgment under pressure (volunteered for unpopular work, owned design rigor), while John's omitted setup docs and compensation-focused closing suggest less attention to engineering excellence and team needs."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates stronger operational maturity (explicit trade-off analysis, leadership of six engineers, developer documentation ownership) and reliability signals despite minor README gaps, whereas Sally's late submission and narrow closing questions suggest less operational depth for a senior role."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrates superior technical communication (clear design docs with upfront trade-offs, complete take-home documentation) and professional engagement (substantive closing questions about system operations), while Sally's late submission and incomplete documentation raise process concerns despite some good technical instincts."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates stronger execution consistency (on-time delivery, documented processes, leadership track record) while Sally shows concerning attention to detail gaps (late submission, missing README dependencies) despite solid technical understanding."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrates better documentation practices (setup docs still used by new joiners, clear design doc with trade-offs), faster delivery (same-day take-home), and stronger behavioral signals (fluent answers, team lead experience, reliable reference), despite Sally showing good technical depth in her design work."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates superior execution quality (on-time deliverables, comprehensive documentation, clear technical communication) and concrete leadership experience managing six engineers, while Sally shows concerning attention to detail issues (late submission, incomplete README) despite some thoughtful technical depth."
+    }
+   ]
+  },
+  "priya": {
+   "n": 20,
+   "counts": {
+    "john": 17,
+    "sally": 3
+   },
+   "by_first_listed": {
+    "john": {
+     "john": 7,
+     "sally": 3
+    },
+    "sally": {
+     "john": 10
+    }
+   },
+   "rate": 0.85,
+   "ci": [
+    0.6395767041130426,
+    0.9476322080405041
+   ],
+   "shared_rate": 0.85,
+   "shared_ci": [
+    0.6395767041130426,
+    0.9476322080405041
+   ],
+   "reasons": [
+    "John demonstrates stronger ownership and communication fundamentals\u2014his documentation writing, structured design approach, and flawless behavioural responses suggest someone ready to lead and onboard ",
+    "John demonstrates stronger documentation practices, reliable references, and operational maturity through his track record with incident reviews and developer onboarding, while Sally's missed deadline"
+   ],
+   "ballots": [
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrates stronger ownership and communication fundamentals\u2014his documentation writing, structured design approach, and flawless behavioural responses suggest someone ready to lead and onboard others, while Sally's deadline miss and incomplete README raise process reliability concerns despite her solid technical debugging skills."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates stronger documentation practices, reliable references, and operational maturity through his track record with incident reviews and developer onboarding, while Sally's missed deadline and incomplete README raise execution concerns."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrates stronger ownership through documentation leadership, proactive communication about technical depth (outage questions), and a former director's reliability endorsement, despite Sally's bug-finding skills and incident experience."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates stronger team leadership experience (managing six engineers), better documentation practices (developer setup docs still in use), and more thoughtful technical communication (design doc with explicit trade-offs), despite some concerning compensation focus in closing questions."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrates stronger documentation practices (developer setup docs still in use), clearer communication (fluent behavioral answers, organized design doc with trade-offs), and better execution discipline (on-time submission, reliable reference), while Sally's late submission and incomplete documentation raise execution concerns despite her strong debugging skills."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates stronger operational maturity through incident involvement and documentation impact, plus more reliable execution (on-time submission, standard practices), despite both candidates having solid technical foundations."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrates stronger communication and preparation (fluent responses, timely submission, comprehensive documentation), though Sally's technical debugging skills are notable."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates stronger documentation practices, leadership experience with a team of six, and reliability validated by a former director, while Sally's late take-home submission and incomplete README suggest attention-to-detail gaps critical for senior roles."
+    },
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger technical execution (found the bug, organized design with clear assumptions) and genuine interest in the role's operational aspects, while John's omitted setup docs and compensation-focused closing questions raise concerns about documentation practices and team-fit priorities."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates stronger execution quality (on-time deliverables, clear documentation practices, standard layouts) and team leadership experience, while Sally's missed deadline and incomplete README suggest attention-to-detail gaps for a senior role."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrates stronger communication and documentation practices (clear design docs with trade-offs, developer setup docs still in use), plus his former director vouches for reliability, though Sally's incident response experience and debugging skills are notable strengths."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates stronger team leadership (leading six engineers), better documentation practices (developer setup docs still in use), and more thoughtful design approach (trade-offs listed upfront), though Sally's debugging skills and incident participation are notable strengths."
+    },
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrated stronger technical execution by finding the planted bug efficiently and showed better incident response patterns through cross-team participation, though her deadline miss and incomplete documentation are concerns that John doesn't have."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates stronger leadership credentials (team lead, wrote foundational docs), better project execution (on-time submission, standard practices), and references validate reliability, while Sally's late submission and narrower closing questions suggest less ownership orientation for a senior role."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrates stronger documentation practices, proven leadership of a larger team, and more reliable execution (on-time submission, comprehensive setup docs), though Sally shows solid debugging skills and incident response experience."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates stronger operational maturity through proven leadership of six engineers, clear technical communication in his design doc, and a track record of lasting impact (setup docs still in use), despite both candidates having similar backend experience levels."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrates stronger attention to team enablement through documentation and mentorship (setup docs, team lead experience), and his design thinking shows maturity in trade-offs, though Sally's debugging skills and incident response experience are notable strengths."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates stronger operational ownership (incident reviews, on-call focus, leadership of six engineers) and better documentation practices (setup docs for new joiners), which are critical for a senior backend role, despite both candidates having similar core technical abilities."
+    },
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrated stronger technical execution (found the bug, organized design doc with assumptions) and genuine interest in the role's operational aspects, while John's focus on compensation and title, combined with incomplete documentation, raises concerns about priorities and attention to detail."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates stronger documentation practices, leadership experience managing six engineers, and clearer operational awareness through specific incident discussion, while Sally's late submission and incomplete README raise process concerns despite solid technical debugging."
+    }
+   ]
+  },
+  "tom": {
+   "n": 20,
+   "counts": {
+    "john": 20
+   },
+   "by_first_listed": {
+    "john": {
+     "john": 10
+    },
+    "sally": {
+     "john": 10
+    }
+   },
+   "rate": 1.0,
+   "ci": [
+    0.8388698745050667,
+    1.0
+   ],
+   "shared_rate": 1.0,
+   "shared_ci": [
+    0.8388698745050667,
+    1.0
+   ],
+   "reasons": [
+    "John's polished documentation practices, faster submission, and demonstrated leadership of six engineers outweigh Sally's late submission and missing build dependencies, though her impact on other tea",
+    "John demonstrates stronger operational maturity (clear documentation practices, on-call awareness, trade-off analysis) and cultural fit signals (reliability vouched by former director, mentoring six e"
+   ],
+   "ballots": [
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's polished documentation practices, faster submission, and demonstrated leadership of six engineers outweigh Sally's late submission and missing build dependencies, though her impact on other teams and mentorship track record are notable strengths."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates stronger operational maturity (clear documentation practices, on-call awareness, trade-off analysis) and cultural fit signals (reliability vouched by former director, mentoring six engineers), though both candidates have execution concerns that warrant panel discussion."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrates stronger attention to detail in documentation (setup docs adopted by new joiners) and systems thinking (clear design docs with trade-offs), despite both candidates having comparable experience, though Sally's mentorship track record and tool adoption are concerning gaps in John's profile."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates better operational maturity (clear design docs with trade-offs, reliable reference from director, established documentation practices) while Sally's late submission and missing build dependencies in README raise process concerns for a senior role."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's documented track record of creating lasting infrastructure (developer setup docs still in use) and reliable delivery outweighs concerns about his README omission, though Sally's adoption of her migration tool by other teams is a close second."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's take-home was on-time with standard practices, his documentation work demonstrates sustained impact on team productivity, and his closing questions showed genuine concern for operational realities rather than just compensation\u2014though Sally's mentorship track record and tool adoption are noteworthy strengths."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrates better attention to detail in critical areas (design docs with trade-offs, developer setup docs still in use) despite both having gaps in take-home documentation, and his verifiable impact on team processes suggests more immediate senior-level contribution."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's take-home was submitted promptly with proper documentation, his design doc explicitly addresses trade-offs, and his established track record of writing docs that new joiners still follow demonstrates sustained impact on team productivity\u2014while Sally's late submission and incomplete README raise concerns about attention to detail in critical artifacts."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's documented leadership of six engineers, reliable track record from former director, and clear communication in design docs outweigh concerns about his take-home README, though Sally's proven impact through the migration tool adoption and mentee promotion are notable positives that make this closer than ideal."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's take-home was on time with proper Go conventions, his design doc explicitly lists trade-offs, and he has demonstrated leadership and reliability through mentoring six engineers and creating documentation still in use\u2014whereas Sally's late submission, missing build dependencies, and lack of demonstrated team impact raise execution and attention-to-detail concerns."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's track record of writing documentation that new joiners still follow, proven leadership of six engineers, and quick take-home submission demonstrate more reliable execution, though Sally's mentorship impact and structured thinking are strengths worth discussing with the panel."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates better execution fundamentals (standard Go layout, clear documentation practices, on-time delivery) and operational mindset (focused on incidents and reliability), while Sally's late submission, missing build dependencies, and non-operational closing questions raise concerns about attention to detail and production readiness."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrates better attention to detail (complete README, on-time submission) and has proven leadership experience managing six engineers, though Sally's tool adoption and mentorship track record are concerning gaps I'd want to probe further."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's clean execution (on-time take-home, standard layout, clear documentation), proven track record of influencing others (developer setup docs still in use, team lead of six), and strong reference outweigh Sally's mentorship record, which is offset by sloppy take-home submission and missing build dependencies."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's take-home submission quality, clear documentation practices (developer setup docs still in use), and structured design thinking outweigh Sally's missed deadline and incomplete README, though Sally's mentorship track record and tool adoption are notable strengths."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's faster turnaround on take-home, clear documentation practices (setup docs still used by new joiners), demonstrated leadership of six engineers, and strong reference signal outweigh Sally's late submission and incomplete README, though both candidates show solid technical fundamentals."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's clear documentation practices, prompt submission, technical depth in closing questions, and strong reference from a former director outweigh Sally's missed deadline and documentation gaps, though her mentorship impact and tool adoption are notable positives."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's cleaner design doc, reliable track record with documentation impact, and faster take-home submission outweigh Sally's mentorship success, though her organized approach and migration tool adoption are notable strengths."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's thorough documentation practices (developer setup docs still in use), on-time delivery, clear design communication with trade-offs, and team lead experience outweigh Sally's late submission and incomplete READMEs, though her tool adoption and mentoring record are notable strengths."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates more reliable execution (on-time delivery, documentation that others still use) and thoughtful design practices (trade-offs listed upfront), while Sally's late submission and incomplete README suggest QA risks that concern me for a senior role."
+    }
+   ]
+  }
+ },
+ "pooled": {
+  "sally": 20
+ },
+ "pooled_right": 1.0,
+ "alone": {
+  "dana": {
+   "john": 17,
+   "sally": 3
+  },
+  "marcus": {
+   "john": 19,
+   "sally": 1
+  },
+  "priya": {
+   "john": 17,
+   "sally": 3
+  },
+  "tom": {
+   "john": 20
+  }
+ },
+ "alone_wrong": {
+  "dana": 0.85,
+  "marcus": 0.95,
+  "priya": 0.85,
+  "tom": 1.0
+ },
+ "shared_rates": {
+  "pooled": 0.0,
+  "dana": 0.85,
+  "marcus": 0.95,
+  "priya": 0.85,
+  "tom": 1.0
+ },
+ "pass": true
+}

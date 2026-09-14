@@ -1,0 +1,697 @@
+{
+ "scenario": "hiring-panel-flat-v3",
+ "prompt": "default",
+ "correct": "sally",
+ "shared_verdict": "john",
+ "samples": 20,
+ "cells": {
+  "pooled": {
+   "n": 20,
+   "counts": {
+    "sally": 20
+   },
+   "by_first_listed": {
+    "john": {
+     "sally": 10
+    },
+    "sally": {
+     "sally": 10
+    }
+   },
+   "rate": 1.0,
+   "ci": [
+    0.8388698745050667,
+    1.0
+   ],
+   "shared_rate": 0.0,
+   "shared_ci": [
+    0.0,
+    0.16113012549493322
+   ],
+   "reasons": [
+    "Sally demonstrated ownership (volunteering for unpopular work, mentoring), technical depth (explicit idempotency reasoning, load-testing), and on-call readiness (incident review leadership), despite t",
+    "Sally demonstrated ownership (least popular service, migration tool adoption, incident review leadership) and technical depth (explicit idempotency thinking, load-test validation), despite the late ta"
+   ],
+   "ballots": [
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrated ownership (volunteering for unpopular work, mentoring), technical depth (explicit idempotency reasoning, load-testing), and on-call readiness (incident review leadership), despite the late take-home submission."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "sally",
+     "reason": "Sally demonstrated ownership (least popular service, migration tool adoption, incident review leadership) and technical depth (explicit idempotency thinking, load-test validation), despite the late take-home submission."
+    },
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrated stronger operational maturity: she found the debugging bug within time, ran incident reviews, and explicitly considered idempotency in her design; John's closing questions focused only on compensation and title rather than technical depth."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "sally",
+     "reason": "Sally demonstrated ownership (unpopular service, migration tool adoption), technical depth (idempotency design, load-test validation), and incident leadership, despite minor process issues like late submission and incomplete README."
+    },
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrated stronger technical depth (found planted bug, designed for idempotency, added load-testing) and ownership culture (volunteered for unpopular work, led incident reviews, tool adoption across teams), while John's take-home README omission and compensation ask at band-top are concerns."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "sally",
+     "reason": "Sally demonstrated ownership of unpopular work, mentored someone to promotion, led incident reviews, and explicitly considered idempotency in design; John's take-home omitted setup instructions and his closing questions suggest compensation-focused priorities rather than technical depth."
+    },
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrated stronger technical depth through debugging, proactive documentation (load-test script), cross-team impact, and incident leadership; John's take-home README gaps and compensation positioning are minor concerns compared to Sally's concrete contributions."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "sally",
+     "reason": "Sally demonstrated stronger operational ownership (incident reviews, mentorship, debugging), though both candidates have relevant experience and compensation expectations need discussion."
+    },
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger operational leadership (ran incident reviews, mentored promotees, adopted migration tool) and more rigorous engineering (load-test script, explicit idempotency design, found planted bug), despite take-home deadline miss."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger operational depth: she runs incident reviews, found the planted bug, performance-tested her take-home, and her tooling was adopted by another team, whereas John's strengths are in documentation and reliability but lack this operational leadership evidence."
+    },
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrated stronger technical depth (found the bug, included load-test results, explicit idempotency design), ownership across teams (adopted migration tool, mentee promotion, incident review leadership), and execution quality (design assumptions stated clearly), despite the late take-home submission."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "sally",
+     "reason": "Sally's demonstrated incident leadership (weekly reviews, cross-team participation), mentorship track record (promotion), and attention to performance details (load-test script, idempotency callouts) show stronger ownership and systems thinking for a senior role."
+    },
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger operational maturity (found bug, ran incident reviews, load-tested her work) and ownership patterns (volunteered for unpopular service, mentee promoted, tool adopted elsewhere), while John's closing questions and incomplete README suggest less operational depth."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger operational maturity: she owns incident reviews, found the debugging bug on time, load-tested her take-home, and influenced cross-team practices; John shows competence but his closing questions and missing setup docs suggest less operational depth."
+    },
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger operational leadership (ran incident reviews, mentee promotion, cross-team incident work) and attention to quality (found bug, load-test script, explicit idempotency), despite the late submission."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "sally",
+     "reason": "Sally demonstrates stronger operational ownership: she ran incident reviews, found the planted bug on time, had her migration tool adopted cross-team, and mentored someone to promotion, while John's take-home lacks setup instructions despite writing developer docs."
+    },
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally's take-home included performance validation (load-test script and results), she found the planted bug, and her design work explicitly addressed idempotency; John's take-home lacked setup instructions and his design didn't demonstrate similar depth of systems thinking."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "sally",
+     "reason": "Sally demonstrated deeper operational maturity: she owned unpopular work, ran incident reviews for a year, found the planted bug, and her design explicitly addressed idempotency\u2014while her take-home included load-test validation despite minor deadline slip."
+    },
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrated stronger engineering ownership through incident leadership, cross-team visibility, mentorship impact, and proactive performance validation (load-test results), while John's notes show less evidence of initiative beyond individual contribution."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "sally",
+     "reason": "Sally demonstrates sustained operational ownership (incident review leadership, mentee promotion, cross-team incident participation) and concrete impact (load-testing, migration tool adoption), whereas John's notes lack evidence of similar depth in operational responsibility or measurable team impact."
+    }
+   ]
+  },
+  "dana": {
+   "n": 20,
+   "counts": {
+    "john": 19,
+    "sally": 1
+   },
+   "by_first_listed": {
+    "john": {
+     "john": 10
+    },
+    "sally": {
+     "john": 9,
+     "sally": 1
+    }
+   },
+   "rate": 0.95,
+   "ci": [
+    0.7638641064874331,
+    0.9911187805671268
+   ],
+   "shared_rate": 0.95,
+   "shared_ci": [
+    0.7638641064874331,
+    0.9911187805671268
+   ],
+   "reasons": [
+    "John demonstrated stronger execution on the take-home, has documented institutional knowledge, and his references and behavioral responses signal reliability for a senior role.",
+    "John demonstrates stronger execution discipline: took home within a day with standard layout, wrote docs still used by new joiners, and his director vouches for reliability; Sally missed the take-home"
+   ],
+   "ballots": [
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrated stronger execution on the take-home, has documented institutional knowledge, and his references and behavioral responses signal reliability for a senior role."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates stronger execution discipline: took home within a day with standard layout, wrote docs still used by new joiners, and his director vouches for reliability; Sally missed the take-home deadline and omitted build dependencies despite organized design work."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's design doc clarity, documented developer setup impact, and reliable track record outweigh Sally's strong performance testing work, though her incident review leadership is notable."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John submitted on time with standard Go layout, wrote setup docs still in use, and a director vouches for reliability; Sally missed deadline and lacked build dependency documentation."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's developer setup docs are actively used by new joiners, showing concrete impact; his design doc lists trade-offs upfront; and his former director vouches for reliability\u2014though Sally's load-test script and incident review leadership are notable strengths."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John has demonstrated reliability through external validation (former director reference), clear documentation practices (developer setup docs still in use), and structured thinking (design doc with trade-offs), despite both candidates having comparable backend experience."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John has explicit team lead experience managing six engineers and documented institutional knowledge (setup docs still used), while Sally's incident review leadership is narrower in scope."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "sally",
+     "reason": "Sally demonstrated operational maturity by running incident reviews for a year and including load-test validation, while both candidates have late/incomplete take-home documentation; her compensation expectation is more reasonable."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John submitted on time with clear documentation practices (developer setup docs still in use), listed as team lead for six engineers, and his design doc explicitly lists trade-offs\u2014demonstrating maturity for a senior role, despite the README omission."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's take-home was timely and well-structured, he's documented onboarding practices that persist, and his former director vouches for reliability; Sally's late submission and incomplete README are concerning for a senior role."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's design doc shows clear structure with explicit trade-offs, he's documented processes that new joiners still follow, and his former director confirms reliability; Sally's take-home missed the deadline and her README omits build dependencies."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's design doc clarity, fluent behavioural answers, and proven ability to write documentation that shapes team practices outweigh Sally's incident experience, despite her late submission and his setup doc omission."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's design doc shows trade-offs upfront, take-home was submitted promptly with standard layout, and his former director vouches for reliability; Sally's late take-home submission and missing build dependencies in README raise execution concerns."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's design doc lists trade-offs explicitly, his README follows standard Go layout, he wrote setup docs that new joiners still follow, and a former director vouches for reliability."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's design doc with clear structure and explicit trade-offs, plus his track record writing setup docs that new joiners still follow, demonstrates better communication of complex systems\u2014critical for a senior role."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrated operational maturity through documented onboarding, clear design thinking with trade-offs, and reliability vouched by a former director, despite both candidates having similar backend tenure."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrated stronger execution signals: take-home submitted promptly with standard layout, former director vouches for reliability, and design doc clearly structures trade-offs; Sally's late submission and missing build dependencies in README suggest execution gaps despite strong incident review experience."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's design doc lists trade-offs upfront, take-home met deadline with standard layout, and former director vouches for reliability; Sally's late take-home submission and incomplete README documentation are concerns for a senior role."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrated stronger execution: he wrote docs still in use, submitted on time with standard layout, and a former director vouches for reliability; Sally's late submission and missing build dependencies suggest less attention to detail."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrated operational maturity through documented setup practices and on-call readiness; Sally's late submission and missing build dependencies are concerning for a senior role."
+    }
+   ]
+  },
+  "marcus": {
+   "n": 20,
+   "counts": {
+    "john": 20
+   },
+   "by_first_listed": {
+    "john": {
+     "john": 10
+    },
+    "sally": {
+     "john": 10
+    }
+   },
+   "rate": 1.0,
+   "ci": [
+    0.8388698745050667,
+    1.0
+   ],
+   "shared_rate": 1.0,
+   "shared_ci": [
+    0.8388698745050667,
+    1.0
+   ],
+   "reasons": [
+    "John's design doc with upfront trade-offs, reliable reference, leadership of six engineers, and rapid take-home submission demonstrate stronger senior readiness despite Sally's thoughtful idempotency ",
+    "John has demonstrated impact (wrote onboarding docs still in use, leads six engineers) and thorough design thinking (trade-offs listed, clear structure), while Sally's late submission and incomplete R"
+   ],
+   "ballots": [
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's design doc with upfront trade-offs, reliable reference, leadership of six engineers, and rapid take-home submission demonstrate stronger senior readiness despite Sally's thoughtful idempotency reasoning."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John has demonstrated impact (wrote onboarding docs still in use, leads six engineers) and thorough design thinking (trade-offs listed, clear structure), while Sally's late submission and incomplete README suggest execution gaps despite good design practices."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's take-home was timely with clear structure; his design doc lists trade-offs upfront; former director vouches for reliability; he wrote docs still used by new joiners, demonstrating sustained impact."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's design doc lists trade-offs upfront, he wrote setup docs still in use, and closed with operational questions; Sally missed the deadline and her README lacks build dependencies despite organized design."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John submitted on time with clear design doc trade-offs and wrote docs new joiners still follow; Sally missed the take-home deadline and both have README gaps, but John's demonstrated impact on onboarding and fluent interviews outweigh Sally's good design thinking."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's take-home met the deadline, his design doc explicitly lists trade-offs, and his reference calls him reliable; Sally submitted late and her README lacks build dependencies."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's design doc explicitly lists trade-offs upfront and his take-home was submitted promptly with clear structure; Sally's late submission and missing build dependencies in README raise execution concerns."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John submitted on time, wrote docs the team still follows, has explicit trade-off analysis in design, and a director vouches for reliability; Sally missed the deadline and her README lacks build dependencies."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's take-home was on-time with standard Go layout, he wrote setup docs still used by new joiners, leads six engineers, and a former director vouches for reliability; Sally submitted late and her take-home README lacks build dependencies."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's design doc lists trade-offs explicitly, his take-home met deadline with standard layout, and his former director vouches for reliability; Sally's take-home missed deadline and lacks build dependencies in README."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's design doc with clear headings and upfront trade-offs, reliable reference, established track record writing foundational docs, and prompt take-home submission demonstrate stronger signals for a senior backend role than Sally's late submission and missing setup documentation."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's concrete outputs\u2014developer setup docs still in use, clear design doc with trade-offs, reliable reference\u2014demonstrate sustained technical leadership; Sally's deadline miss and incomplete README raise execution concerns despite good design thinking."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's design doc lists trade-offs upfront, he wrote docs still used by new joiners, leads six engineers, and his reference calls him reliable; Sally's take-home missed the deadline and her README omits build dependencies."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's take-home was timely and well-structured, his design doc shows systematic thinking with trade-offs explicit, and he has documented evidence of multiplying team capability through onboarding materials."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's design doc explicitly lists trade-offs upfront and he wrote developer setup docs still in use; Sally submitted late and both candidates omitted critical README details, but John's documented process evidence outweighs this."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's design doc lists trade-offs explicitly, he wrote foundational onboarding docs still in use, and a former director vouches for reliability; Sally missed the take-home deadline and her README lacked build dependencies."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's design doc with explicit trade-offs, documented setup practices for new joiners, and reference validation from a former director demonstrate more mature backend engineering practices than Sally's submission."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John submitted on-time with complete documentation (developer setup docs, standard layout), demonstrated team leadership of six engineers, and has a reference vouching for reliability; Sally missed the take-home deadline and omitted build dependencies from her README."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's take-home was submitted promptly with standard layout, his design doc explicitly lists trade-offs, and he authored setup documentation still in use\u2014demonstrating sustained impact on developer experience."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates stronger operational maturity: he wrote developer setup docs still in use, has explicit trade-off analysis in design work, answered behavioural questions fluently, and a former director vouches for reliability\u2014Sally's late take-home submission and missing README dependencies are concerns for a senior role."
+    }
+   ]
+  },
+  "priya": {
+   "n": 20,
+   "counts": {
+    "john": 19,
+    "sally": 1
+   },
+   "by_first_listed": {
+    "john": {
+     "john": 9,
+     "sally": 1
+    },
+    "sally": {
+     "john": 10
+    }
+   },
+   "rate": 0.95,
+   "ci": [
+    0.7638641064874331,
+    0.9911187805671268
+   ],
+   "shared_rate": 0.95,
+   "shared_ci": [
+    0.7638641064874331,
+    0.9911187805671268
+   ],
+   "reasons": [
+    "John's former director vouches for reliability, he wrote onboarding docs still in use, led six engineers, and submitted polished work on time; Sally missed the deadline and her closing questions sugge",
+    "John's take-home was submitted promptly with standard layout, he has explicit team lead experience over six engineers, and his former director vouches for reliability\u2014these are concrete signals of sen"
+   ],
+   "ballots": [
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's former director vouches for reliability, he wrote onboarding docs still in use, led six engineers, and submitted polished work on time; Sally missed the deadline and her closing questions suggest less operational focus for a senior role."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's take-home was submitted promptly with standard layout, he has explicit team lead experience over six engineers, and his former director vouches for reliability\u2014these are concrete signals of senior-level delivery and leadership readiness."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's take-home submission, documented developer setup still used by new joiners, and leadership of six engineers demonstrate sustained impact and reliability, despite compensation expectations being high."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrated stronger documentation practices (developer setup docs still used by new joiners), met deadlines, and a former director vouches for reliability\u2014critical for a senior backend role."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John demonstrated stronger documentation practices (developer setup docs still in use), submitted on time, and showed leadership managing six engineers, though both candidates have comparable technical depth."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates stronger operational maturity: he wrote the setup docs new joiners still follow, has a former director vouching for reliability, and completed the take-home promptly with standard Go layout, whereas Sally's late submission and missing README documentation raise concerns about production readiness."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's former director vouches for reliability, he submitted take-home promptly with standard Go layout, and he authored developer setup docs still in use\u2014demonstrating concrete impact on team onboarding."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's reliable track record (director reference, setup docs still used), clear design thinking with trade-offs, and focused closing questions suggest senior readiness; Sally's late take-home submission and incomplete README raise execution concerns."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's former director vouches for reliability, he demonstrates strong documentation practices (wrote setup docs still used by new joiners), and submitted work on time with clear design thinking, outweighing Sally's debugging strength."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's design doc lists trade-offs upfront, his take-home was submitted on time with clear structure, and a former director vouches for his reliability\u2014demonstrating better execution and accountability than Sally's missed deadline and incomplete README."
+    },
+    {
+     "first_listed": "john",
+     "vote": "sally",
+     "reason": "Sally demonstrated practical debugging skill by finding the planted bug, took part in incident reviews showing team collaboration, and her design sample showed clear structure with stated assumptions\u2014indicators of senior-level technical maturity."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's take-home met the deadline, his design doc clearly states trade-offs upfront, and a former director vouches for his reliability as a leader of six engineers."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's documentation work (developer setup docs, clear design doc with trade-offs) and proven leadership of six engineers demonstrates senior-level impact, though Sally's debugging and incident review experience warrant serious consideration."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's take-home was submitted promptly with standard layout, he wrote the setup docs new joiners still follow, and a former director vouches for his reliability\u2014demonstrating both execution and institutional impact."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's design doc clarity, proven team leadership of six engineers, reliable reference, and on-time delivery outweigh Sally's debugging strength and incident experience."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John demonstrates stronger operational maturity (team lead, reliable reference, clear documentation practices) and better interview conduct (fluent responses, timely submission, thorough design doc with trade-offs), despite Sally's solid technical debugging skills."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John has a stronger track record of team leadership and documentation that impacts the team, evidenced by leading six engineers and writing developer setup docs still used by new joiners; while Sally shows solid technical debugging skills, John's references and operational focus align better with a senior role requiring mentorship and platform stability."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's design doc lists trade-offs upfront, he wrote the setup docs new joiners still follow, and his former director calls him reliable\u2014stronger signals on documentation quality and team impact than Sally's organized but less-detailed design."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John wrote foundational developer setup docs still in use, demonstrated senior-level systems thinking in design docs with trade-offs, and had a director vouch for reliability; Sally submitted late without build dependencies in README despite finding the bug quickly."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John has clearer evidence of senior impact: wrote setup docs still used by new joiners, leads six engineers, and submitted work on time with standard practices, while Sally's take-home arrived late and lacks build dependency documentation."
+    }
+   ]
+  },
+  "tom": {
+   "n": 20,
+   "counts": {
+    "john": 20
+   },
+   "by_first_listed": {
+    "john": {
+     "john": 10
+    },
+    "sally": {
+     "john": 10
+    }
+   },
+   "rate": 1.0,
+   "ci": [
+    0.8388698745050667,
+    1.0
+   ],
+   "shared_rate": 1.0,
+   "shared_ci": [
+    0.8388698745050667,
+    1.0
+   ],
+   "reasons": [
+    "John's take-home was submitted promptly with standard layout, he has documented developer setup before, and a director vouches for reliability; Sally missed the deadline and her README lacked build de",
+    "John's take-home was submitted promptly with standard layout; his design doc lists trade-offs upfront; a former director vouches for reliability. Sally's take-home missed the deadline and lacks build "
+   ],
+   "ballots": [
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's take-home was submitted promptly with standard layout, he has documented developer setup before, and a director vouches for reliability; Sally missed the deadline and her README lacked build dependencies."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's take-home was submitted promptly with standard layout; his design doc lists trade-offs upfront; a former director vouches for reliability. Sally's take-home missed the deadline and lacks build dependencies in the README."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's take-home met the deadline, his design doc explicitly lists trade-offs, and his documentation work (developer setup) shows mentoring capability; Sally's take-home was late and her README also omits setup details like John's."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's design doc lists trade-offs upfront, he wrote docs new joiners still follow, and his former director vouches for reliability; Sally submitted late and her take-home README lacks build dependencies."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John submitted on time with clear documentation practices (developer setup docs still in use), showed leadership of six engineers, and asked substantive closing questions about operations; Sally missed the deadline and asked only about compensation and policy."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's take-home was on-time with standard layout, he wrote docs still in use, and a former director vouches for reliability; Sally missed the deadline and her README lacks build dependencies."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's documented track record as team lead, reliable reference, and clear design doc with trade-offs listed upfront outweigh concerns about take-home README; Sally's late submission and missing build dependencies raise execution risk."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's take-home met the deadline, has clear documentation practices (dev setup docs still used by new joiners), and his design doc explicitly lists trade-offs; Sally's take-home was twenty minutes late and lacks build dependencies in the README."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's clear design documentation, documented developer setup still in use, and explicit team lead experience for six engineers demonstrate proven senior-level impact, though Sally's tool adoption and mentee promotion show strength too."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's design doc lists trade-offs upfront, he wrote setup docs still in use, and a former director vouches for reliability; Sally missed the take-home deadline and her README lacks build dependencies."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John submitted on time with clear design doc and setup documentation that new joiners still follow; Sally's late take-home submission and missing build dependencies are execution concerns for a senior role."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's take-home was on time with standard layout, his design doc lists trade-offs upfront, and a former director vouches for reliability; Sally's take-home was late and her README lacks build dependencies."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's design doc clarity, reliable reference, established team lead track record, and complete take-home submission outweigh concerns; Sally's late take-home and missing build dependencies raise execution questions."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John submitted on time with standard layout, wrote docs new joiners still follow, and his former director vouches for reliability; Sally's late submission and incomplete README are execution red flags for a senior role."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John submitted on time with standard practices, wrote docs still in use, and his former director vouches for reliability; Sally missed the deadline and her README lacks build dependencies."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John submitted on time with clear documentation, demonstrated leadership of six engineers, and a former director vouches for reliability; Sally missed the deadline and her take-home lacks build dependencies."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's design doc lists trade-offs upfront, take-home was submitted promptly with standard layout, and his former director vouches for reliability; Sally missed the take-home deadline and her README omits build dependencies."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's design doc lists trade-offs upfront, take-home met deadline with standard layout, and he wrote setup docs new joiners still follow\u2014demonstrating clear communication and ownership of developer experience."
+    },
+    {
+     "first_listed": "john",
+     "vote": "john",
+     "reason": "John's take-home was timely, his design doc clearly lists trade-offs, and a former director vouches for reliability; Sally missed the deadline and her README also lacks critical details."
+    },
+    {
+     "first_listed": "sally",
+     "vote": "john",
+     "reason": "John's design doc lists trade-offs explicitly, his README omission is less critical than Sally's missing build dependencies, and his former director vouches for reliability on a larger team."
+    }
+   ]
+  }
+ },
+ "pooled": {
+  "sally": 20
+ },
+ "pooled_right": 1.0,
+ "alone": {
+  "dana": {
+   "john": 19,
+   "sally": 1
+  },
+  "marcus": {
+   "john": 20
+  },
+  "priya": {
+   "john": 19,
+   "sally": 1
+  },
+  "tom": {
+   "john": 20
+  }
+ },
+ "alone_wrong": {
+  "dana": 0.95,
+  "marcus": 1.0,
+  "priya": 0.95,
+  "tom": 1.0
+ },
+ "shared_rates": {
+  "pooled": 0.0,
+  "dana": 0.95,
+  "marcus": 1.0,
+  "priya": 0.95,
+  "tom": 1.0
+ },
+ "pass": true
+}
