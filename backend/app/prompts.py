@@ -182,4 +182,5 @@ def alone_vote_message(scenario: Scenario) -> str:
     options = "|".join(c.id for c in scenario.candidates)
     return f"""You have not spoken to any other panelist. Based only on your own notes,
 which candidate do you recommend? You must pick one.
+Keep "reason" to one sentence.
 JSON only: {{"vote": "{options}", "confidence": 0..1, "reason": string}}"""
