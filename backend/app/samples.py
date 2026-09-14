@@ -488,6 +488,192 @@ HIRING_PANEL_V1 = Scenario.model_validate(
     }
 )
 
+FLAT_DECISIVE: list[dict[str, Any]] = [
+    _fact(
+        "F1",
+        "sally",
+        "pro",
+        1,
+        "Sally has taken part in two cross-team incident reviews at her current company.",
+        "Took part in two cross-team incident reviews.",
+        ["incident reviews", "cross-team", "took part"],
+    ),
+    _fact(
+        "F2",
+        "sally",
+        "pro",
+        1,
+        "One other team at Sally's company has adopted her migration tool.",
+        "One other team has adopted her migration tool.",
+        ["migration tool", "one other team", "adopted"],
+    ),
+    _fact(
+        "F3",
+        "sally",
+        "pro",
+        1,
+        "In the debugging round Sally found the planted bug within the allotted time.",
+        "Found the planted bug in the debugging round within the allotted time.",
+        ["debugging round", "planted bug", "allotted time"],
+    ),
+    _fact(
+        "F4",
+        "sally",
+        "pro",
+        1,
+        "Sally's design answer included a short section on logging and metrics.",
+        "Design answer included a short section on logging and metrics.",
+        ["logging", "metrics", "design answer"],
+    ),
+    _fact(
+        "F5",
+        "sally",
+        "pro",
+        1,
+        "One engineer Sally mentored has since been promoted.",
+        "One mentee has since been promoted.",
+        ["mentored", "promoted", "one engineer"],
+    ),
+    _fact(
+        "F6",
+        "sally",
+        "pro",
+        1,
+        "Sally has contributed several pages to her team's on-call runbook.",
+        "Has contributed pages to her team's on-call runbook.",
+        ["on-call", "runbook", "contributed"],
+    ),
+    _fact(
+        "F7",
+        "sally",
+        "pro",
+        1,
+        "A former skip-level manager described Sally as dependable.",
+        "Former skip-level describes her as dependable.",
+        ["skip-level", "reference", "dependable"],
+    ),
+    _fact(
+        "F8",
+        "sally",
+        "pro",
+        1,
+        "Sally has a small Go side project on GitHub with recent commits.",
+        "Has a small Go side project with recent commits.",
+        ["Go", "side project", "GitHub"],
+    ),
+    _fact(
+        "G1",
+        "john",
+        "con",
+        1,
+        "Two of John's six reports left the team within the last year.",
+        "Two of six reports left within the last year.",
+        ["reports left", "attrition", "last year"],
+    ),
+    _fact(
+        "G2",
+        "john",
+        "con",
+        1,
+        "The platform migration John described leading listed eleven other contributors.",
+        "The migration he described leading had eleven other contributors.",
+        ["migration", "eleven contributors", "led"],
+    ),
+    _fact(
+        "G3",
+        "john",
+        "con",
+        1,
+        "When asked about his on-call experience, John answered about team process instead.",
+        "Answered a question about his on-call experience with team process.",
+        ["on-call", "answered indirectly", "team process"],
+    ),
+    _fact(
+        "G4",
+        "john",
+        "con",
+        1,
+        "One of John's last two roles lasted under 18 months.",
+        "One of his last two roles lasted under 18 months.",
+        ["18 months", "tenure", "one role"],
+    ),
+    _fact(
+        "G5",
+        "john",
+        "con",
+        1,
+        "John started answering before the QA engineer had finished one question.",
+        "Started answering before the QA engineer finished one question.",
+        ["started answering", "QA engineer", "question"],
+    ),
+    _fact(
+        "G6",
+        "john",
+        "con",
+        1,
+        "John's former manager described him as a strong individual contributor who is still growing as a lead.",
+        "Former manager: strong individual contributor, still growing as a lead.",
+        ["former manager", "individual contributor", "growing as a lead"],
+    ),
+]
+
+FLAT_SHARED: list[dict[str, Any]] = [
+    {**fact, "weight": 1} if fact["id"] == "S6" else fact
+    for fact in _HP_SHARED
+    if fact["id"] not in ("J8", "S9")
+]
+FLAT_SHARED_IDS = [fact["id"] for fact in FLAT_SHARED]
+
+FLAT_COUNTER: list[dict[str, Any]] = [
+    _fact(
+        "J17",
+        "john",
+        "pro",
+        1,
+        "John's former manager says he has met every delivery date they set together.",
+        "Former manager reports he has met every delivery date.",
+        ["delivery dates", "former manager", "reference"],
+    ),
+    _fact(
+        "J18",
+        "john",
+        "pro",
+        1,
+        "John has given two conference talks on Go service architecture.",
+        "Two conference talks on Go service architecture.",
+        ["conference talks", "Go", "architecture"],
+    ),
+    _fact(
+        "S20",
+        "sally",
+        "con",
+        1,
+        "Sally estimated three months to become productive in Go.",
+        "Estimates three months to become productive in Go.",
+        ["three months", "Go", "ramp-up"],
+    ),
+]
+
+HIRING_PANEL_FLAT = Scenario.model_validate(
+    {
+        "id": "hiring-panel-flat",
+        "title": "Hiring panel (flat items)",
+        "brief": HIRING_PANEL_V1.brief,
+        "isSample": True,
+        "candidates": HIRING_PANEL_CANDIDATES,
+        "agents": HIRING_PANEL_AGENTS,
+        "facts": FLAT_SHARED + FLAT_DECISIVE + FLAT_COUNTER,
+        "distribution": {
+            "dana": FLAT_SHARED_IDS + ["F1", "F5", "G1", "J17"],
+            "marcus": FLAT_SHARED_IDS + ["F2", "F6", "G2", "J18"],
+            "priya": FLAT_SHARED_IDS + ["F3", "F7", "G3"],
+            "tom": FLAT_SHARED_IDS + ["F4", "F8", "G4"],
+            "omar": FLAT_SHARED_IDS + ["G5", "G6", "S20"],
+        },
+        "validation": {},
+    }
+)
+
 
 def _facts(rows: list[tuple[str, str, str, int, str, str, list[str]]]) -> list[dict[str, Any]]:
     return [_fact(*row) for row in rows]
@@ -1552,6 +1738,7 @@ SAMPLE_SCENARIOS: list[Scenario] = [
     VENDOR_SELECTION_V1,
     HIRING_WEAK_PROFILE_V1,
     HIRING_ADVERSARIAL_V1,
+    HIRING_PANEL_FLAT,
     *PAPER_SCENARIOS,
 ]
 

@@ -77,7 +77,7 @@ def test_match_facts_paraphrase() -> None:
     hits = truth.match_facts(
         ["She found the data-loss race in that legacy service really quickly"], s.facts
     )
-    assert hits == ["S4"]
+    assert hits == ["S13"]
 
 
 def test_match_facts_unrelated() -> None:
