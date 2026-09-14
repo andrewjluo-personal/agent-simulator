@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from app import truth, validator
 from app.llm import FakeClient
 from app.main import app
+from app.samples import SERVED_SCENARIO_IDS
 from app.scenarios.papers import PAPER_SCENARIOS
 
 client = TestClient(app)
@@ -61,7 +62,7 @@ def test_paper_scenarios_are_in_api() -> None:
     response = client.get("/api/scenarios")
     assert response.status_code == 200
     ids = {scenario["id"] for scenario in response.json()}
-    assert {scenario.id for scenario in PAPER_SCENARIOS} <= ids
+    assert SERVED_SCENARIO_IDS <= ids
 
     response = client.get("/api/scenarios/stasser-1985-hidden/analysis")
     assert response.status_code == 200

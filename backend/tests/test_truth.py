@@ -3,11 +3,12 @@ from __future__ import annotations
 from app import truth
 from app.models import AgentPersona, Candidate, Fact, Scenario
 from app.samples import SAMPLES_BY_ID
-from app.scenario import DEFAULT_SCENARIO_ID
+
+FLAT_SCENARIO_ID = "hiring-panel-flat-v2"
 
 
 def test_bundled_scenario_hidden_profile() -> None:
-    s = SAMPLES_BY_ID[DEFAULT_SCENARIO_ID]
+    s = SAMPLES_BY_ID[FLAT_SCENARIO_ID]
     assert truth.shared_only_verdict(s) == "john"
     assert truth.pooled_verdict(s) == "sally"
     assert truth.is_hidden_profile(s)
@@ -73,19 +74,17 @@ def test_neutral_fact_has_no_score_or_decisive_effect() -> None:
 
 
 def test_match_facts_paraphrase() -> None:
-    s = SAMPLES_BY_ID[DEFAULT_SCENARIO_ID]
-    hits = truth.match_facts(
-        ["She wrote the onboarding guide that new hires still use"], s.facts
-    )
+    s = SAMPLES_BY_ID[FLAT_SCENARIO_ID]
+    hits = truth.match_facts(["She wrote the onboarding guide that new hires still use"], s.facts)
     assert hits == ["F14"]
 
 
 def test_match_facts_unrelated() -> None:
-    s = SAMPLES_BY_ID[DEFAULT_SCENARIO_ID]
+    s = SAMPLES_BY_ID[FLAT_SCENARIO_ID]
     assert truth.match_facts(["I think we should wrap up soon"], s.facts) == []
 
 
 def test_match_facts_self_consistency() -> None:
-    s = SAMPLES_BY_ID[DEFAULT_SCENARIO_ID]
+    s = SAMPLES_BY_ID[FLAT_SCENARIO_ID]
     for f in s.facts:
         assert f.id in truth.match_facts([f.memo_text or f.text], s.facts)
