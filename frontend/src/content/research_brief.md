@@ -49,7 +49,15 @@ HiddenBench never tested a Claude model (its 15 models are GPT, Gemini, Qwen3 an
 - **Company acquisition** — HiddenBench groups: Gemini-2.5-Pro/Flash 1.0, GPT-5-medium 0.73, GPT-4.1 0.6 post-discussion, and pre-discussion accuracy 0.3–0.5 (above the paper's own ≤20% validity threshold, i.e. a weak decoy). Our Haiku groups 10/10 correct. **Consistent with the paper.**
 - **Laboratory theft** — HiddenBench groups: GPT-4.1 0.1, Gemini-Flash 0.0, GPT-5-medium 0.03, best Gemini-Pro 0.6. Our Haiku groups **10/10 correct**. **A genuine departure.**
 
-Both tasks pass our alone/pooled gates, so the divergence is not the information structure. The likely cause is discussion protocol: HiddenBench agents speak for 15 sequential rounds but see **only the previous round's messages**, whereas our agents keep the full transcript. With ~7 facts spread over 4 agents, one mention of each unique fact is enough for a full-transcript group to pool everything and let the G2 margin decide. A lossy-memory replication (last-round-only visibility, 15 rounds, balanced order, 10 groups) on lab-theft and Stasser is running now; results will be appended here.
+Both tasks pass our alone/pooled gates, so the divergence is not the information structure. Our first hypothesis was discussion protocol: HiddenBench agents speak for 15 sequential rounds but see **only the previous round's messages**, whereas our agents keep the full transcript. We tested it directly by replicating the paper's protocol on Haiku (private pre-vote, one turn per agent per round, last-round-only visibility, balanced order, 10 groups per cell):
+
+| lab-theft cell | groups correct (majority) |
+|---|---|
+| full transcript, 8 rounds | 10/10 |
+| last round only, 3 rounds | 9/10 |
+| last round only, 15 rounds (paper protocol) | 9/10 |
+
+Pre-discussion individual accuracy was 0/10 for every agent in every cell — the hidden profile binds alone — but all 4 unique facts surfaced in round 1 of every group and Haiku integrated them even with a one-round memory window. **Memory and length are not the cause.** Remaining candidates: the model itself (no Claude in the paper), our structured turn/vote JSON prompting, or the residual prior toward the correct lab that the twin null revealed (γ 61% pooled under the default prompt), which would hand the group the right answer for partly wrong reasons. Stasser's failure, by contrast, survived the lossy protocol (0/6 groups; only ~5 of 12 unique facts voiced per group): it fails because facts never get pooled, not because of memory.
 
 ### 3.5 What discussion does in our runs
 
