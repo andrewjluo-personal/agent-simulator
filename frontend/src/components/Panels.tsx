@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { aloneVotes, candidateName, decisiveFactIds, pooledVerdict, sharedFactIds, tally, tallyText } from '../truth'
-import type { FactStyle, Paradigm, RunConfig, RunState, RunSummary, Scenario, TieBreak, Turn, TurnOrder } from '../types'
+import type { Paradigm, RunConfig, RunState, RunSummary, Scenario, TieBreak, Turn, TurnOrder } from '../types'
 import { candidateColor } from './Table'
 
 export function VerdictBadges({ scenario }: { scenario: Scenario }) {
@@ -134,13 +134,6 @@ export function Controls(p: ControlsProps) {
               {x.label}
             </option>
           ))}
-        </select>
-      </label>
-      <label>
-        Evidence format
-        <select value={p.config.factStyle} onChange={(e) => set('factStyle', e.target.value as FactStyle)}>
-          <option value="memo">Memo (human-study style)</option>
-          <option value="labelled">Labelled facts</option>
         </select>
       </label>
       <label>
