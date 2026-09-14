@@ -183,6 +183,7 @@ export function ScenarioLab({ scenario, onSaved, onClose }: Props) {
   const [saving, setSaving] = useState(false)
   const [job, setJob] = useState<ValidationJob | null>(null)
   const [validationError, setValidationError] = useState<string | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [discussion, setDiscussion] = useState(false)
   const [slug, setSlug] = useState('')
   const hl = useHighlight()
@@ -273,11 +274,11 @@ export function ScenarioLab({ scenario, onSaved, onClose }: Props) {
 
   const save = async () => {
     setSaving(true)
-    setValidationError(null)
+    setSaveError(null)
     try {
       onSaved(await forkScenario({ baseId: scenario.id, scenario: draft, ...(slug ? { slug } : {}) }))
     } catch (cause) {
-      setValidationError(errorText(cause))
+      setSaveError(errorText(cause))
     } finally {
       setSaving(false)
     }
@@ -388,6 +389,7 @@ export function ScenarioLab({ scenario, onSaved, onClose }: Props) {
         <label>Slug <input value={slug} placeholder={`${scenario.id.replace(/-v\d+$/, '')}-v2`} onChange={(e) => setSlug(e.target.value)} /></label>
         <button type="button" onClick={() => void save()} disabled={!dirty || saving}>{saving ? 'Saving…' : 'Save as new scenario'}</button>
         <button type="button" className="link" onClick={() => setDraft(copyScenario(scenario))} disabled={!dirty}>Discard changes</button>
+        {saveError && <div className="lab-error">{saveError}</div>}
       </footer>
     </section>
   )
