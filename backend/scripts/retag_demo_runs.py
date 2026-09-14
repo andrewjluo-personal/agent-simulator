@@ -83,7 +83,7 @@ def main() -> None:
             (Jsonb(current.model_dump(by_alias=True)), new_stamp, args.scenario_id, args.old_stamp),
         )
         print(f"{cur.rowcount} runs updated")
-    db.Store().upsert_scenario(current)
+    db.PgStore().upsert_scenario(current)
     print("scenario row upserted")
 
 
