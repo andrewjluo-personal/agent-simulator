@@ -35,6 +35,7 @@ export type ValidationResult = {
   trials: number
   date: string
   passed: boolean
+  nullGate?: boolean | null
   freeDiscussionRate?: number | null
   freeDiscussionRuns?: number
 }

@@ -51,9 +51,10 @@ function validationBadge(scenario: Scenario): { text: string; title: string } | 
   const pooled = formatRate(result.pooledRightRate)
   const freeDiscussion =
     result.freeDiscussionRate == null ? 'n/a' : formatRate(result.freeDiscussionRate)
+  const nullGate = result.nullGate == null ? 'n/a' : result.nullGate ? 'pass' : 'FAIL'
   return {
-    text: `validated on ${model}`,
-    title: `alone-wrong ${alone}, pooled-right ${pooled}, free-discussion ${freeDiscussion}`,
+    text: `validated on ${model}${result.nullGate === false ? ' · fails null gate' : ''}`,
+    title: `alone-wrong ${alone}, pooled-right ${pooled}, free-discussion ${freeDiscussion}, null-gate ${nullGate}`,
   }
 }
 

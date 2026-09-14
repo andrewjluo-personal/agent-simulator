@@ -29,7 +29,10 @@ def _run(
 ) -> tuple[MemoryStore, FakeClient, RunState]:
     store = store or MemoryStore()
     client = FakeClient()
-    run = orchestrator.new_run(store, cfg or RunConfig(), provider="fake")
+    cfg = cfg or RunConfig(scenario_id="hiring-panel-flat-v2")
+    if cfg.scenario_id == "stasser-1985-hidden":
+        cfg = cfg.model_copy(update={"scenario_id": "hiring-panel-flat-v2"})
+    run = orchestrator.new_run(store, cfg, provider="fake")
     store.create_run(run)
     return store, client, run
 

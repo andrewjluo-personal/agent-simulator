@@ -115,7 +115,10 @@ def test_validation_hourly_limit(monkeypatch: pytest.MonkeyPatch) -> None:
     for scenario_id in ("hiring-panel-flat-v2", "stasser-1985-hidden"):
         response = client.post(f"/api/scenarios/{scenario_id}/validate", headers=headers)
         assert response.status_code == 202
-    response = client.post("/api/scenarios/stasser-1985-shared/validate", headers=headers)
+    response = client.post(
+        "/api/scenarios/hiddenbench-company-acquisition-decision/validate",
+        headers=headers,
+    )
     assert response.status_code == 429
     assert response.json()["detail"] == (
         "Too many validations started from this address in the last hour — limit is 2/hour."
@@ -212,7 +215,9 @@ def test_custom_scenario_picker_cap(monkeypatch: pytest.MonkeyPatch) -> None:
     listed = client.get("/api/scenarios")
     assert listed.status_code == 200
     listed_body = listed.json()
-    assert all(s["source"]["kind"] != "custom" for s in listed_body if s["id"] == "hiring-panel-flat-v2")
+    assert all(
+        s["source"]["kind"] != "custom" for s in listed_body if s["id"] == "hiring-panel-flat-v2"
+    )
     custom_ids = {s["id"] for s in listed_body if s["source"]["kind"] == "custom"}
     newest = {s["id"] for s in sorted(created, key=lambda s: s["createdAt"], reverse=True)[:2]}
     assert custom_ids == newest

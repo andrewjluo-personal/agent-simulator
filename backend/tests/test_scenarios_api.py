@@ -10,9 +10,10 @@ os.environ["RUN_RATE_LIMIT_PER_MIN"] = "0"
 from fastapi.testclient import TestClient
 
 from app.main import app, get_store
+from app.samples import HIDDEN_SAMPLE_IDS, SAMPLES_BY_ID
 
 client = TestClient(app)
-SID = "hiring-panel-flat-v2"
+SID = "stasser-1985-hidden"
 
 
 def test_list_and_get_scenarios() -> None:
@@ -53,5 +54,14 @@ def test_demo_scenario_filter() -> None:
 def test_run_unknown_scenario_404() -> None:
     resp = client.post("/api/runs", json={"scenarioId": "nope"})
     assert resp.status_code == 404
+
+
+def test_hidden_scenario_is_not_listed_but_remains_readable() -> None:
+    hidden_id = "incident-review-v1"
+    get_store().upsert_scenario(SAMPLES_BY_ID[hidden_id])
+    listed_ids = {scenario["id"] for scenario in client.get("/api/scenarios").json()}
+    assert hidden_id in HIDDEN_SAMPLE_IDS
+    assert hidden_id not in listed_ids
+    assert client.get(f"/api/scenarios/{hidden_id}").status_code == 200
     resp = client.post("/api/runs/batch", json={"config": {"scenarioId": "nope"}, "n": 2})
     assert resp.status_code == 404

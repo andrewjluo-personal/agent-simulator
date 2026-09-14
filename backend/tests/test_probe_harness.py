@@ -6,7 +6,7 @@ from pathlib import Path
 
 from app import orchestrator, prompts, truth
 from app.llm import FakeClient
-from app.models import RunConfig
+from app.models import AgentPersona, Candidate, Fact, RunConfig, Scenario
 from app.paradigms import get_paradigm
 from app.samples import HIRING_PANEL_FLAT, HIRING_PANEL_V1
 from app.store import MemoryStore
@@ -127,3 +127,140 @@ def test_balanced_order_assignment() -> None:
     assert assigned.count("fixed") == assigned.count("reversed") == 5
     assert probe_lib.order_for_sample("random", 0) == "random"
     assert probe_lib.order_for_sample("fixed", 7) == "fixed"
+
+
+def _helper_scenario(*, pooled_tie: bool = False, hidden_tie: bool = False) -> Scenario:
+    if pooled_tie and hidden_tie:
+        shared_a, shared_b, unique_a, unique_b = 2, 2, 1, 1
+    elif pooled_tie:
+        shared_a, shared_b, unique_a, unique_b = 3, 1, 1, 3
+    else:
+        shared_a, shared_b, unique_a, unique_b = 1, 1, 1, 3
+    agents = [
+        AgentPersona(id="one", name="One", role="reviewer", style="careful"),
+        AgentPersona(id="two", name="Two", role="reviewer", style="careful"),
+    ]
+    facts = [
+        Fact(id="shared-a", candidate_id="a", valence="pro", weight=shared_a, text="A"),
+        Fact(id="shared-b", candidate_id="b", valence="pro", weight=shared_b, text="B"),
+        Fact(id="unique-a", candidate_id="a", valence="pro", weight=unique_a, text="A"),
+        Fact(id="unique-b", candidate_id="b", valence="pro", weight=unique_b, text="B"),
+    ]
+    return Scenario(
+        id="helper",
+        title="Helper",
+        brief="Choose.",
+        candidates=[
+            Candidate(id="a", name="A", blurb=""),
+            Candidate(id="b", name="B", blurb=""),
+        ],
+        facts=facts,
+        agents=agents,
+        distribution={
+            "one": ["shared-a", "shared-b", "unique-a"],
+            "two": ["shared-a", "shared-b", "unique-b"],
+        },
+    )
+
+
+def test_rotate_candidates_preserves_id_and_rotates() -> None:
+    scenario = _helper_scenario()
+    rotated = probe_lib.rotate_candidates(scenario, 3)
+    assert scenario.id == rotated.id
+    assert [c.id for c in rotated.candidates] == ["b", "a"]
+
+
+def test_designed_correct_decided_and_hidden_tie_break() -> None:
+    assert probe_lib.designed_correct(HIRING_PANEL_FLAT) == "sally"
+    assert probe_lib.designed_correct(_helper_scenario(pooled_tie=True)) == "b"
+    assert probe_lib.designed_correct(_helper_scenario(pooled_tie=True, hidden_tie=True)) is None
+
+
+def test_samples_for_balances_rotations() -> None:
+    assert probe_lib.samples_for(2, 8) == 8
+    assert probe_lib.samples_for(3, 8) == 6
+    assert probe_lib.samples_for(4, 8) == 8
+    assert probe_lib.samples_for(3, 2) == 3
+
+
+def test_twin_null_is_symmetric_and_rotates_names() -> None:
+    candidates = [
+        Candidate(id="a", name="Candidate A", blurb="A blurb"),
+        Candidate(id="b", name="Candidate B", blurb="B blurb"),
+        Candidate(id="c", name="Candidate C", blurb="C blurb"),
+    ]
+    agents = [
+        AgentPersona(id="one", name="One", role="reviewer", style="careful"),
+        AgentPersona(id="two", name="Two", role="reviewer", style="careful"),
+    ]
+    scenario = Scenario(
+        id="three-way",
+        title="Three-way",
+        brief="Choose.",
+        candidates=candidates,
+        facts=[
+            Fact(
+                id="fact-a",
+                candidate_id="a",
+                valence="pro",
+                weight=2,
+                text="Candidate A (a) has a strong result.",
+                memo_text="Candidate A (a) result.",
+            ),
+            Fact(
+                id="fact-b",
+                candidate_id="b",
+                valence="pro",
+                weight=1,
+                text="Candidate B (b) has a strong result.",
+                memo_text="Candidate B (b) result.",
+            ),
+        ],
+        agents=agents,
+        distribution={"one": ["fact-a"], "two": ["fact-b"]},
+    )
+    twin = probe_lib.twin_null(scenario)
+    assert twin.id == "three-way-twin"
+    assert twin.title == "Three-way (twin null)"
+    assert twin.validation is None
+    assert len(twin.facts) == 3 * len(scenario.facts)
+    assert all(candidate.blurb == "" for candidate in twin.candidates)
+    assert twin.facts[0].text == "Candidate A (a) has a strong result."
+    assert twin.facts[1].text == "Candidate B (b) has a strong result."
+    assert twin.facts[2].text == "Candidate C (c) has a strong result."
+    assert twin.facts[0].memo_text == "Candidate A (a) result."
+    assert len(twin.distribution["one"]) == 3
+    pooled_scores = truth.scores(twin, truth.pooled_fact_ids(twin))
+    assert len(set(pooled_scores.values())) == 1
+    for held in twin.distribution.values():
+        scores = truth.scores(twin, held)
+        assert len(set(scores.values())) == 1
+
+
+def test_twin_null_rotates_candidate_name_prefix_aliases() -> None:
+    scenario = Scenario(
+        id="alias-three-way",
+        title="Alias three-way",
+        brief="Choose.",
+        candidates=[
+            Candidate(id="option-a", name="Option A: Foo", blurb=""),
+            Candidate(id="option-b", name="Option B: Bar", blurb=""),
+        ],
+        facts=[
+            Fact(
+                id="fact-a",
+                candidate_id="option-a",
+                valence="pro",
+                weight=1,
+                text="Option B's revenue is stable.",
+            )
+        ],
+        agents=[
+            AgentPersona(id="one", name="One", role="reviewer", style="careful"),
+        ],
+        distribution={"one": ["fact-a"]},
+    )
+    twin = probe_lib.twin_null(scenario)
+    assert twin.facts[0].text == "Option B's revenue is stable."
+    assert twin.facts[1].candidate_id == "option-b"
+    assert twin.facts[1].text == "Option A's revenue is stable."
