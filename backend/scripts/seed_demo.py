@@ -1,6 +1,7 @@
-"""Seed demo runs against the configured store. Idempotent per engine version:
-tops up each paradigm to --per-paradigm done runs stamped with the current
-ENGINE_VERSION, and unless --keep-stale removes demo runs from older versions.
+"""Seed demo runs against the configured store. Idempotent per scenario stamp:
+tops up each paradigm to --per-paradigm done runs stamped with the scenario's
+current scenario_engine_version, and unless --keep-stale removes demo runs
+whose scenario stamp no longer matches.
 
 Usage:
   .venv/bin/python scripts/seed_demo.py --per-paradigm 5 --provider fake \
@@ -19,10 +20,10 @@ from typing import cast
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app import llm, orchestrator
-from app.engine_version import ENGINE_VERSION
+from app.engine_version import scenario_engine_version
 from app.models import Paradigm, RunConfig
 from app.paradigms import PARADIGMS
-from app.samples import ensure_samples
+from app.samples import SAMPLE_SCENARIOS, ensure_samples
 from app.scenario import DEFAULT_SCENARIO_ID
 from app.store import MemoryStore, Store
 
@@ -56,14 +57,17 @@ async def main() -> None:
         client = llm.AnthropicClient()
     store = get_store()
     ensure_samples(store)
-    if store.get_scenario(args.scenario) is None:
+    scenario = store.get_scenario(args.scenario)
+    if scenario is None:
         sys.exit(f"unknown scenario {args.scenario!r}")
+    stamp = scenario_engine_version(scenario)
     if args.reset_demo:
         print(f"deleted {store.delete_demo_runs()} demo runs")
     elif not args.keep_stale:
+        current = {s.id: scenario_engine_version(s) for s in SAMPLE_SCENARIOS}
         print(
-            f"deleted {store.delete_stale_demo_runs(ENGINE_VERSION)} stale demo runs "
-            f"(engine != {ENGINE_VERSION})"
+            f"deleted {store.delete_stale_demo_runs(current)} stale demo runs "
+            "(unknown scenario or stamp mismatch)"
         )
 
     sem = asyncio.Semaphore(4)
@@ -92,7 +96,7 @@ async def main() -> None:
                 for s in store.list_runs(is_demo=True, scenario_id=args.scenario)
                 if s.config.paradigm == paradigm
                 and s.status == "done"
-                and s.engine_version == ENGINE_VERSION
+                and s.engine_version == stamp
             ]
         )
         create = max(0, args.per_paradigm - existing)

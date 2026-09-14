@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from . import db, llm, orchestrator, queues, truth, validation_jobs
 from .anthropic_auth import vercel_oidc_context
-from .engine_version import ENGINE_VERSION
+from .engine_version import ENGINE_VERSION, scenario_engine_version
 from .models import (
     BatchState,
     DemoSnapshot,
@@ -488,7 +488,7 @@ def get_demo(scenario_id: str | None = Query(default=None, alias="scenarioId")) 
     snapshot = DemoSnapshot(
         scenario=scenario,
         runs=runs,
-        engine_version=ENGINE_VERSION,
+        engine_version=scenario_engine_version(scenario),
         auto_run_on_load=AUTO_RUN_ON_LOAD,
     )
     return snapshot.model_dump(by_alias=True, mode="json")

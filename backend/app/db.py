@@ -15,7 +15,7 @@ from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 from psycopg_pool import ConnectionPool
 
-from .engine_version import ENGINE_VERSION
+from .engine_version import scenario_engine_version
 from .models import Metrics, RunState, RunStatus, RunSummary, Scenario, Turn, ValidationJob, Vote
 
 SCHEMA = """
@@ -291,9 +291,7 @@ class PgStore:
 
     def delete_scenario(self, scenario_id: str) -> bool:
         with connection() as conn:
-            cur = conn.execute(
-                "delete from scenarios where id = %s and is_sample", (scenario_id,)
-            )
+            cur = conn.execute("delete from scenarios where id = %s and is_sample", (scenario_id,))
         return (cur.rowcount or 0) > 0
 
     def upsert_validation_job(self, job: ValidationJob) -> None:
@@ -384,13 +382,14 @@ class PgStore:
             ).fetchone()
             if row is None:
                 return None
+            scenario = Scenario.model_validate(row["body"])
             rows = conn.execute(
                 "select * from runs where scenario_id = %s "
                 "and engine_version = %s and status = 'done' "
                 "order by created_at desc limit 40",
-                (scenario_id, ENGINE_VERSION),
+                (scenario_id, scenario_engine_version(scenario)),
             ).fetchall()
-        return Scenario.model_validate(row["body"]), [_summary_from_row(r) for r in rows]
+        return scenario, [_summary_from_row(r) for r in rows]
 
     def get_run_since(self, run_id: str, since_seq: int) -> RunState | None:
         with connection() as conn:
@@ -506,13 +505,26 @@ class PgStore:
             cur = conn.execute("delete from runs where is_demo")
             return cur.rowcount
 
-    def delete_stale_demo_runs(self, engine_version: str) -> int:
+    def delete_stale_demo_runs(self, current: dict[str, str]) -> int:
+        """Delete demo runs for unknown scenario_ids or with a mismatched stamp."""
+        deleted = 0
         with connection() as conn:
-            cur = conn.execute(
-                "delete from runs where is_demo and engine_version <> %s",
-                (engine_version,),
-            )
-            return cur.rowcount
+            for scenario_id, stamp in current.items():
+                cur = conn.execute(
+                    "delete from runs where is_demo and scenario_id = %s and engine_version <> %s",
+                    (scenario_id, stamp),
+                )
+                deleted += cur.rowcount
+            if current:
+                cur = conn.execute(
+                    "delete from runs where is_demo and scenario_id <> all(%s)",
+                    (list(current),),
+                )
+                deleted += cur.rowcount
+            else:
+                cur = conn.execute("delete from runs where is_demo")
+                deleted += cur.rowcount
+            return deleted
 
     def record_run_requests(self, client_key: str, n: int, window_s: int) -> int:
         with connection() as conn:
