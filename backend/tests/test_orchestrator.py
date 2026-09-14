@@ -189,6 +189,22 @@ def test_ballot_sees_transcript_and_own_lean() -> None:
     asyncio.run(go())
 
 
+def test_hidden_transcript_naive_run_completes() -> None:
+    async def go() -> None:
+        store, client, run = _run(
+            RunConfig(
+                rounds=2,
+                prompt_style="naive",
+                transcript_visibility="none",
+            )
+        )
+        final = await orchestrator.run_to_completion(store, client, run.id)
+        assert final.status == "done"
+        assert final.metrics is not None
+
+    asyncio.run(go())
+
+
 def test_memo_mode_run_yields_cited() -> None:
     async def go() -> None:
         store, client, run = _run(RunConfig(fact_style="memo", rounds=2))

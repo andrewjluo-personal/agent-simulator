@@ -1,0 +1,559 @@
+{
+ "id": "hiring-panel-null",
+ "title": "Hiring panel (null control: perceived margins \u2248 0 for shared, every hand, pooled)",
+ "brief": "The panel must recommend exactly one candidate for a senior backend role on a payments team. Each panelist attended different parts of the interview loop and holds different evidence.",
+ "isSample": false,
+ "candidates": [
+  {
+   "id": "john",
+   "name": "John",
+   "blurb": "Eight years of Go; currently a team lead at a payments company"
+  },
+  {
+   "id": "sally",
+   "name": "Sally",
+   "blurb": "Six years of Python and Java backend work on data platforms"
+  }
+ ],
+ "facts": [
+  {
+   "id": "J1",
+   "candidateId": "john",
+   "valence": "pro",
+   "weight": 1,
+   "text": "John answered every behavioural question in the panel round without pausing and kept each answer under two minutes.",
+   "memoText": "Answered all behavioural questions fluently and concisely.",
+   "keywords": [
+    "behavioural",
+    "fluent",
+    "two minutes"
+   ]
+  },
+  {
+   "id": "J2",
+   "candidateId": "john",
+   "valence": "pro",
+   "weight": 2,
+   "text": "John has eight years of professional Go, which is the team's primary backend language.",
+   "memoText": "Eight years of professional Go.",
+   "keywords": [
+    "eight years",
+    "Go",
+    "primary language"
+   ]
+  },
+  {
+   "id": "J3",
+   "candidateId": "john",
+   "valence": "pro",
+   "weight": 1,
+   "text": "John's CV lists him as team lead for six engineers at his current employer.",
+   "memoText": "Listed as team lead for six engineers.",
+   "keywords": [
+    "team lead",
+    "six engineers"
+   ]
+  },
+  {
+   "id": "J4",
+   "candidateId": "john",
+   "valence": "pro",
+   "weight": 1,
+   "text": "John's current employer is a payments company most of the panel has heard of.",
+   "memoText": "Current employer is a well-known payments company.",
+   "keywords": [
+    "payments company",
+    "employer",
+    "brand"
+   ]
+  },
+  {
+   "id": "J5",
+   "candidateId": "john",
+   "valence": "pro",
+   "weight": 1,
+   "text": "John submitted the take-home within a day; the code follows standard Go project layout.",
+   "memoText": "Take-home submitted within a day; standard Go layout.",
+   "keywords": [
+    "take-home",
+    "within a day",
+    "layout"
+   ]
+  },
+  {
+   "id": "J6",
+   "candidateId": "john",
+   "valence": "pro",
+   "weight": 1,
+   "text": "John used payments vocabulary (settlement, chargeback, reconciliation) correctly throughout the loop.",
+   "memoText": "Used payments domain vocabulary correctly.",
+   "keywords": [
+    "vocabulary",
+    "settlement",
+    "reconciliation"
+   ]
+  },
+  {
+   "id": "J7",
+   "candidateId": "john",
+   "valence": "pro",
+   "weight": 1,
+   "text": "John is available to start in two weeks.",
+   "memoText": "Available to start in two weeks.",
+   "keywords": [
+    "available",
+    "two weeks",
+    "start date"
+   ]
+  },
+  {
+   "id": "J9",
+   "candidateId": "john",
+   "valence": "con",
+   "weight": 1,
+   "text": "John's take-home README omits setup and run instructions.",
+   "memoText": "Take-home README omits setup instructions.",
+   "keywords": [
+    "README",
+    "setup instructions",
+    "take-home"
+   ]
+  },
+  {
+   "id": "J10",
+   "candidateId": "john",
+   "valence": "con",
+   "weight": 1,
+   "text": "In the closing round John asked about title and compensation and did not ask about the product.",
+   "memoText": "Closing questions were about title and compensation only.",
+   "keywords": [
+    "closing round",
+    "title",
+    "compensation"
+   ]
+  },
+  {
+   "id": "J11",
+   "candidateId": "john",
+   "valence": "con",
+   "weight": 1,
+   "text": "John's compensation ask is at the top of the posted band.",
+   "memoText": "Compensation ask at the top of the band.",
+   "keywords": [
+    "compensation",
+    "top of band",
+    "ask"
+   ]
+  },
+  {
+   "id": "S1",
+   "candidateId": "sally",
+   "valence": "pro",
+   "weight": 1,
+   "text": "Sally's written design sample is organised into numbered sections with a stated assumptions list.",
+   "memoText": "Design sample is organised with numbered sections and stated assumptions.",
+   "keywords": [
+    "design sample",
+    "numbered sections",
+    "assumptions"
+   ]
+  },
+  {
+   "id": "S2",
+   "candidateId": "sally",
+   "valence": "pro",
+   "weight": 1,
+   "text": "Sally has six years of backend work in Python and Java on data platforms.",
+   "memoText": "Six years of Python and Java backend work.",
+   "keywords": [
+    "six years",
+    "Python",
+    "Java"
+   ]
+  },
+  {
+   "id": "S3",
+   "candidateId": "sally",
+   "valence": "pro",
+   "weight": 1,
+   "text": "Sally maintains an open-source Postgres migration tool with a few hundred GitHub stars.",
+   "memoText": "Maintains an open-source Postgres migration tool.",
+   "keywords": [
+    "open-source",
+    "Postgres",
+    "migration tool"
+   ]
+  },
+  {
+   "id": "S4",
+   "candidateId": "sally",
+   "valence": "pro",
+   "weight": 1,
+   "text": "In the closing round Sally asked about the on-call rotation and the team's last three incidents.",
+   "memoText": "Closing questions were about on-call and recent incidents.",
+   "keywords": [
+    "closing round",
+    "on-call",
+    "incidents"
+   ]
+  },
+  {
+   "id": "S5",
+   "candidateId": "sally",
+   "valence": "con",
+   "weight": 2,
+   "text": "Sally has not written Go professionally; the team's services are in Go.",
+   "memoText": "No professional Go experience.",
+   "keywords": [
+    "no Go",
+    "Go experience",
+    "primary language"
+   ]
+  },
+  {
+   "id": "S6",
+   "candidateId": "sally",
+   "valence": "con",
+   "weight": 1,
+   "text": "Sally paused for several seconds before two panel answers and asked to restart one of them.",
+   "memoText": "Paused before two panel answers and restarted one.",
+   "keywords": [
+    "paused",
+    "restart",
+    "panel answers"
+   ]
+  },
+  {
+   "id": "S7",
+   "candidateId": "sally",
+   "valence": "con",
+   "weight": 1,
+   "text": "Sally's most recent role lasted 14 months.",
+   "memoText": "Most recent tenure was 14 months.",
+   "keywords": [
+    "14 months",
+    "tenure",
+    "recent role"
+   ]
+  },
+  {
+   "id": "S8",
+   "candidateId": "sally",
+   "valence": "con",
+   "weight": 1,
+   "text": "Sally has had no direct reports and no formal lead title.",
+   "memoText": "No direct reports or formal lead title.",
+   "keywords": [
+    "no direct reports",
+    "lead title",
+    "management"
+   ]
+  },
+  {
+   "id": "S10",
+   "candidateId": "sally",
+   "valence": "con",
+   "weight": 1,
+   "text": "Sally submitted her take-home twenty minutes after the deadline.",
+   "memoText": "Take-home submitted twenty minutes after the deadline.",
+   "keywords": [
+    "take-home",
+    "after the deadline",
+    "twenty minutes"
+   ]
+  },
+  {
+   "id": "S11",
+   "candidateId": "sally",
+   "valence": "con",
+   "weight": 1,
+   "text": "Sally's background is in logistics data platforms rather than payments.",
+   "memoText": "Background in logistics data platforms, not payments.",
+   "keywords": [
+    "logistics",
+    "background",
+    "payments"
+   ]
+  },
+  {
+   "id": "F1",
+   "candidateId": "sally",
+   "valence": "pro",
+   "weight": 1,
+   "text": "Sally has taken part in two cross-team incident reviews at her current company.",
+   "memoText": "Took part in two cross-team incident reviews.",
+   "keywords": [
+    "incident reviews",
+    "cross-team",
+    "took part"
+   ]
+  },
+  {
+   "id": "F2",
+   "candidateId": "sally",
+   "valence": "pro",
+   "weight": 1,
+   "text": "One other team at Sally's company has adopted her migration tool.",
+   "memoText": "One other team has adopted her migration tool.",
+   "keywords": [
+    "migration tool",
+    "one other team",
+    "adopted"
+   ]
+  },
+  {
+   "id": "F6",
+   "candidateId": "sally",
+   "valence": "pro",
+   "weight": 1,
+   "text": "Sally has contributed several pages to her team's on-call runbook.",
+   "memoText": "Has contributed pages to her team's on-call runbook.",
+   "keywords": [
+    "on-call",
+    "runbook",
+    "contributed"
+   ]
+  },
+  {
+   "id": "F7",
+   "candidateId": "sally",
+   "valence": "pro",
+   "weight": 1,
+   "text": "A former skip-level manager described Sally as dependable.",
+   "memoText": "Former skip-level describes her as dependable.",
+   "keywords": [
+    "skip-level",
+    "reference",
+    "dependable"
+   ]
+  },
+  {
+   "id": "G1",
+   "candidateId": "john",
+   "valence": "con",
+   "weight": 1,
+   "text": "Two of John's six reports left the team within the last year.",
+   "memoText": "Two of six reports left within the last year.",
+   "keywords": [
+    "reports left",
+    "attrition",
+    "last year"
+   ]
+  },
+  {
+   "id": "G4",
+   "candidateId": "john",
+   "valence": "con",
+   "weight": 1,
+   "text": "One of John's last two roles lasted under 18 months.",
+   "memoText": "One of his last two roles lasted under 18 months.",
+   "keywords": [
+    "18 months",
+    "tenure",
+    "one role"
+   ]
+  },
+  {
+   "id": "G5",
+   "candidateId": "john",
+   "valence": "con",
+   "weight": 1,
+   "text": "John started answering before the QA engineer had finished one question.",
+   "memoText": "Started answering before the QA engineer finished one question.",
+   "keywords": [
+    "started answering",
+    "QA engineer",
+    "question"
+   ]
+  },
+  {
+   "id": "F12",
+   "candidateId": "sally",
+   "valence": "pro",
+   "weight": 1,
+   "text": "A reference says Sally volunteered to own the least popular service on her team.",
+   "memoText": "Reference: she volunteered to own the least popular service on the team.",
+   "keywords": [
+    "volunteered",
+    "least popular service",
+    "reference"
+   ]
+  },
+  {
+   "id": "F13",
+   "candidateId": "sally",
+   "valence": "pro",
+   "weight": 1,
+   "text": "Sally has run her team's weekly incident review meeting for the past year.",
+   "memoText": "Has run her team's weekly incident review for the past year.",
+   "keywords": [
+    "incident review",
+    "weekly",
+    "past year"
+   ]
+  },
+  {
+   "id": "G7",
+   "candidateId": "john",
+   "valence": "con",
+   "weight": 1,
+   "text": "John's take-home has no tests.",
+   "memoText": "His take-home has no tests.",
+   "keywords": [
+    "take-home",
+    "no tests"
+   ]
+  },
+  {
+   "id": "G8",
+   "candidateId": "john",
+   "valence": "con",
+   "weight": 1,
+   "text": "John could not explain why he chose the concurrency model in his take-home.",
+   "memoText": "Could not explain why he chose the concurrency model in his take-home.",
+   "keywords": [
+    "concurrency model",
+    "could not explain",
+    "take-home"
+   ]
+  }
+ ],
+ "agents": [
+  {
+   "id": "dana",
+   "name": "Dana",
+   "role": "Hiring manager",
+   "style": "direct and decisive; wants to close the loop"
+  },
+  {
+   "id": "marcus",
+   "name": "Marcus",
+   "role": "Staff engineer",
+   "style": "precise, evidence-first, dislikes vibes"
+  },
+  {
+   "id": "priya",
+   "name": "Priya",
+   "role": "Recruiter",
+   "style": "warm, focused on references and team fit"
+  },
+  {
+   "id": "tom",
+   "name": "Tom",
+   "role": "QA lead",
+   "style": "skeptical, asks what could go wrong"
+  },
+  {
+   "id": "omar",
+   "name": "Omar",
+   "role": "Peer engineer",
+   "style": "collegial, detail-oriented"
+  }
+ ],
+ "distribution": {
+  "dana": [
+   "J2",
+   "J5",
+   "J9",
+   "J10",
+   "G8",
+   "S3",
+   "F2",
+   "S5",
+   "S6",
+   "S1",
+   "S2",
+   "S4",
+   "J11",
+   "J1",
+   "G1",
+   "F1",
+   "S7"
+  ],
+  "marcus": [
+   "J2",
+   "J5",
+   "J9",
+   "J10",
+   "G8",
+   "S3",
+   "F2",
+   "S5",
+   "S6",
+   "S1",
+   "S2",
+   "S4",
+   "J11",
+   "J3",
+   "G4",
+   "F6",
+   "S8"
+  ],
+  "priya": [
+   "J2",
+   "J5",
+   "J9",
+   "J10",
+   "G8",
+   "S3",
+   "F2",
+   "S5",
+   "S6",
+   "S1",
+   "S2",
+   "S4",
+   "J11",
+   "J4",
+   "G5",
+   "F7",
+   "S11"
+  ],
+  "tom": [
+   "J2",
+   "J5",
+   "J9",
+   "J10",
+   "G8",
+   "S3",
+   "F2",
+   "S5",
+   "S6",
+   "S1",
+   "S2",
+   "S4",
+   "J11",
+   "J6",
+   "G7",
+   "F13",
+   "S10"
+  ],
+  "omar": [
+   "J2",
+   "J5",
+   "J9",
+   "J10",
+   "G8",
+   "S3",
+   "F2",
+   "S5",
+   "S6",
+   "S1",
+   "S2",
+   "S4",
+   "J11",
+   "J7",
+   "F12"
+  ]
+ },
+ "decisionRule": "majority",
+ "validation": {},
+ "source": {
+  "kind": "sample",
+  "paper": null,
+  "doiOrUrl": null,
+  "fidelity": null,
+  "notes": null
+ },
+ "parentId": null,
+ "createdAt": null
+}

@@ -134,3 +134,129 @@ def test_vote_message_private_wording() -> None:
     assert "private recommendation; no other panelist will see it" in vm
     assert "Which candidate do you recommend?" in vm
     assert "Based on everything you hold" not in vm
+
+
+def test_default_cfg_matches_explicit_defaults() -> None:
+    implicit = RunConfig(seed=7, fact_style="memo")
+    explicit = RunConfig(
+        seed=7,
+        fact_style="memo",
+        prompt_style="default",
+        transcript_visibility="full",
+    )
+    for a, b in (
+        (
+            prompts.system_prompt(SCENARIO, implicit, DANA, HAND, PARADIGM),
+            prompts.system_prompt(SCENARIO, explicit, DANA, HAND, PARADIGM),
+        ),
+        (
+            prompts.turn_message(SCENARIO, implicit, 1, HEARD, PARADIGM, 3),
+            prompts.turn_message(SCENARIO, explicit, 1, HEARD, PARADIGM, 3),
+        ),
+        (
+            prompts.vote_message(SCENARIO, implicit, 0, HEARD, "dana", total=3, final=False),
+            prompts.vote_message(SCENARIO, explicit, 0, HEARD, "dana", total=3, final=False),
+        ),
+    ):
+        assert a == b
+    sp = prompts.system_prompt(SCENARIO, implicit, DANA, HAND, PARADIGM)
+    assert "RULES" in sp
+    assert "state evidence" in sp
+
+
+def test_naive_prompt_shape() -> None:
+    cfg = RunConfig(seed=7, prompt_style="naive")
+    sp = prompts.system_prompt(SCENARIO, cfg, DANA, HAND, PARADIGM)
+    assert "Here is some information available to you:" in sp
+    assert "RULES" not in sp
+    assert "Never invent evidence" not in sp
+    assert "items_referenced" not in sp
+    # memo notes are used even when fact_style is labelled
+    cfg_labelled = RunConfig(seed=7, prompt_style="naive", fact_style="labelled")
+    sp_labelled = prompts.system_prompt(SCENARIO, cfg_labelled, DANA, HAND, PARADIGM)
+    assert "Your notes on Sally:" in sp_labelled
+    assert "[S13]" not in sp_labelled
+
+
+def test_naive_variant_lines() -> None:
+    nr = RunConfig(seed=7, prompt_style="naive_no_repeat")
+    sp = prompts.system_prompt(SCENARIO, nr, DANA, HAND, PARADIGM)
+    assert (
+        "Do not repeat points another panelist has already made; add something new "
+        "or stay brief." in sp
+    )
+    nc = RunConfig(seed=7, prompt_style="naive_consensus")
+    sp = prompts.system_prompt(SCENARIO, nc, DANA, HAND, PARADIGM)
+    assert (
+        "The panel's goal is to reach a consensus recommendation that the whole "
+        "panel can sign." in sp
+    )
+
+
+def test_naive_visibility_sentence_only_when_not_full() -> None:
+    full = RunConfig(seed=7, prompt_style="naive", transcript_visibility="full")
+    sp = prompts.system_prompt(SCENARIO, full, DANA, HAND, PARADIGM)
+    assert "You will not see" not in sp
+    assert "most recent round" not in sp
+    none = RunConfig(seed=7, prompt_style="naive", transcript_visibility="none")
+    sp = prompts.system_prompt(SCENARIO, none, DANA, HAND, PARADIGM)
+    assert "You will not see what the other panelists say" in sp
+
+
+def _round_turns() -> list[Turn]:
+    turns = []
+    seq = 0
+    for r in range(3):
+        for agent in ("a1", "a2"):
+            turns.append(
+                Turn(
+                    seq=seq,
+                    round=r,
+                    agent_id=agent,
+                    sentences=[f"round {r} point from {agent}"],
+                    cited=[],
+                    hallucinated=[],
+                    lean="sally",
+                    confidence=0.5,
+                )
+            )
+            seq += 1
+    return turns
+
+
+def test_visible_turns_last_round() -> None:
+    turns = _round_turns()
+    cfg = RunConfig(transcript_visibility="last_round")
+    seen = prompts.visible_turns(cfg, turns, 2, ballot=False)
+    assert {t.round for t in seen} == {1, 2}
+    seen = prompts.visible_turns(cfg, turns, 1, ballot=True)
+    assert {t.round for t in seen} == {1}
+
+
+def test_visible_turns_none() -> None:
+    cfg = RunConfig(transcript_visibility="none")
+    assert prompts.visible_turns(cfg, _round_turns(), 2, ballot=False) == []
+    assert prompts.visible_turns(cfg, _round_turns(), 2, ballot=True) == []
+
+
+def test_vote_message_visibility_none() -> None:
+    cfg = RunConfig(transcript_visibility="none")
+    heard = [
+        Turn(
+            seq=0,
+            round=0,
+            agent_id="dana",
+            sentences=["I hold a decisive note."],
+            cited=["S12"],
+            hallucinated=[],
+            lean="sally",
+            confidence=0.6,
+        )
+    ]
+    vm = prompts.vote_message(SCENARIO, cfg, 0, heard, "dana", total=3, final=False)
+    assert "hidden in this run" in vm
+    assert "Nothing has been said yet" not in vm
+    assert "I hold a decisive note." in vm  # own statements still listed
+    tm = prompts.turn_message(SCENARIO, cfg, 0, heard, PARADIGM, 3)
+    assert "hidden in this run" in tm
+    assert "I hold a decisive note." not in tm

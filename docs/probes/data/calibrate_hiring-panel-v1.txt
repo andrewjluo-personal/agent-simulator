@@ -1,0 +1,43 @@
+shared S3    pro w=1 rated=3.60  Maintains an open-source Postgres migration tool.
+shared J2    pro w=2 rated=3.00  Eight years of professional Go.
+shared J3    pro w=1 rated=3.00  Listed as team lead for six engineers.
+shared J4    pro w=1 rated=3.00  Current employer is a well-known payments company.
+shared S2    pro w=1 rated=3.00  Six years of Python and Java backend work.
+shared J1    pro w=1 rated=2.00  Answered all behavioural questions fluently and concisely.
+shared J5    pro w=1 rated=2.00  Take-home submitted within a day; standard Go layout.
+shared J6    pro w=1 rated=2.00  Used payments domain vocabulary correctly.
+shared J7    pro w=1 rated=2.00  Available to start in two weeks.
+shared J8    pro w=1 rated=2.00  Holds an AWS Solutions Architect certification.
+shared J9    con w=1 rated=2.00  Take-home README omits setup instructions.
+shared J10   con w=1 rated=2.00  Closing questions were about title and compensation only.
+shared S1    pro w=1 rated=2.00  Design sample is organised with numbered sections and stated assumptions.
+shared S4    pro w=1 rated=2.00  Closing questions were about on-call and recent incidents.
+shared S5    con w=2 rated=2.00  No professional Go experience.
+shared S6    con w=2 rated=2.00  Paused before two panel answers and restarted one.
+shared S7    con w=1 rated=2.00  Most recent tenure was 14 months.
+shared S8    con w=1 rated=2.00  No direct reports or formal lead title.
+shared S10   con w=1 rated=2.00  Take-home submitted an hour before the deadline.
+shared S11   con w=1 rated=2.00  Background in logistics data platforms, not payments.
+shared J11   con w=1 rated=1.20  Compensation ask at the top of the band.
+shared S9    con w=1 rated=1.00  Asked to use an editor instead of the whiteboard.
+unique S12   pro w=2 rated=5.00  Named lead on a 2B-row ledger migration with no recorded downtime.
+unique J13   con w=2 rated=5.00  Take-home matches a public blog post, including variable names and a comment.
+unique J16   con w=1 rated=5.00  Said an outage on his service was not his; the post-mortem lists him as owner.
+unique S13   pro w=2 rated=4.20  Located a silent data-loss race condition in the debugging round in 18 minutes.
+unique S14   pro w=2 rated=4.00  Covered the double-spend case with idempotency keys unprompted.
+unique S15   pro w=2 rated=4.00  Four mentees promoted within two years; two now lead teams.
+unique S17   pro w=1 rated=4.00  Cut batch settlement infrastructure cost 40% and documented it.
+unique S18   pro w=1 rated=4.00  Former skip-level would hire her first for an under-specified problem.
+unique J12   con w=2 rated=4.00  Three of six reports left within a year; two named him in exit interviews.
+unique J14   con w=2 rated=4.00  Colleague describes him as one of twelve contributors on the migration he said he led.
+unique J15   con w=2 rated=4.00  Interrupted the QA engineer twice and did not return to the question.
+unique S16   pro w=1 rated=3.00  Wrote a post-mortem template adopted org-wide.
+unique J17   pro w=1 rated=3.00  Former manager reports he has met every delivery date.
+unique S20   con w=1 rated=2.60  Estimates three months to become productive in Go.
+unique J18   pro w=1 rated=2.00  Two conference talks on Go service architecture.
+unique J19   pro w=1 rated=2.00  Finished the live coding exercise early.
+unique S19   con w=1 rated=2.00  One take-home edge-case test fails; flagged as known in her notes.
+unique mean 3.64
+shared mean 2.17
+gap +1.46
+CALIBRATION: FAIL (|gap| < 0.3)

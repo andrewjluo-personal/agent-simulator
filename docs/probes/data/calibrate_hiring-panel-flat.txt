@@ -1,0 +1,41 @@
+shared S3    pro w=1 rated=3.80  Maintains an open-source Postgres migration tool.
+shared J3    pro w=1 rated=3.60  Listed as team lead for six engineers.
+shared J4    pro w=1 rated=3.00  Current employer is a well-known payments company.
+shared S2    pro w=1 rated=3.00  Six years of Python and Java backend work.
+shared J2    pro w=2 rated=2.80  Eight years of professional Go.
+shared S7    con w=1 rated=2.40  Most recent tenure was 14 months.
+shared J1    pro w=1 rated=2.00  Answered all behavioural questions fluently and concisely.
+shared J5    pro w=1 rated=2.00  Take-home submitted within a day; standard Go layout.
+shared J6    pro w=1 rated=2.00  Used payments domain vocabulary correctly.
+shared J7    pro w=1 rated=2.00  Available to start in two weeks.
+shared J9    con w=1 rated=2.00  Take-home README omits setup instructions.
+shared J10   con w=1 rated=2.00  Closing questions were about title and compensation only.
+shared S1    pro w=1 rated=2.00  Design sample is organised with numbered sections and stated assumptions.
+shared S4    pro w=1 rated=2.00  Closing questions were about on-call and recent incidents.
+shared S5    con w=2 rated=2.00  No professional Go experience.
+shared S6    con w=1 rated=2.00  Paused before two panel answers and restarted one.
+shared S8    con w=1 rated=2.00  No direct reports or formal lead title.
+shared S10   con w=1 rated=2.00  Take-home submitted an hour before the deadline.
+shared S11   con w=1 rated=2.00  Background in logistics data platforms, not payments.
+shared J11   con w=1 rated=1.20  Compensation ask at the top of the band.
+unique F2    pro w=1 rated=3.00  One other team has adopted her migration tool.
+unique F3    pro w=1 rated=3.00  Found the planted bug in the debugging round within the allotted time.
+unique J17   pro w=1 rated=3.00  Former manager reports he has met every delivery date.
+unique S20   con w=1 rated=2.80  Estimates three months to become productive in Go.
+unique G6    con w=1 rated=2.20  Former manager: strong individual contributor, still growing as a lead.
+unique F1    pro w=1 rated=2.00  Took part in two cross-team incident reviews.
+unique F4    pro w=1 rated=2.00  Design answer included a short section on logging and metrics.
+unique F5    pro w=1 rated=2.00  One mentee has since been promoted.
+unique F6    pro w=1 rated=2.00  Has contributed pages to her team's on-call runbook.
+unique F7    pro w=1 rated=2.00  Former skip-level describes her as dependable.
+unique F8    pro w=1 rated=2.00  Has a small Go side project with recent commits.
+unique G1    con w=1 rated=2.00  Two of six reports left within the last year.
+unique G2    con w=1 rated=2.00  The migration he described leading had eleven other contributors.
+unique G3    con w=1 rated=2.00  Answered a question about his on-call experience with team process.
+unique G4    con w=1 rated=2.00  One of his last two roles lasted under 18 months.
+unique G5    con w=1 rated=2.00  Started answering before the QA engineer finished one question.
+unique J18   pro w=1 rated=2.00  Two conference talks on Go service architecture.
+unique mean 2.24
+shared mean 2.29
+gap -0.05
+CALIBRATION: PASS (|gap| < 0.3)

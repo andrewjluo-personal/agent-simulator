@@ -16,7 +16,7 @@ const PARADIGMS: { id: Paradigm; label: string }[] = [
   { id: 'share_first', label: 'Share facts first' },
 ]
 
-const DEFAULT_SCENARIO_ID = 'hiring-panel-flat-v2'
+const DEFAULT_SCENARIO_ID = 'hiring-panel-v1'
 
 function defaultConfig(scenario: Scenario): RunConfig {
   return {

@@ -43,35 +43,77 @@ def _memo_lines(
     return "\n\n".join(blocks)
 
 
-def naive_system_prompt(
+def visibility_statement(cfg: RunConfig, paradigm: ParadigmSpec) -> str:
+    if cfg.transcript_visibility == "last_round":
+        return (
+            "Before each turn you will see only the most recent round of discussion; "
+            "each ballot shows only the round just finished."
+        )
+    if cfg.transcript_visibility == "none":
+        return (
+            "You will not see what the other panelists say; you only have your own "
+            "notes and your own statements."
+        )
+    return paradigm.visibility_statement()
+
+
+_NAIVE_EXTRA_LINE = {
+    "naive_no_repeat": (
+        "Do not repeat points another panelist has already made; add something new or stay brief."
+    ),
+    "naive_consensus": (
+        "The panel's goal is to reach a consensus recommendation that the whole panel can sign."
+    ),
+}
+
+
+def _naive_system_prompt(
     scenario: Scenario,
     cfg: RunConfig,
     agent: AgentPersona,
     hand_fact_ids: list[str],
+    paradigm: ParadigmSpec,
 ) -> str:
-    """HiddenBench-style minimal prompt: no asymmetry sentence, no evidence rules,
-    memo notes only, 'one or two sentences'. Used by the mechanism probes."""
+    """HiddenBench-style naive prompt: memo notes, no RULES, no labelled ids."""
     notes = _memo_lines(scenario, cfg, agent, hand_fact_ids)
     schema = (
-        f'{{"sentences": string[], "current_lean": "{_lean_options(scenario)}", '
-        f'"confidence": 0..1}}'
+        f'{{"sentences": string[], "current_lean": '
+        f'"{_lean_options(scenario)}", "confidence": 0..1}}'
     )
+    vis = "" if cfg.transcript_visibility == "full" else f"\n{visibility_statement(cfg, paradigm)}"
+    concise = "Keep your response concise, just one or two sentences."
+    extra = _NAIVE_EXTRA_LINE.get(cfg.prompt_style)
+    if extra:
+        concise = f"{concise}\n{extra}"
     return f"""You are {agent.name}, {agent.role} on the panel. Style: {agent.style}.
 The panel has {len(scenario.agents)} interviewers and must recommend exactly one candidate:
 {_candidate_lines(scenario)}
 
 {scenario.brief}
-The panel will discuss and then each of you will give a private recommendation.
+The panel will discuss and then each of you will give a private recommendation.{vis}
 
 Here is some information available to you:
 {notes}
 
-Keep your response concise, just one or two sentences.
+{concise}
 
 Run nonce: {cfg.seed}
 
 Respond with JSON only:
 {schema}"""
+
+
+def visible_turns(
+    cfg: RunConfig, heard_turns: list[Turn], round_idx: int, *, ballot: bool
+) -> list[Turn]:
+    """The slice of the transcript the agent may see under cfg.transcript_visibility."""
+    if cfg.transcript_visibility == "none":
+        return []
+    if cfg.transcript_visibility == "last_round":
+        if ballot:
+            return [t for t in heard_turns if t.round == round_idx]
+        return [t for t in heard_turns if t.round >= round_idx - 1]
+    return heard_turns
 
 
 def system_prompt(
@@ -81,8 +123,8 @@ def system_prompt(
     hand_fact_ids: list[str],
     paradigm: ParadigmSpec,
 ) -> str:
-    if cfg.prompt_style == "naive":
-        return naive_system_prompt(scenario, cfg, agent, hand_fact_ids)
+    if cfg.prompt_style != "default":
+        return _naive_system_prompt(scenario, cfg, agent, hand_fact_ids, paradigm)
     extra = paradigm.system_rules(cfg)
     extra_block = f"\n{extra}" if extra else ""
     labelled = cfg.fact_style == "labelled"
@@ -113,7 +155,7 @@ The panel has {len(scenario.agents)} interviewers and must recommend exactly one
 {scenario.brief}{consensus_line}
 You each attended different parts of the interview loop and took your own notes. The
 panel will discuss and then each of you will give a private recommendation.
-{paradigm.visibility_statement()}
+{visibility_statement(cfg, paradigm)}
 
 YOUR NOTES:
 {notes}
@@ -135,6 +177,8 @@ def _agent_name(scenario: Scenario, agent_id: str) -> str:
 
 
 def transcript_block(scenario: Scenario, heard_turns: list[Turn], cfg: RunConfig) -> str:
+    if cfg.transcript_visibility == "none":
+        return "TRANSCRIPT: hidden in this run (you see only your own notes and statements)."
     if heard_turns:
         if cfg.fact_style == "labelled":
             transcript = "\n".join(
@@ -173,9 +217,10 @@ def turn_message(
 ) -> str:
     instruction = paradigm.round_instruction(round_idx, cfg)
     instruction_block = f"\n{instruction}" if instruction else ""
+    heard = visible_turns(cfg, heard_turns, round_idx, ballot=False)
     return f"""Round {round_idx + 1} of {total}. You speak now.
 
-{transcript_block(scenario, heard_turns, cfg)}{instruction_block}
+{transcript_block(scenario, heard, cfg)}{instruction_block}
 
 Your turn. JSON only."""
 
@@ -197,9 +242,10 @@ def vote_message(
     )
     last_lean = own[-1].lean if own else UNDECIDED
     lean_name = next((c.name for c in scenario.candidates if c.id == last_lean), last_lean)
+    heard = visible_turns(cfg, heard_turns, round_idx, ballot=True)
     return f"""Round {round_idx + 1} of {total} is over. This is a private recommendation; no other panelist will see it. Consider your own notes and what you heard.
 
-{transcript_block(scenario, heard_turns, cfg)}
+{transcript_block(scenario, heard, cfg)}
 
 YOUR OWN STATEMENTS SO FAR:
 {own_lines}
