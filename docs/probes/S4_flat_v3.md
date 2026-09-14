@@ -2,20 +2,21 @@
 
 Model `claude-haiku-4-5`, memo fact style, single-agent ballots via `scripts/gate_pool.py`
 (v3) and `scripts/gate_null.py` (v3 twin null), seeds 0–7, one sample per seed (n = 8 per
-cell). Raw outputs: `docs/probes/data/s4/`. Total spend ≈ $0.85 across 9 runs (8 kept).
+cell). Raw outputs: `docs/probes/data/s4/`. Total spend ≈ $0.85 across 9 runs (8 kept) + $0.09 (§6) + $0.41 (§7).
 
 Verdict: **FAILS THE NULL GATE.** The gate order is (1) twin null within 35–65% Sally for
 alone AND pooled under both orders, then (2) alone→John / pooled→Sally. The v3 twin null's
 pooled cell reads 75–88% Sally (naive) with John listed first, so v3's pooled→Sally 8/8 is
 uninterpretable and the naive alone/pooled "pass" in §3 cannot be claimed. §6 locates the
-lean. No further item tweaks were made (priya tweak declined).
+lean. No further item tweaks were made (priya tweak declined). §7 re-runs the null on the
+four-panelist / `balanced` baseline merged from S3 (#27, #30): it still fails.
 
 ## 1. Design
 
 Rules from the brief: symmetric brief/blurbs (S3's `HIRING_PANEL_NULL` ones, verbatim);
 shared set has the SAME type×sign histogram for John and Sally (John leads only by
 strength/weight); every unique is Sally-positive and of a type in which John already holds
-shared pros. 35 items, 28 shared + 7 unique, 5 agents, same personas as flat-v2.
+shared pros. 35 items, 28 shared + 7 unique; 5 agents originally, 4 after the S3 merge (§7).
 
 Shared histogram (identical for both candidates): credential 2 pro / 1 con, behavioural
 3/1, rigour 2/1, teamwork 1/1, communication 1/1. Truth scores: shared John 7 / Sally 1;
@@ -161,6 +162,47 @@ candidates — plus position.
   cell 75–88% Sally under balanced order.
 - Not changed: frontend default scenario, `Scenario.source`, `backend/app/scenarios/papers/`,
   prod seeding.
+
+## 7. Post-S3 re-run: four panelists, `candidate_order=balanced` (≈ $0.41)
+
+Merged `origin/main` (S3's `balanced` order; Omar retired, four panelists). v3 keeps its 35
+items; Omar's uniques moved to marcus (VU5) and tom (VU7), so hands are dana {VU1,VU6},
+marcus {VU2,VU5}, priya {VU3}, tom {VU4,VU7}; truth still shared→John, every hand→John,
+pooled→Sally, null hands undecided. Gate step (1), S3's exact `gate_null` convention
+(10 samples × 2 seeds, 5 John-first / 5 Sally-first per seed), `data/s4/null_v3_4p`:
+
+| cell | naive Sally (Wilson) | by order (fixed / reversed) | default Sally | by order |
+|---|---|---|---|---|
+| pooled | **0.85** [0.64,0.95] | S8 J2 / S9 J1 | **0.70** [0.48,0.85] | S4 J6 / S10 |
+| dana | 0.50 | J9 S1 / S9 J1 | 0.50 | J10 / S10 |
+| marcus | 0.50 | J9 S1 / S9 J1 | 0.50 | J10 / S10 |
+| priya | **0.80** [0.58,0.92] | S7 J3 / S9 J1 | **0.80** [0.58,0.92] | S6 J4 / S10 |
+| tom | 0.65 | J5 S5 / S8 J2 | 0.60 | J8 S2 / S10 |
+
+→ **FAIL** on both prompts (pooled and priya). Compare S3's `hiring-panel-null` under the
+same convention: pooled 0.65 (fixed J7 S3 / reversed S10), priya 0.55. Sally-first is
+≈100% Sally in both nulls; the difference is John-first, where v2's twin bank reads ~70%
+John and v3's reads ~50/50 (pooled) or Sally-leaning (priya, whose persona is "warm,
+focused on references and team fit").
+
+Drop-set ablations on the v3 null, naive prompt, balanced order, n = 10 per cell
+(`scripts/probe/s4_null_ablate.py`, `data/s4/s4_null_*.json`):
+
+| condition | items | pooled Sally (fixed / reversed) | priya Sally (fixed / reversed) |
+|---|---|---|---|
+| baseline | 70 | 7/10 (S2 J2 U1 / S5) | 7/10 (S2 J3 / S5) |
+| − VU3 twins (priya's unique) | 68 | 7/10 (S2 J3 / S5) | 7/10 (S2 J3 / S5) |
+| − all unique twins | 56 | 8/10 (S4 U1 / S4 J1) | 8/10 (S3 J2 / S5) |
+| − behavioural twins | 48 | 9/10 (S4 J1 / S5) | 8/10 (S3 J2 / S5) |
+| − rigour twins | 52 | 7/10 (S2 J3 / S5) | 7/10 (S2 J3 / S5) |
+| − all con twins | 50 | 8/10 (S3 J2 / S5) | 6/10 (S1 J4 / S5) |
+
+Shared-only (− all unique twins) agent cells: dana 6/10, marcus 5/10, priya 9/10, tom 4/10.
+No item type or the uniques carry the lean; every condition keeps Sally-first ≈ 5/5 Sally
+and John-first ≈ even, so the v3 twin bank has a residual content-independent Sally lean of
+roughly +20 pp over v2's bank at n = 10 (CIs ≈ ±0.3, so individual rows are not
+distinguishable; the pattern is across 6 conditions × 2 cells). Step (2) (alone→John /
+pooled→Sally) was therefore not run on this baseline.
 
 ## 6. Where the pooled-null lean comes from (≈ $0.09)
 
