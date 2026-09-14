@@ -88,8 +88,62 @@ Discriminating test not yet run: P5/last_round (does one round of memory suffice
 P4/naive_no_repeat (does suppressing restatement change the outcome?). Sample sizes for P5/P6/P8
 are 5; CIs are wide.
 
+## Addendum — flat pool invalid; P5 rerun on `hiring-panel-flat-v2` + null control
+
+**The P9 flat PASS above was a false pass.** `calibrate_items.py` compares unique-vs-shared rating
+*magnitude* and discards *direction*. S1's signed `scripts/perceived_profile.py` shows Haiku reads
+the pooled `hiring-panel-flat` as John, so "group Sally vs spoken-tally John" on that pool is not
+evidence pooling and the novelty-premium reading in the sections above is **withdrawn** for that
+pool. Everything above this line is kept as a record of the runs; use signed perceived-profile
+calibration, not the magnitude gap, as the validity gate.
+
+Rerun (naive prompt, Haiku 4.5, 5 agents / 3 rounds, 8 runs per cell, seeds 0–7, ~$1.1) on the
+merged `hiring-panel-flat-v2` and on `hiring-panel-null` — a 31-item subset of flat-v2
+(`backend/scripts/probe/pools/hiring-panel-null.json`) chosen so the perceived-profile pooled
+tally is ≈0 (neutral rating: John +0.8 / Sally +0.8, undecided; `docs/probes/data/perceived/`).
+Data: `s2v2_P5.jsonl`, `s2v2_P5null.jsonl`; table `summary_v2_P5.md`.
+
+| cell | n | Sally | Wilson 95% CI | uniques cited | % final≠spoken | echo r1/r2/r3 | pre-vote Sally (of 40) | pooled right |
+|---|---|---|---|---|---|---|---|---|
+| flat-v2 / full | 8 | 1.00 | [0.68, 1.00] | 0.53 | 0.00 | 0.03 / 0.26 / 0.55 | 21 | 10/10 |
+| flat-v2 / last_round | 8 | 1.00 | [0.68, 1.00] | 0.55 | 0.00 | 0.05 / 0.21 / 0.39 | 9 | — |
+| flat-v2 / none | 8 | 1.00 | [0.68, 1.00] | 0.65 | 0.00 | 0.03 / 0.06 / 0.08 | 19 | — |
+| null / full | 8 | 1.00 | [0.68, 1.00] | 0.41 | 0.00 | 0.04 / 0.32 / 0.56 | 36 | 10/10 |
+| null / last_round | 8 | 1.00 | [0.68, 1.00] | 0.35 | 0.00 | 0.03 / 0.23 / 0.43 | 35 | — |
+| null / none | 8 | 1.00 | [0.68, 1.00] | 0.52 | 0.00 | 0.02 / 0.07 / 0.08 | 36 | — |
+
+Spoken-evidence tally was Sally in all 48 runs (no disagreement), so transcript visibility cannot be
+tested for a flip here: there is nothing to flip against.
+
+**Finding A — the null control is not null.** With item-level perceived margins ≈0 the panel still
+votes Sally: alone (round-0 ballot) 107/120, pooled reviewer 10/10, final 24/24, regardless of
+whether agents can hear each other. Four agents (marcus, omar, priya, tom) are Sally 24/24 alone;
+dana 11/24. A candidate-level Sally prior therefore exists that no single item carries. It must live
+in what item-level calibration never sees: the brief / candidate blurbs / names, or a holistic
+weighting of item *types* (Sally's items are behavioural stories, John's are credentials), or the
+persona lines. **Until null reads ≈50/50, flat-v2 results are not interpretable as pooling.**
+
+**Finding B — S1's flat-v2 alone gate (John 10/10 × 5) is a seed-0 artifact.** `gate_pool.py`
+builds `RunConfig(seed=0)` and the in-run round-0 ballot uses the same `system_prompt` +
+`alone_vote_message`; the only differences are the seed (which sets the per-agent memo shuffle in
+`_memo_lines` and the `Run nonce:` line of the naive prompt) and `max_tokens` (200 vs 600).
+Round-0 Sally votes on flat-v2 by seed: **seed 0 → 1/15**, seed 1 → 3/15, seeds 2–7 → 5–9/15
+(mean 0.41 over all seeds). Per agent over 24 ballots: omar 1, dana 6, marcus 10, priya 15, tom 17.
+So flat-v2 passes the alone gate only under the one memo ordering the gate script happens to
+sample; averaged over orderings it is roughly a coin flip, i.e. flat-v2 is *also* not a clean
+hidden profile for Haiku. Fix: gate over several seeds (`--seed` sweep) and report the range.
+
+**Leak discriminators — written, not run.** `backend/scripts/probe/leak_null.py` runs, on the null
+pool with the naive prompt: (1) blurb-only ballot with empty hands, (2) items re-attributed to the
+other candidate with names/blurbs unchanged (`mirror_scenario`), (3) items + blurbs swapped, (4)
+each agent alone on (2). Expected reads: (1) Sally → prior is in the brief/blurbs/names; (2) still
+"Sally" → attribution wording dominates; (2) flips to John with (3) still John → item-type/content
+prior; (2) John but (3) Sally → name/gender prior. Not executed: the session's Anthropic calls began
+returning 401 for every key mid-session (infra issue reported); ~$0.30 at 10 samples/condition.
+
 ## Not run / caveats
 - Cells marked *not run* above; excerpts file was skipped for time.
+- Leak discriminators (`leak_null.py`) not run — see addendum.
 - No OpenAI/other key in env → no non-Anthropic model.
 - `redistribute(flat, 9, seed=0)` gives one fixed deal for the n9 cell; other deals untested.
 - Costs are estimated from recorded run tokens; baseline calls (~$0.10) are not itemised.

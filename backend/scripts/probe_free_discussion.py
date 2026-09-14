@@ -69,6 +69,9 @@ def mirror_scenario(base: Scenario) -> Scenario:
 
 
 def load_probe_scenario(scenario_id: str) -> Scenario:
+    path = Path(scenario_id)
+    if path.suffix == ".json" and path.exists():
+        return Scenario.model_validate(json.loads(path.read_text()))
     if scenario_id.endswith("-mirror"):
         base_id = scenario_id[: -len("-mirror")]
         base = SAMPLES_BY_ID.get(base_id)

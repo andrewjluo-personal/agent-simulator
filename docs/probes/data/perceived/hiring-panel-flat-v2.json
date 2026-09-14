@@ -1,0 +1,1143 @@
+{
+ "scenario": "hiring-panel-flat-v2",
+ "items": [
+  {
+   "id": "J1",
+   "candidate": "john",
+   "kind": "shared",
+   "designed": 1,
+   "calibrate_signed": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "calibrate_mean": 0.0,
+   "neutral_scores": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "neutral_mean": 1.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": true,
+   "weak_neutral": false,
+   "text": "Answered all behavioural questions fluently and concisely."
+  },
+  {
+   "id": "J2",
+   "candidate": "john",
+   "kind": "shared",
+   "designed": 2,
+   "calibrate_signed": [
+    4,
+    4,
+    4,
+    4,
+    4
+   ],
+   "calibrate_mean": 4.0,
+   "neutral_scores": [
+    2,
+    2,
+    2,
+    2,
+    2
+   ],
+   "neutral_mean": 2.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": false,
+   "text": "Eight years of professional Go."
+  },
+  {
+   "id": "J3",
+   "candidate": "john",
+   "kind": "shared",
+   "designed": 1,
+   "calibrate_signed": [
+    3,
+    3,
+    4,
+    4,
+    4
+   ],
+   "calibrate_mean": 3.6,
+   "neutral_scores": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "neutral_mean": 1.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": false,
+   "text": "Listed as team lead for six engineers."
+  },
+  {
+   "id": "J4",
+   "candidate": "john",
+   "kind": "shared",
+   "designed": 1,
+   "calibrate_signed": [
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "calibrate_mean": 3.0,
+   "neutral_scores": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "neutral_mean": 1.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": false,
+   "text": "Current employer is a well-known payments company."
+  },
+  {
+   "id": "J5",
+   "candidate": "john",
+   "kind": "shared",
+   "designed": 1,
+   "calibrate_signed": [
+    2,
+    2,
+    2,
+    2,
+    2
+   ],
+   "calibrate_mean": 2.0,
+   "neutral_scores": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "neutral_mean": 1.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": false,
+   "text": "Take-home submitted within a day; standard Go layout."
+  },
+  {
+   "id": "J6",
+   "candidate": "john",
+   "kind": "shared",
+   "designed": 1,
+   "calibrate_signed": [
+    2,
+    3,
+    2,
+    2,
+    3
+   ],
+   "calibrate_mean": 2.4,
+   "neutral_scores": [
+    1,
+    1,
+    2,
+    1,
+    2
+   ],
+   "neutral_mean": 1.4,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": false,
+   "text": "Used payments domain vocabulary correctly."
+  },
+  {
+   "id": "J7",
+   "candidate": "john",
+   "kind": "shared",
+   "designed": 1,
+   "calibrate_signed": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "calibrate_mean": 0.0,
+   "neutral_scores": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "neutral_mean": 1.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": true,
+   "weak_neutral": false,
+   "text": "Available to start in two weeks."
+  },
+  {
+   "id": "J9",
+   "candidate": "john",
+   "kind": "shared",
+   "designed": -1,
+   "calibrate_signed": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "calibrate_mean": 0.0,
+   "neutral_scores": [
+    -1,
+    -1,
+    -1,
+    -1,
+    -1
+   ],
+   "neutral_mean": -1.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": true,
+   "weak_neutral": false,
+   "text": "Take-home README omits setup instructions."
+  },
+  {
+   "id": "J10",
+   "candidate": "john",
+   "kind": "shared",
+   "designed": -1,
+   "calibrate_signed": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "calibrate_mean": 0.0,
+   "neutral_scores": [
+    -1,
+    -1,
+    -1,
+    -1,
+    -1
+   ],
+   "neutral_mean": -1.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": true,
+   "weak_neutral": false,
+   "text": "Closing questions were about title and compensation only."
+  },
+  {
+   "id": "J11",
+   "candidate": "john",
+   "kind": "shared",
+   "designed": -1,
+   "calibrate_signed": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "calibrate_mean": 0.0,
+   "neutral_scores": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "neutral_mean": 0.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": true,
+   "weak_neutral": true,
+   "text": "Compensation ask at the top of the band."
+  },
+  {
+   "id": "S1",
+   "candidate": "sally",
+   "kind": "shared",
+   "designed": 1,
+   "calibrate_signed": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "calibrate_mean": 0.0,
+   "neutral_scores": [
+    0
+   ],
+   "neutral_mean": 0.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": true,
+   "weak_neutral": true,
+   "text": "Design sample is organised with numbered sections and stated assumptions."
+  },
+  {
+   "id": "S2",
+   "candidate": "sally",
+   "kind": "shared",
+   "designed": 1,
+   "calibrate_signed": [
+    2,
+    2,
+    2,
+    2,
+    2
+   ],
+   "calibrate_mean": 2.0,
+   "neutral_scores": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "neutral_mean": 0.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": true,
+   "text": "Six years of Python and Java backend work."
+  },
+  {
+   "id": "S3",
+   "candidate": "sally",
+   "kind": "shared",
+   "designed": 1,
+   "calibrate_signed": [
+    2,
+    2,
+    2,
+    2,
+    2
+   ],
+   "calibrate_mean": 2.0,
+   "neutral_scores": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "neutral_mean": 1.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": false,
+   "text": "Maintains an open-source Postgres migration tool."
+  },
+  {
+   "id": "S4",
+   "candidate": "sally",
+   "kind": "shared",
+   "designed": 1,
+   "calibrate_signed": [
+    -2,
+    -2,
+    -2,
+    -2,
+    0
+   ],
+   "calibrate_mean": -1.6,
+   "neutral_scores": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "neutral_mean": 0.0,
+   "disagree_calibrate": true,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": true,
+   "text": "Closing questions were about on-call and recent incidents."
+  },
+  {
+   "id": "S5",
+   "candidate": "sally",
+   "kind": "shared",
+   "designed": -2,
+   "calibrate_signed": [
+    -4,
+    -4,
+    -4,
+    -4,
+    -4
+   ],
+   "calibrate_mean": -4.0,
+   "neutral_scores": [
+    -1,
+    -1,
+    -1,
+    -1,
+    -1
+   ],
+   "neutral_mean": -1.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": false,
+   "text": "No professional Go experience."
+  },
+  {
+   "id": "S6",
+   "candidate": "sally",
+   "kind": "shared",
+   "designed": -1,
+   "calibrate_signed": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "calibrate_mean": 0.0,
+   "neutral_scores": [
+    -1,
+    -1,
+    -1,
+    -1,
+    -1
+   ],
+   "neutral_mean": -1.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": true,
+   "weak_neutral": false,
+   "text": "Paused before two panel answers and restarted one."
+  },
+  {
+   "id": "S7",
+   "candidate": "sally",
+   "kind": "shared",
+   "designed": -1,
+   "calibrate_signed": [
+    -2,
+    -3,
+    -2,
+    -3,
+    -2
+   ],
+   "calibrate_mean": -2.4,
+   "neutral_scores": [
+    -1,
+    -1,
+    -1,
+    -1,
+    -1
+   ],
+   "neutral_mean": -1.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": false,
+   "text": "Most recent tenure was 14 months."
+  },
+  {
+   "id": "S8",
+   "candidate": "sally",
+   "kind": "shared",
+   "designed": -1,
+   "calibrate_signed": [
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "calibrate_mean": 3.0,
+   "neutral_scores": [
+    -1,
+    -1,
+    -1,
+    -1,
+    -1
+   ],
+   "neutral_mean": -1.0,
+   "disagree_calibrate": true,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": false,
+   "text": "No direct reports or formal lead title."
+  },
+  {
+   "id": "S10",
+   "candidate": "sally",
+   "kind": "shared",
+   "designed": -1,
+   "calibrate_signed": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "calibrate_mean": 0.0,
+   "neutral_scores": [
+    -1,
+    -2,
+    -1,
+    -1,
+    -1
+   ],
+   "neutral_mean": -1.2,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": true,
+   "weak_neutral": false,
+   "text": "Take-home submitted twenty minutes after the deadline."
+  },
+  {
+   "id": "S11",
+   "candidate": "sally",
+   "kind": "shared",
+   "designed": -1,
+   "calibrate_signed": [
+    -3,
+    -3,
+    -3,
+    -3,
+    -3
+   ],
+   "calibrate_mean": -3.0,
+   "neutral_scores": [
+    -1,
+    -1,
+    -1,
+    -1,
+    -1
+   ],
+   "neutral_mean": -1.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": false,
+   "text": "Background in logistics data platforms, not payments."
+  },
+  {
+   "id": "F1",
+   "candidate": "sally",
+   "kind": "unique",
+   "designed": 1,
+   "calibrate_signed": [
+    -2,
+    -3,
+    -3,
+    -3,
+    -2
+   ],
+   "calibrate_mean": -2.6,
+   "neutral_scores": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "neutral_mean": 1.0,
+   "disagree_calibrate": true,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": false,
+   "text": "Took part in two cross-team incident reviews."
+  },
+  {
+   "id": "F2",
+   "candidate": "sally",
+   "kind": "unique",
+   "designed": 1,
+   "calibrate_signed": [
+    2,
+    2,
+    2,
+    2,
+    2
+   ],
+   "calibrate_mean": 2.0,
+   "neutral_scores": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "neutral_mean": 1.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": false,
+   "text": "One other team has adopted her migration tool."
+  },
+  {
+   "id": "F3",
+   "candidate": "sally",
+   "kind": "unique",
+   "designed": 1,
+   "calibrate_signed": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "calibrate_mean": 0.0,
+   "neutral_scores": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "neutral_mean": 1.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": true,
+   "weak_neutral": false,
+   "text": "Found the planted bug in the debugging round within the allotted time."
+  },
+  {
+   "id": "F5",
+   "candidate": "sally",
+   "kind": "unique",
+   "designed": 1,
+   "calibrate_signed": [
+    -2,
+    -2,
+    -2,
+    -2,
+    -2
+   ],
+   "calibrate_mean": -2.0,
+   "neutral_scores": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "neutral_mean": 1.0,
+   "disagree_calibrate": true,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": false,
+   "text": "One mentee has since been promoted."
+  },
+  {
+   "id": "F6",
+   "candidate": "sally",
+   "kind": "unique",
+   "designed": 1,
+   "calibrate_signed": [
+    2,
+    2,
+    2,
+    2,
+    2
+   ],
+   "calibrate_mean": 2.0,
+   "neutral_scores": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "neutral_mean": 1.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": false,
+   "text": "Has contributed pages to her team's on-call runbook."
+  },
+  {
+   "id": "F7",
+   "candidate": "sally",
+   "kind": "unique",
+   "designed": 1,
+   "calibrate_signed": [
+    2,
+    2,
+    2,
+    2,
+    2
+   ],
+   "calibrate_mean": 2.0,
+   "neutral_scores": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "neutral_mean": 1.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": false,
+   "text": "Former skip-level describes her as dependable."
+  },
+  {
+   "id": "F8",
+   "candidate": "sally",
+   "kind": "unique",
+   "designed": 1,
+   "calibrate_signed": [
+    -2,
+    -2,
+    -2,
+    -2,
+    -2
+   ],
+   "calibrate_mean": -2.0,
+   "neutral_scores": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "neutral_mean": 1.0,
+   "disagree_calibrate": true,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": false,
+   "text": "Has a small Go side project with recent commits."
+  },
+  {
+   "id": "G1",
+   "candidate": "john",
+   "kind": "unique",
+   "designed": -1,
+   "calibrate_signed": [
+    0,
+    2,
+    3,
+    0,
+    3
+   ],
+   "calibrate_mean": 1.6,
+   "neutral_scores": [
+    -1,
+    -1,
+    -1,
+    -1,
+    -1
+   ],
+   "neutral_mean": -1.0,
+   "disagree_calibrate": true,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": false,
+   "text": "Two of six reports left within the last year."
+  },
+  {
+   "id": "G4",
+   "candidate": "john",
+   "kind": "unique",
+   "designed": -1,
+   "calibrate_signed": [
+    0,
+    0,
+    0,
+    -2,
+    0
+   ],
+   "calibrate_mean": -0.4,
+   "neutral_scores": [
+    -1,
+    -1,
+    -1,
+    -1,
+    -1
+   ],
+   "neutral_mean": -1.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": true,
+   "weak_neutral": false,
+   "text": "One of his last two roles lasted under 18 months."
+  },
+  {
+   "id": "G5",
+   "candidate": "john",
+   "kind": "unique",
+   "designed": -1,
+   "calibrate_signed": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "calibrate_mean": 0.0,
+   "neutral_scores": [
+    -1,
+    -1,
+    -1,
+    -1,
+    -1
+   ],
+   "neutral_mean": -1.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": true,
+   "weak_neutral": false,
+   "text": "Started answering before the QA engineer finished one question."
+  },
+  {
+   "id": "F9",
+   "candidate": "sally",
+   "kind": "unique",
+   "designed": 1,
+   "calibrate_signed": [
+    4,
+    4,
+    4,
+    4,
+    4
+   ],
+   "calibrate_mean": 4.0,
+   "neutral_scores": [
+    2,
+    2,
+    2,
+    1,
+    2
+   ],
+   "neutral_mean": 1.8,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": false,
+   "text": "Her take-home included a load-test script and results for the hot path."
+  },
+  {
+   "id": "F10",
+   "candidate": "sally",
+   "kind": "unique",
+   "designed": 1,
+   "calibrate_signed": [
+    4,
+    4,
+    4,
+    4,
+    4
+   ],
+   "calibrate_mean": 4.0,
+   "neutral_scores": [
+    2,
+    2,
+    1,
+    1
+   ],
+   "neutral_mean": 1.5,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": false,
+   "text": "Rolled back a bad deploy within ten minutes using a runbook she wrote."
+  },
+  {
+   "id": "F11",
+   "candidate": "sally",
+   "kind": "unique",
+   "designed": 1,
+   "calibrate_signed": [
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "calibrate_mean": 3.0,
+   "neutral_scores": [
+    2,
+    2,
+    2,
+    2,
+    2
+   ],
+   "neutral_mean": 2.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": false,
+   "text": "Her design sample called out the idempotency of retries explicitly."
+  },
+  {
+   "id": "F12",
+   "candidate": "sally",
+   "kind": "unique",
+   "designed": 1,
+   "calibrate_signed": [
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "calibrate_mean": 3.0,
+   "neutral_scores": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "neutral_mean": 1.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": false,
+   "text": "Reference: she volunteered to own the least popular service on the team."
+  },
+  {
+   "id": "F13",
+   "candidate": "sally",
+   "kind": "unique",
+   "designed": 1,
+   "calibrate_signed": [
+    2,
+    2,
+    3,
+    2,
+    2
+   ],
+   "calibrate_mean": 2.2,
+   "neutral_scores": [
+    1,
+    1,
+    1
+   ],
+   "neutral_mean": 1.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": false,
+   "text": "Has run her team's weekly incident review for the past year."
+  },
+  {
+   "id": "F14",
+   "candidate": "sally",
+   "kind": "unique",
+   "designed": 1,
+   "calibrate_signed": [
+    2,
+    2,
+    2,
+    2,
+    2
+   ],
+   "calibrate_mean": 2.0,
+   "neutral_scores": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "neutral_mean": 1.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": false,
+   "text": "Wrote the onboarding guide new hires on her team still use."
+  },
+  {
+   "id": "F15",
+   "candidate": "sally",
+   "kind": "unique",
+   "designed": 1,
+   "calibrate_signed": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "calibrate_mean": 0.0,
+   "neutral_scores": [
+    1,
+    1,
+    2,
+    1,
+    1
+   ],
+   "neutral_mean": 1.2,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": true,
+   "weak_neutral": false,
+   "text": "Added a regression test before fixing the bug in the debugging round."
+  },
+  {
+   "id": "G7",
+   "candidate": "john",
+   "kind": "unique",
+   "designed": -1,
+   "calibrate_signed": [
+    -4,
+    -4,
+    -4,
+    -4,
+    -4
+   ],
+   "calibrate_mean": -4.0,
+   "neutral_scores": [
+    -2,
+    -2,
+    -2,
+    -2,
+    -2
+   ],
+   "neutral_mean": -2.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": false,
+   "text": "His take-home has no tests."
+  },
+  {
+   "id": "G8",
+   "candidate": "john",
+   "kind": "unique",
+   "designed": -1,
+   "calibrate_signed": [
+    -3,
+    -3,
+    -3,
+    -3,
+    -3
+   ],
+   "calibrate_mean": -3.0,
+   "neutral_scores": [
+    -1,
+    -1,
+    -1,
+    -1,
+    -1
+   ],
+   "neutral_mean": -1.0,
+   "disagree_calibrate": false,
+   "disagree_neutral": false,
+   "weak_calibrate": false,
+   "weak_neutral": false,
+   "text": "Could not explain why he chose the concurrency model in his take-home."
+  }
+ ],
+ "tallies": {
+  "designed": {
+   "shared": {
+    "john": 5.0,
+    "sally": -3.0
+   },
+   "hand:dana": {
+    "john": 4.0,
+    "sally": 0.0
+   },
+   "hand:marcus": {
+    "john": 4.0,
+    "sally": 0.0
+   },
+   "hand:priya": {
+    "john": 4.0,
+    "sally": 0.0
+   },
+   "hand:tom": {
+    "john": 4.0,
+    "sally": 0.0
+   },
+   "hand:omar": {
+    "john": 4.0,
+    "sally": -1.0
+   },
+   "pooled": {
+    "john": 0.0,
+    "sally": 11.0
+   }
+  },
+  "calibrate": {
+   "shared": {
+    "john": 15.0,
+    "sally": -4.0
+   },
+   "hand:dana": {
+    "john": 16.6,
+    "sally": -4.6
+   },
+   "hand:marcus": {
+    "john": 14.6,
+    "sally": 4.0
+   },
+   "hand:priya": {
+    "john": 15.0,
+    "sally": 1.0
+   },
+   "hand:tom": {
+    "john": 11.0,
+    "sally": -0.8
+   },
+   "hand:omar": {
+    "john": 12.0,
+    "sally": -2.0
+   },
+   "pooled": {
+    "john": 9.2,
+    "sally": 13.6
+   }
+  },
+  "neutral": {
+   "shared": {
+    "john": 6.4,
+    "sally": -5.2
+   },
+   "hand:dana": {
+    "john": 5.4,
+    "sally": -1.4
+   },
+   "hand:marcus": {
+    "john": 5.4,
+    "sally": -1.7
+   },
+   "hand:priya": {
+    "john": 5.4,
+    "sally": -1.2
+   },
+   "hand:tom": {
+    "john": 4.4,
+    "sally": -2.2
+   },
+   "hand:omar": {
+    "john": 5.4,
+    "sally": -3.0
+   },
+   "pooled": {
+    "john": 0.4,
+    "sally": 11.3
+   }
+  }
+ }
+}
