@@ -6,7 +6,7 @@ from pathlib import Path
 
 from app import orchestrator, prompts, truth
 from app.llm import FakeClient
-from app.models import RunConfig
+from app.models import AgentPersona, Candidate, Fact, RunConfig, Scenario
 from app.paradigms import get_paradigm
 from app.samples import HIRING_PANEL_FLAT, HIRING_PANEL_V1
 from app.store import MemoryStore
@@ -127,3 +127,57 @@ def test_balanced_order_assignment() -> None:
     assert assigned.count("fixed") == assigned.count("reversed") == 5
     assert probe_lib.order_for_sample("random", 0) == "random"
     assert probe_lib.order_for_sample("fixed", 7) == "fixed"
+
+
+def _helper_scenario(*, pooled_tie: bool = False, hidden_tie: bool = False) -> Scenario:
+    if pooled_tie and hidden_tie:
+        shared_a, shared_b, unique_a, unique_b = 2, 2, 1, 1
+    elif pooled_tie:
+        shared_a, shared_b, unique_a, unique_b = 3, 1, 1, 3
+    else:
+        shared_a, shared_b, unique_a, unique_b = 1, 1, 1, 3
+    agents = [
+        AgentPersona(id="one", name="One", role="reviewer", style="careful"),
+        AgentPersona(id="two", name="Two", role="reviewer", style="careful"),
+    ]
+    facts = [
+        Fact(id="shared-a", candidate_id="a", valence="pro", weight=shared_a, text="A"),
+        Fact(id="shared-b", candidate_id="b", valence="pro", weight=shared_b, text="B"),
+        Fact(id="unique-a", candidate_id="a", valence="pro", weight=unique_a, text="A"),
+        Fact(id="unique-b", candidate_id="b", valence="pro", weight=unique_b, text="B"),
+    ]
+    return Scenario(
+        id="helper",
+        title="Helper",
+        brief="Choose.",
+        candidates=[
+            Candidate(id="a", name="A", blurb=""),
+            Candidate(id="b", name="B", blurb=""),
+        ],
+        facts=facts,
+        agents=agents,
+        distribution={
+            "one": ["shared-a", "shared-b", "unique-a"],
+            "two": ["shared-a", "shared-b", "unique-b"],
+        },
+    )
+
+
+def test_rotate_candidates_preserves_id_and_rotates() -> None:
+    scenario = _helper_scenario()
+    rotated = probe_lib.rotate_candidates(scenario, 3)
+    assert scenario.id == rotated.id
+    assert [c.id for c in rotated.candidates] == ["b", "a"]
+
+
+def test_designed_correct_decided_and_hidden_tie_break() -> None:
+    assert probe_lib.designed_correct(HIRING_PANEL_FLAT) == "sally"
+    assert probe_lib.designed_correct(_helper_scenario(pooled_tie=True)) == "b"
+    assert probe_lib.designed_correct(_helper_scenario(pooled_tie=True, hidden_tie=True)) is None
+
+
+def test_samples_for_balances_rotations() -> None:
+    assert probe_lib.samples_for(2, 8) == 8
+    assert probe_lib.samples_for(3, 8) == 6
+    assert probe_lib.samples_for(4, 8) == 8
+    assert probe_lib.samples_for(3, 2) == 3

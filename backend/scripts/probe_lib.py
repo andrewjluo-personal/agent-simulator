@@ -112,6 +112,39 @@ def mirror_scenario(scenario: Scenario, suffix: str = "-mirror") -> Scenario:
     return scenario.model_copy(update={"id": scenario.id + suffix, "facts": facts})
 
 
+def rotate_candidates(scenario: Scenario, k: int) -> Scenario:
+    """Return a copy with candidates rotated by k positions."""
+    cands = scenario.candidates
+    offset = k % len(cands)
+    return scenario.model_copy(update={"candidates": cands[offset:] + cands[:offset]})
+
+
+def designed_correct(scenario: Scenario) -> str | None:
+    """Return the pooled winner, or the unique winner of the hidden items."""
+    pooled = truth.pooled_verdict(scenario)
+    if pooled != truth.UNDECIDED:
+        return pooled
+    pooled_scores = truth.scores(scenario, truth.pooled_fact_ids(scenario))
+    shared_scores = truth.scores(scenario, truth.shared_fact_ids(scenario))
+    hidden_scores = {
+        candidate_id: pooled_scores[candidate_id] - shared_scores[candidate_id]
+        for candidate_id in pooled_scores
+    }
+    best = max(hidden_scores.values())
+    winners = [candidate_id for candidate_id, score in hidden_scores.items() if score == best]
+    return winners[0] if len(winners) == 1 else None
+
+
+def samples_for(k_candidates: int, requested: int) -> int:
+    """Use a multiple of candidate count without dropping below one rotation."""
+    if k_candidates <= 0:
+        raise ValueError("k_candidates must be positive")
+    if requested <= 0:
+        raise ValueError("requested must be positive")
+    adjusted = requested - requested % k_candidates
+    return max(adjusted, k_candidates)
+
+
 def load_scenario_arg(arg: str) -> Scenario:
     """`<sample id>`, `<sample id>:mirror`, or a path to a Scenario JSON file."""
     from app.samples import SAMPLES_BY_ID
