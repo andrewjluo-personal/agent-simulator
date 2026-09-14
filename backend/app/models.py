@@ -18,7 +18,8 @@ Paradigm = Literal["free_discussion", "share_first"]
 TurnOrder = Literal["clockwise", "random"]
 TieBreak = Literal["none", "runoff", "chair"]
 FactStyle = Literal["memo", "labelled"]
-PromptStyle = Literal["default", "naive"]
+PromptStyle = Literal["default", "naive", "naive_no_repeat", "naive_consensus"]
+TranscriptVisibility = Literal["full", "last_round", "none"]
 DecisionRule = Literal["majority", "consensus"]
 RunStatus = Literal["queued", "running", "done", "error"]
 LlmProvider = Literal["anthropic", "fake"]
@@ -111,14 +112,15 @@ class Scenario(Model):
 class RunConfig(Model):
     scenario_id: str = "hiring-panel-v1"
     paradigm: Paradigm = "free_discussion"
-    rounds: int = Field(default=3, ge=1, le=10)
+    rounds: int = Field(default=3, ge=1, le=15)
     sentences_per_turn: int = Field(default=2, ge=1, le=5)
     turn_order: TurnOrder = "clockwise"
     tie_break: TieBreak = "runoff"
     fact_style: FactStyle = "memo"
+    prompt_style: PromptStyle = "default"
+    transcript_visibility: TranscriptVisibility = "full"
     model: str = "claude-haiku-4-5"
     seed: int = 0
-    prompt_style: PromptStyle = "default"
 
 
 class AgentLean(Model):
