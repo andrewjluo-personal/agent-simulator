@@ -1,6 +1,6 @@
 import { useMemo, type ReactNode } from 'react'
 import { useHighlight } from '../hooks/useHighlight'
-import { candidateName, decisiveFactIds, factsById, holders, sharedFactIds } from '../truth'
+import { decisiveFactIds, factsById, holders, sharedFactIds } from '../truth'
 import type { RunState, Turn } from '../types'
 import { FactChip } from './FactChip'
 
@@ -55,11 +55,6 @@ export function FlowTimeline({ run, turns }: Props) {
   const firstDecisive = surfacedDecisive
     .map((id) => ({ id, ...firstSeen.get(id)! }))
     .sort((a, b) => a.seq - b.seq)[0]
-
-  const agreement = run.metrics?.agreementByRound ?? []
-  const accuracy = run.metrics?.accuracyByRound ?? []
-  const voteRounds = run.metrics?.voteRounds?.length ? run.metrics.voteRounds : Array.from({ length: rounds }, (_, r) => r)
-  const showChart = finished && agreement.length > 0
 
   const enterFact = (factId: string, agentId: string) => hl.set({ factId, agentId })
 
@@ -173,13 +168,6 @@ export function FlowTimeline({ run, turns }: Props) {
           ))}
         </div>
       )}
-
-      <ConvergenceChart
-        agreement={showChart ? agreement : []}
-        accuracy={showChart ? accuracy : []}
-        voteRounds={voteRounds}
-        correctName={run.metrics ? candidateName(scenario, run.metrics.correctCandidateId) : 'the correct candidate'}
-      />
     </div>
   )
 }
@@ -206,70 +194,5 @@ function TimelineRow({
       </div>
       {children}
     </>
-  )
-}
-
-const CW = 360
-const CH = 120
-const PAD = { l: 34, r: 12, t: 10, b: 24 }
-
-function ConvergenceChart({
-  agreement,
-  accuracy,
-  voteRounds,
-  correctName,
-}: {
-  agreement: number[]
-  accuracy: number[]
-  voteRounds: number[]
-  correctName: string
-}) {
-  const n = Math.max(voteRounds.length, 1)
-  const x = (i: number) => PAD.l + (n === 1 ? (CW - PAD.l - PAD.r) / 2 : (i * (CW - PAD.l - PAD.r)) / (n - 1))
-  const y = (v: number) => PAD.t + (1 - v) * (CH - PAD.t - PAD.b)
-  const path = (vals: number[]) => vals.map((v, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ')
-  const empty = agreement.length === 0
-  return (
-    <div className="convergence">
-      <div className="convergence-head">
-        <h4>Convergence vs correctness</h4>
-        <span className="legend">
-          <i className="sw agree" /> agreement — share of the panel voting with the round's plurality
-          <i className="sw acc" /> accuracy — share voting for {correctName}
-        </span>
-      </div>
-      <svg width={CW} height={CH} className="convergence-svg">
-        {[0, 0.5, 1].map((v) => (
-          <g key={v}>
-            <line x1={PAD.l} x2={CW - PAD.r} y1={y(v)} y2={y(v)} className="grid" />
-            <text x={PAD.l - 6} y={y(v) + 3} textAnchor="end" className="tick">
-              {Math.round(v * 100)}%
-            </text>
-          </g>
-        ))}
-        {voteRounds.map((r, i) => (
-          <text key={i} x={x(i)} y={CH - 8} textAnchor="middle" className="tick">
-            {r < 0 ? 'before discussion' : `R${r + 1}`}
-          </text>
-        ))}
-        {!empty && (
-          <>
-            <path d={path(agreement)} className="line agree" />
-            <path d={path(accuracy)} className="line acc" />
-            {agreement.map((v, i) => (
-              <circle key={`a${i}`} cx={x(i)} cy={y(v)} r={3} className="dot agree" />
-            ))}
-            {accuracy.map((v, i) => (
-              <circle key={`c${i}`} cx={x(i)} cy={y(v)} r={3} className="dot acc" />
-            ))}
-          </>
-        )}
-        {empty && (
-          <text x={CW / 2} y={CH / 2} textAnchor="middle" className="tick">
-            available when the run finishes
-          </text>
-        )}
-      </svg>
-    </div>
   )
 }
