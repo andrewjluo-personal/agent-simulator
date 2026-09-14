@@ -1,11 +1,16 @@
-"""Free-discussion ablation probe: sweep prompt_style x transcript_visibility cells
-of the real orchestrator and record per-run JSONL.
+"""Free-discussion probe: N seeded runs of one scenario, one JSONL row per run plus a
+transcript dump, with optional planted round-1 turns (P1) and randomised order (P2).
 
 Usage:
-  .venv/bin/python scripts/probe_free_discussion.py \
-      --scenario hiring-panel-flat --cell fd-naive-hidden \
-      --prompt-style naive --transcript-visibility none \
-      --runs 20 --out probes.jsonl
+  .venv/bin/python scripts/probe_free_discussion.py --scenario hiring-panel-flat-v2
+      --prompt naive --runs 8 --seed-start 0 --dump-dir scripts/probe/out/p1/control
+      [--plant FILE.json] [--order clockwise|random] [--rounds 3] [--concurrency 4]
+
+  # P1 presets (plant text + dump dir chosen for you):
+  .venv/bin/python scripts/probe_free_discussion.py --cell a|b|c|cprime|d [--runs 8]
+
+Plant file: {"round": 1, "speaker": "<agent_id>", "text": "..."} (round is 1-based).
+Summarise a directory of cells with scripts/summarize_probe.py.
 """
 
 from __future__ import annotations
@@ -13,306 +18,230 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
-import os
-import re
 import sys
 from pathlib import Path
 from typing import Any
 
-os.environ.setdefault("LOG_LEVEL", "WARNING")
-
-_BACKEND = str(Path(__file__).parent.parent)
-sys.path.insert(0, _BACKEND)
+sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent))
 
-from validate_scenario import CountingClient
+from gate_pool import CountingClient
+from probe_lib import cost_usd, echo_by_round, load_scenario_arg, spoken_verdict, wilson
 
-from app import orchestrator, prompts, scenario_gen, truth, validate
-from app.llm import AnthropicClient, LLMClient, LLMRequest
-from app.models import RunConfig, Scenario, Vote
-from app.paradigms import get_paradigm
-from app.probe_stats import echo_by_round
-from app.samples import SAMPLES_BY_ID
+from app import orchestrator, truth
+from app.llm import AnthropicClient
+from app.models import PromptStyle, RunConfig, RunState, Scenario, TurnOrder
+from app.orchestrator import Plant
 from app.store import MemoryStore
-from app.validator import REVIEWER
 
-MIRROR_SWAP = {
-    "John": "Sally",
-    "Sally": "John",
-    "John's": "Sally's",
-    "Sally's": "John's",
-    "his": "her",
-    "her": "his",
-    "he": "she",
-    "she": "he",
-    "him": "her",
-    "He": "She",
-    "She": "He",
+MODEL = "claude-haiku-4-5"
+
+# P1 cells on hiring-panel-flat-v2. Speaker "dana" is moved to the front of round 1.
+# (a)/(b) are length-matched evaluative frames on SHARED items only; (c)/(c') are
+# length-matched flat statements of one unique item held by dana (F1 Sally, G1 John).
+P1_CELLS: dict[str, dict[str, Any]] = {
+    "a": {
+        "desc": "pro-John framing of shared items",
+        "plant": (
+            "Honestly the notes make this easy: John has eight years of Go, leads a team of six "
+            "and knows the payments domain, while Sally has no Go, paused and restarted answers, "
+            "and submitted late. John is clearly the stronger candidate here."
+        ),
+    },
+    "b": {
+        "desc": "pro-Sally framing of shared items",
+        "plant": (
+            "Honestly the notes make this easy: Sally asked about on-call and incidents, thinks "
+            "before answering and maintains a Postgres tool, while John only asked about title "
+            "and pay and omitted setup docs. Sally is clearly the stronger candidate here."
+        ),
+    },
+    "c": {
+        "desc": "one Sally unique (F1), flat",
+        "plant": None,  # filled from the fact's memo text at runtime
+        "fact": "F1",
+    },
+    "cprime": {
+        "desc": "one John unique (G1), flat",
+        "plant": None,
+        "fact": "G1",
+    },
+    "d": {"desc": "control (no plant)", "plant": None},
 }
-_MIRROR_PAT = re.compile(r"\b(" + "|".join(re.escape(k) for k in MIRROR_SWAP) + r")\b")
+P1_SCENARIO = "hiring-panel-flat-v2"
+P1_SPEAKER = "dana"
 
 
-def mirror_scenario(base: Scenario) -> Scenario:
-    """John<->Sally name/pronoun swap (copied from scripts/probe/mirror_pool.py)."""
-
-    def swap(text: str) -> str:
-        return _MIRROR_PAT.sub(lambda m: MIRROR_SWAP[m.group(1)], text)
-
-    mirror = base.model_copy(deep=True)
-    mirror.id = f"{base.id}-mirror"
-    for f in mirror.facts:
-        f.candidate_id = "sally" if f.candidate_id == "john" else "john"
-        f.text = swap(f.text)
-        if f.memo_text:
-            f.memo_text = swap(f.memo_text)
-    return mirror
+def load_plants(path: str | None) -> tuple[Plant, ...]:
+    if not path:
+        return ()
+    data = json.loads(Path(path).read_text())
+    items = data if isinstance(data, list) else [data]
+    return tuple(
+        Plant(round_idx=int(p["round"]) - 1, speaker=p["speaker"], text=p["text"]) for p in items
+    )
 
 
-def load_probe_scenario(scenario_id: str) -> Scenario:
-    path = Path(scenario_id)
-    if path.suffix == ".json" and path.exists():
-        return Scenario.model_validate(json.loads(path.read_text()))
-    if scenario_id.endswith("-mirror"):
-        base_id = scenario_id[: -len("-mirror")]
-        base = SAMPLES_BY_ID.get(base_id)
-        if base is None:
-            raise SystemExit(f"unknown scenario {base_id!r} for mirroring")
-        return mirror_scenario(base)
-    scenario = SAMPLES_BY_ID.get(scenario_id)
-    if scenario is None:
-        raise SystemExit(f"unknown scenario {scenario_id!r}")
-    return scenario
+def cell_plants(scenario: Scenario, cell: str) -> tuple[Plant, ...]:
+    spec = P1_CELLS[cell]
+    text = spec["plant"]
+    if spec.get("fact"):
+        f = scenario.fact(spec["fact"])
+        cand = next(c for c in scenario.candidates if c.id == f.candidate_id)
+        text = f"One thing from my notes on {cand.name}: {f.memo_text or f.text}"
+    if text is None:
+        return ()
+    return (Plant(round_idx=0, speaker=P1_SPEAKER, text=text),)
 
 
-def _votes_dict(votes: list[Vote], round_idx: int) -> dict[str, str]:
-    return {v.agent_id: v.choice for v in votes if v.round == round_idx}
+def run_row(final: RunState, scenario: Scenario, plants: tuple[Plant, ...]) -> dict[str, Any]:
+    pre = {v.agent_id: v.choice for v in final.votes if v.round == -1}
+    rounds = sorted({v.round for v in final.votes if v.round >= 0})
+    votes_by_round = {
+        str(r): {v.agent_id: v.choice for v in final.votes if v.round == r} for r in rounds
+    }
+    uniques = truth.unique_fact_ids(scenario)
+    decisive = truth.decisive_fact_ids(scenario)
+    cited_all = {f for t in final.turns for f in t.cited}
+    uniques_by_round = {
+        str(r): sorted({f for t in final.turns if t.round == r for f in t.cited} & uniques)
+        for r in range(final.config.rounds)
+    }
+    r1 = [t for t in final.turns if t.round == 0]
+    first = r1[0].agent_id if r1 else None
+    planted_ids = {p.speaker for p in plants if p.round_idx == 0}
+    first_free = next((t.agent_id for t in r1 if t.agent_id not in planted_ids), None)
+    m = final.metrics
+    tin = sum(t.input_tokens or 0 for t in final.turns)
+    tout = sum(t.output_tokens or 0 for t in final.turns)
+    return {
+        "run_id": final.id,
+        "seed": final.config.seed,
+        "scenario": scenario.id,
+        "prompt_style": final.config.prompt_style,
+        "turn_order": final.config.turn_order,
+        "planted": [p.__dict__ for p in plants],
+        "correct_candidate": truth.pooled_verdict(scenario),
+        "pre_votes": pre,
+        "votes_by_round": votes_by_round,
+        "uniques_cited_by_round": uniques_by_round,
+        "uniques_cited": sorted(cited_all & uniques),
+        "decisive_cited": sorted(cited_all & decisive),
+        "spoken_verdict": spoken_verdict(scenario, cited_all),
+        "final_majority": m.majority_candidate_id if m else truth.UNDECIDED,
+        "final_tally": m.final_tally if m else {},
+        "first_speaker": {"agent_id": first, "pre_vote": pre.get(first or "")},
+        "first_free_speaker": {"agent_id": first_free, "pre_vote": pre.get(first_free or "")},
+        "echo_by_round": echo_by_round(
+            [{"round": t.round, "text": " ".join(t.sentences)} for t in final.turns]
+        ),
+        "input_tokens": tin,
+        "output_tokens": tout,
+        "cost_usd": cost_usd(tin, tout),
+    }
 
 
-async def one_run(
-    client: LLMClient,
+def write_transcript(path: Path, final: RunState) -> None:
+    lines = []
+    for v in final.votes:
+        if v.round == -1:
+            lines.append(f"pre-vote {v.agent_id}: {v.choice}")
+    for t in final.turns:
+        lines.append(f"R{t.round + 1} {t.agent_id}: {' '.join(t.sentences)}  [{','.join(t.cited)}]")
+    for v in final.votes:
+        if v.round >= 0:
+            lines.append(f"vote r{v.round + 1} {v.agent_id}: {v.choice} -- {v.reason or ''}")
+    path.write_text("\n".join(lines) + "\n")
+
+
+async def one(
+    client: CountingClient,
     scenario: Scenario,
-    args: argparse.Namespace,
     seed: int,
+    prompt: PromptStyle,
+    order: TurnOrder,
+    rounds: int,
+    plants: tuple[Plant, ...],
     sem: asyncio.Semaphore,
-    done: list[bool],
-    out: Path,
-) -> dict[str, Any]:
+) -> RunState:
     store = MemoryStore()
     store.upsert_scenario(scenario)
-    cfg = RunConfig(
-        scenario_id=scenario.id,
-        paradigm="free_discussion",
-        rounds=args.rounds,
-        seed=seed,
-        model=args.model,
-        prompt_style=args.prompt_style,
-        transcript_visibility=args.transcript_visibility,
+    run = orchestrator.new_run(
+        store,
+        RunConfig(
+            scenario_id=scenario.id,
+            paradigm="free_discussion",
+            seed=seed,
+            fact_style="memo",
+            rounds=rounds,
+            turn_order=order,
+            prompt_style=prompt,
+            model=MODEL,
+        ),
+        provider="anthropic",
     )
-    run = orchestrator.new_run(store, cfg, provider=client.provider)
     store.create_run(run)
     async with sem:
-        final = await orchestrator.run_to_completion(store, client, run.id)
-    m = final.metrics
-    shared = truth.shared_fact_ids(scenario)
-    cited = {c for t in final.turns for c in t.cited}
-    uniques_cited = sorted(cited - shared)
-    spoken = truth.verdict(scenario, shared | cited)
-    vote_rounds = sorted({v.round for v in final.votes if v.round >= 0})
-    record: dict[str, Any] = {
-        "kind": "run",
-        "cell": args.cell,
-        "scenario_id": scenario.id,
-        "n_agents": len(scenario.agents),
-        "rounds": cfg.rounds,
-        "model": cfg.model,
-        "prompt_style": cfg.prompt_style,
-        "transcript_visibility": cfg.transcript_visibility,
-        "seed": seed,
-        "pre_votes": _votes_dict(final.votes, -1),
-        "votes_by_round": [_votes_dict(final.votes, r) for r in vote_rounds],
-        "final_tally": m.final_tally if m else {},
-        "final_majority": m.majority_candidate_id if m else "undecided",
-        "correct_candidate": m.correct_candidate_id if m else "undecided",
-        "correct": bool(m and m.correct),
-        "spoken_verdict": spoken,
-        "final_differs_from_spoken": (m.majority_candidate_id if m else "undecided") != spoken,
-        "uniques_cited": uniques_cited,
-        "n_uniques_cited": len(uniques_cited),
-        "n_uniques_total": len(truth.unique_fact_ids(scenario)),
-        "decisive_surfaced_count": m.decisive_surfaced_count if m else 0,
-        "decisive_total": m.decisive_total if m else 0,
-        "echo_by_round": echo_by_round(final.turns, cfg.rounds),
-        "tokens": {
-            "input": m.tokens_total.input if m else 0,
-            "output": m.tokens_total.output if m else 0,
-        },
-        "turns": [
-            {
-                "round": t.round,
-                "agent_id": t.agent_id,
-                "sentences": t.sentences,
-                "cited": t.cited,
-                "lean": t.lean,
-            }
-            for t in final.turns
-        ],
-        "votes": [
-            {
-                "round": v.round,
-                "agent_id": v.agent_id,
-                "choice": v.choice,
-                "reason": v.reason,
-            }
-            for v in final.votes
-        ],
-    }
-    done.append(bool(record["correct"]))
-    with out.open("a") as fh:
-        fh.write(json.dumps(record) + "\n")
-    print(
-        f"seed {seed}: correct={record['correct']} majority={record['final_majority']} "
-        f"spoken={spoken} uniques={record['n_uniques_cited']}/{record['n_uniques_total']} "
-        f"decisive={record['decisive_surfaced_count']}/{record['decisive_total']} "
-        f"running={sum(done)}/{len(done)}",
-        flush=True,
-    )
-    return record
-
-
-async def _one_vote(
-    client: LLMClient, system: str, user: str, model: str, candidate_ids: set[str]
-) -> str:
-    resp = await client.complete(LLMRequest(system=system, user=user, model=model, max_tokens=400))
-    choice, _conf, _reason = validate.validate_vote(
-        validate.parse_json_object(resp.text), candidate_ids
-    )
-    return choice
-
-
-async def pooled_baseline(
-    client: LLMClient, scenario: Scenario, args: argparse.Namespace
-) -> dict[str, Any]:
-    cfg = RunConfig(
-        scenario_id=scenario.id,
-        model=args.model,
-        prompt_style=args.prompt_style,
-        transcript_visibility=args.transcript_visibility,
-    )
-    spec = get_paradigm("free_discussion")
-    all_fact_ids = [f.id for f in scenario.facts]
-    system = prompts.system_prompt(scenario, cfg, REVIEWER, all_fact_ids, spec)
-    user = prompts.alone_vote_message(scenario)
-    candidate_ids = {c.id for c in scenario.candidates}
-    votes = [
-        await _one_vote(client, system, user, args.model, candidate_ids)
-        for _ in range(args.pooled_baseline)
-    ]
-    right = truth.pooled_verdict(scenario)
-    right_rate = sum(1 for v in votes if v == right) / len(votes) if votes else 0.0
-    return {
-        "kind": "pooled_baseline",
-        "cell": args.cell,
-        "scenario_id": scenario.id,
-        "model": args.model,
-        "prompt_style": cfg.prompt_style,
-        "votes": votes,
-        "right_rate": right_rate,
-    }
-
-
-async def alone_baseline(
-    client: LLMClient, scenario: Scenario, args: argparse.Namespace
-) -> dict[str, Any]:
-    cfg = RunConfig(
-        scenario_id=scenario.id,
-        model=args.model,
-        prompt_style=args.prompt_style,
-        transcript_visibility=args.transcript_visibility,
-    )
-    spec = get_paradigm("free_discussion")
-    candidate_ids = {c.id for c in scenario.candidates}
-    user = prompts.alone_vote_message(scenario)
-    votes: dict[str, str] = {}
-    for agent in scenario.agents:
-        system = prompts.system_prompt(scenario, cfg, agent, scenario.distribution[agent.id], spec)
-        votes[agent.id] = await _one_vote(client, system, user, args.model, candidate_ids)
-    wrong = truth.shared_only_verdict(scenario)
-    wrong_rate = sum(1 for v in votes.values() if v == wrong) / len(votes) if votes else 0.0
-    return {
-        "kind": "alone_baseline",
-        "cell": args.cell,
-        "scenario_id": scenario.id,
-        "model": args.model,
-        "prompt_style": cfg.prompt_style,
-        "votes": votes,
-        "wrong_rate": wrong_rate,
-    }
+        return await orchestrator.run_to_completion(store, client, run.id, plants)
 
 
 async def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--scenario", default="hiring-panel-flat")
-    parser.add_argument("--n-agents", type=int, default=0, help="0 = scenario's own panel")
-    parser.add_argument("--rounds", type=int, default=3)
-    parser.add_argument("--runs", type=int, default=20)
-    parser.add_argument("--seed-start", type=int, default=0)
-    parser.add_argument("--model", default="claude-haiku-4-5")
-    parser.add_argument(
-        "--prompt-style",
-        choices=["default", "naive", "naive_no_repeat", "naive_consensus"],
-        default="default",
-    )
-    parser.add_argument(
-        "--transcript-visibility",
-        choices=["full", "last_round", "none"],
-        default="full",
-    )
-    parser.add_argument("--concurrency", type=int, default=3)
-    parser.add_argument("--cell", default="")
-    parser.add_argument("--out", required=True)
-    parser.add_argument("--pooled-baseline", type=int, default=0)
-    parser.add_argument("--alone-baseline", action="store_true")
-    args = parser.parse_args()
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--scenario", default=P1_SCENARIO)
+    ap.add_argument("--prompt", choices=["naive", "default"], default="naive")
+    ap.add_argument("--runs", type=int, default=8)
+    ap.add_argument("--seed-start", type=int, default=0)
+    ap.add_argument("--dump-dir")
+    ap.add_argument("--plant")
+    ap.add_argument("--order", choices=["clockwise", "random"], default="random")
+    ap.add_argument("--rounds", type=int, default=3)
+    ap.add_argument("--concurrency", type=int, default=4)
+    ap.add_argument("--cell", choices=sorted(P1_CELLS))
+    args = ap.parse_args()
 
-    scenario = load_probe_scenario(args.scenario)
-    if args.n_agents and args.n_agents != len(scenario.agents):
-        scenario = scenario_gen.redistribute(scenario, args.n_agents, seed=0)
-    if not args.cell:
-        args.cell = f"{scenario.id}/{args.prompt_style}/{args.transcript_visibility}"
+    scenario = load_scenario_arg(args.scenario)
+    plants = load_plants(args.plant)
+    if args.cell:
+        plants = cell_plants(scenario, args.cell)
+        args.dump_dir = args.dump_dir or f"scripts/probe/out/p1/{args.cell}"
+    dump = Path(args.dump_dir or f"scripts/probe/out/fd/{scenario.id}")
+    dump.mkdir(parents=True, exist_ok=True)
 
     client = CountingClient(AnthropicClient())
     sem = asyncio.Semaphore(args.concurrency)
-    out = Path(args.out)
-    out.parent.mkdir(parents=True, exist_ok=True)
-
-    done: list[bool] = []
-    lines: list[dict[str, Any]] = list(
-        await asyncio.gather(
-            *(
-                one_run(client, scenario, args, seed, sem, done, out)
-                for seed in range(args.seed_start, args.seed_start + args.runs)
-            )
+    seeds = range(args.seed_start, args.seed_start + args.runs)
+    finals = await asyncio.gather(
+        *(
+            one(client, scenario, s, args.prompt, args.order, args.rounds, plants, sem)
+            for s in seeds
         )
     )
-    if args.pooled_baseline:
-        line = await pooled_baseline(client, scenario, args)
-        with out.open("a") as fh:  # noqa: ASYNC230 - sync append
-            fh.write(json.dumps(line) + "\n")
-        lines.append(line)
-    if args.alone_baseline:
-        line = await alone_baseline(client, scenario, args)
-        with out.open("a") as fh:  # noqa: ASYNC230 - sync append
-            fh.write(json.dumps(line) + "\n")
-        lines.append(line)
+    rows = []
+    with (dump / "runs.jsonl").open("a") as fh:
+        for final in finals:
+            row = run_row(final, scenario, plants)
+            rows.append(row)
+            fh.write(json.dumps(row) + "\n")
+            write_transcript(dump / f"{args.prompt}_seed{final.config.seed}.txt", final)
 
-    n_correct = sum(done)
+    correct = truth.pooled_verdict(scenario)
+    n = len(rows)
+    k = sum(r["final_majority"] == correct for r in rows)
+    dis = sum(r["final_majority"] != r["spoken_verdict"] for r in rows)
+    _, lo, hi = wilson(k, n)
+    print(f"{scenario.id} [{args.prompt}, {args.order}] cell={args.cell or '-'} n={n}")
+    if plants:
+        print(f"  plant ({P1_SPEAKER} first, r1): {plants[0].text}")
+    print(f"  final {correct}: {k}/{n} = {k / n:.2f}  Wilson95 [{lo:.2f}, {hi:.2f}]")
+    print(f"  P3 majority != spoken verdict: {dis}/{n}")
     print(
-        f"cell {args.cell}: {n_correct}/{args.runs} correct "
-        f"({n_correct / args.runs:.2f}); tokens {client.input_tokens} in / "
-        f"{client.output_tokens} out"
+        f"  pre-vote {correct} mean: {sum(sum(v == correct for v in r['pre_votes'].values()) / 5 for r in rows) / n:.2f}"
     )
+    print(f"  uniques cited/run: {sum(len(r['uniques_cited']) for r in rows) / n:.1f}")
+    print(f"  seeds: {[r['seed'] for r in rows]} finals: {[r['final_majority'] for r in rows]}")
+    print(f"  cost ≈ ${cost_usd(client.input_tokens, client.output_tokens):.2f}")
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(asyncio.run(main()))
+    raise SystemExit(asyncio.run(main()))

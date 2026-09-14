@@ -7,9 +7,9 @@ P6 sonnet-default, P8 n3/n7 and n5-r15) were **not run**. All numbers below are 
 unless noted, `RUN_MODE`-independent: the orchestrator is driven directly against a
 `MemoryStore`). Recorded-run cost ≈ $1.94 (+ ~30 baseline calls).
 
-Reproduce a cell: `cd backend && .venv/bin/python scripts/probe_free_discussion.py --scenario
+Reproduce a cell: `cd backend && .venv/bin/python scripts/s2_probe.py --scenario
 hiring-panel-flat --prompt-style naive --transcript-visibility none --runs 5 --cell P5/none
---out ../docs/probes/data/s2_P5.jsonl`; table: `scripts/summarize_probe.py ../docs/probes/data/*.jsonl`.
+--out ../docs/probes/data/s2_P5.jsonl`; table: `scripts/s2_summarize.py ../docs/probes/data/*.jsonl`.
 
 Columns: *correct* = final majority is the pooled-correct candidate (Sally); *uniques cited* =
 fraction of the 14 unique items spoken at least once; *% final≠spoken* = share of runs whose

@@ -29,13 +29,13 @@ def test_demo_snapshot_filters_stale_versions() -> None:
     stale = fresh.model_copy(deep=True, update={"id": "stale-id", "engine_version": "old"})
     store.create_run(fresh)
     store.create_run(stale)
-    snap = store.demo_snapshot("hiring-panel-v1")
+    snap = store.demo_snapshot("hiring-panel-flat-v2")
     assert snap is not None
     ids = [s.id for s in snap[1]]
     assert fresh.id in ids and "stale-id" not in ids
 
     assert store.delete_stale_demo_runs(ENGINE_VERSION) == 1
-    snap = store.demo_snapshot("hiring-panel-v1")
+    snap = store.demo_snapshot("hiring-panel-flat-v2")
     assert snap is not None
     ids = [s.id for s in snap[1]]
     assert ids == [fresh.id]

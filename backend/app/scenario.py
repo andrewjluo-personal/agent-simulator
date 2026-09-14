@@ -5,7 +5,7 @@ from __future__ import annotations
 from .models import Scenario
 from .store import Store
 
-DEFAULT_SCENARIO_ID = "hiring-panel-v1"
+DEFAULT_SCENARIO_ID = "hiring-panel-flat-v2"
 
 
 def load_scenario(store: Store, scenario_id: str = DEFAULT_SCENARIO_ID) -> Scenario:

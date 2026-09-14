@@ -5,7 +5,7 @@ ENGINE_VERSION, and unless --keep-stale removes demo runs from older versions.
 Usage:
   .venv/bin/python scripts/seed_demo.py --per-paradigm 5 --provider fake \
       --paradigms free_discussion,share_first --rounds 3 --sentences 2 \
-      [--scenario hiring-panel-v1] [--reset-demo] [--keep-stale]
+      [--scenario hiring-panel-flat-v2] [--reset-demo] [--keep-stale]
 """
 
 from __future__ import annotations

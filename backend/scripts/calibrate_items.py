@@ -21,7 +21,7 @@ os.environ.setdefault("LOG_LEVEL", "WARNING")
 sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent))
 
-from probe_free_discussion import load_probe_scenario
+from s2_probe import load_probe_scenario
 
 from app import truth
 from app.calibration import gap_check
