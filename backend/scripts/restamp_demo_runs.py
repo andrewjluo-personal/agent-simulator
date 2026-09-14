@@ -46,7 +46,8 @@ def main() -> None:
                     "and scenario_id = %s and engine_version = any(%s)",
                     (scenario.id, args.old_stamps),
                 ).fetchone()
-                print(f"{scenario.id}: {row['n']} runs would be re-stamped to {new_stamp}")
+                n = row["n"] if row else 0
+                print(f"{scenario.id}: {n} runs would be re-stamped to {new_stamp}")
                 continue
             cur = conn.execute(
                 "update runs set engine_version = %s "

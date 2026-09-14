@@ -4,7 +4,7 @@ import importlib
 
 from app import orchestrator
 from app.engine_version import ENGINE_VERSION, scenario_engine_version
-from app.models import RunConfig
+from app.models import RunConfig, ValidationResult
 from app.samples import SAMPLE_SCENARIOS, SAMPLES_BY_ID
 from app.store import MemoryStore
 
@@ -35,13 +35,9 @@ def test_scenario_engine_version_tracks_scenario_content() -> None:
 
     changed_validation = scenario.model_copy(deep=True)
     changed_validation.validation = {
-        "fake": {
-            "aloneWrongRate": {},
-            "pooledRightRate": 0.0,
-            "trials": 1,
-            "date": "2026-01-01",
-            "passed": True,
-        }
+        "fake": ValidationResult(
+            alone_wrong_rate={}, pooled_right_rate=0.0, trials=1, date="2026-01-01", passed=True
+        )
     }
     assert scenario_engine_version(changed_validation) == scenario_engine_version(scenario)
 
