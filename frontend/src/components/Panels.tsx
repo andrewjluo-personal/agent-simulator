@@ -121,8 +121,8 @@ export function Controls(p: ControlsProps) {
       ) : p.status === 'paused' ? (
         <button onClick={p.onResume}>▶ Resume</button>
       ) : (
-        <button className="primary" onClick={p.onPlayCached} disabled={!p.hasCached} title="Replay a recent run for this paradigm">
-          ▶ Play
+        <button className="primary" onClick={p.onPlayCached} disabled={!p.hasCached} title="Replay a seeded run for this paradigm">
+          ▶ Play seeded
         </button>
       )}
       {p.status === 'playing' && <button onClick={p.onSkip}>⏭ Skip</button>}
@@ -208,11 +208,12 @@ export function ResultsStrip({
   activeRunId: string | null
   onPick: (id: string) => void
 }) {
+  const total = rows.reduce((sum, row) => sum + row.runs.length, 0)
   return (
     <div className="strip">
       <div className="strip-head">
-        <h3>Recent runs</h3>
-        <span className="muted">one dot per run · green = panel chose the correct candidate · click a dot to replay</span>
+        <h3>Seeded runs</h3>
+        <span className="muted">{total} pre-recorded runs for this scenario · one dot per run · green = panel chose the correct candidate · click a dot to replay</span>
       </div>
       {rows.map((row) => {
         const done = row.runs.filter((r) => r.status === 'done' && r.metrics)
@@ -250,7 +251,7 @@ export function ResultsStrip({
           </div>
         )
       })}
-      {rows.length === 0 && <p className="muted">No runs yet — press ⚡ Run live.</p>}
+      {rows.length === 0 && <p className="muted">No seeded runs for this scenario yet — press ⚡ Run live.</p>}
     </div>
   )
 }
