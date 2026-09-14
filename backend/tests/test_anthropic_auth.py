@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from typing import Any
 
 import httpx
 import pytest
@@ -20,7 +21,7 @@ def _source(transport: httpx.MockTransport) -> WIFTokenSource:
     )
 
 
-def _token_transport(payload: dict, calls: list[httpx.Request]) -> httpx.MockTransport:
+def _token_transport(payload: dict[str, Any], calls: list[httpx.Request]) -> httpx.MockTransport:
     def handler(request: httpx.Request) -> httpx.Response:
         calls.append(request)
         return httpx.Response(200, json=payload)
@@ -35,7 +36,7 @@ def _patch_llm_client(monkeypatch: pytest.MonkeyPatch, transport: httpx.MockTran
         kw.setdefault("transport", transport)
         return real(**kw)
 
-    monkeypatch.setattr(llm.httpx, "AsyncClient", factory)
+    monkeypatch.setattr("app.llm.httpx.AsyncClient", factory)
 
 
 def _patch_mint(monkeypatch: pytest.MonkeyPatch) -> None:
