@@ -9,11 +9,14 @@ from app import prompts, truth, validator
 from app.llm import FakeClient
 from app.models import RunConfig, Scenario
 from app.samples import (
+    ALL_SAMPLE_SCENARIOS,
+    HIDDEN_SAMPLE_IDS,
     HIRING_PANEL_FLAT_V2,
     HIRING_PANEL_NULL,
     HIRING_PANEL_NULL_V2,
     NULL_V2_SHARED_IDS,
     SAMPLE_SCENARIOS,
+    SAMPLES_BY_ID,
     _null_swap,
     ensure_samples,
 )
@@ -52,6 +55,8 @@ def test_sample_is_hidden_profile_and_each_hand_favors_shared_verdict(scenario: 
 def test_sample_ids_are_unique() -> None:
     assert len({scenario.id for scenario in SAMPLE_SCENARIOS}) == len(SAMPLE_SCENARIOS)
     assert SAMPLE_SCENARIOS[0].id == "hiring-panel-flat-v2"
+    assert len(ALL_SAMPLE_SCENARIOS) > len(SAMPLE_SCENARIOS)
+    assert "incident-review-v1" in HIDDEN_SAMPLE_IDS
 
 
 @pytest.mark.parametrize("scenario", SAMPLE_SCENARIOS, ids=lambda scenario: scenario.id)
@@ -108,6 +113,14 @@ def test_ensure_samples_leaves_identical_rows_untouched() -> None:
     assert store.upserted == []
 
 
+def test_ensure_samples_leaves_hidden_rows_without_upserting() -> None:
+    hidden = SAMPLES_BY_ID["incident-review-v1"]
+    store = _StubStore([*SAMPLE_SCENARIOS, hidden])
+    assert ensure_samples(store) == 0  # type: ignore[arg-type]
+    assert store.get_scenario(hidden.id) == hidden
+    assert hidden.id not in store.upserted
+
+
 def test_ensure_samples_overwrites_stale_rows() -> None:
     stale = SAMPLE_SCENARIOS[0].model_copy(update={"title": "stale"})
     custom = Scenario.model_validate(
@@ -124,9 +137,7 @@ def test_hiring_panel_samples_have_four_panelists() -> None:
     for s in (HIRING_PANEL_FLAT_V2, HIRING_PANEL_NULL):
         assert [a.id for a in s.agents] == ["dana", "marcus", "priya", "tom"]
         cfg = RunConfig()  # balanced candidate order, seed 0
-        split = Counter(
-            prompts.resolve_candidate_order(s, cfg, a) for a in s.agents
-        )
+        split = Counter(prompts.resolve_candidate_order(s, cfg, a) for a in s.agents)
         assert split == Counter({"fixed": 2, "reversed": 2})
         assert prompts.resolve_candidate_order(s, cfg, None) == "fixed"
     assert truth.shared_only_verdict(HIRING_PANEL_FLAT_V2) == "john"

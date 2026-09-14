@@ -3,190 +3,39 @@
     "aloneWrongRate": {
       "jordan": 1.0,
       "casey": 1.0,
-      "riley": 0.0,
-      "morgan": 1.0
-    },
-    "pooledRightRate": 1.0,
-    "trials": 10,
-    "date": "2026-09-14T00:02:12.421162+00:00",
-    "passed": false,
-    "freeDiscussionRate": 0.0,
-    "freeDiscussionRuns": 5
-  },
-  "stasser-1985-shared": {
-    "aloneWrongRate": {
-      "jordan": 1.0,
-      "casey": 1.0,
       "riley": 1.0,
       "morgan": 1.0
     },
-    "pooledRightRate": 1.0,
-    "trials": 10,
-    "date": "2026-09-14T00:03:48.831656+00:00",
+    "pooledRightRate": 0.8333333333333334,
+    "trials": 6,
+    "date": "2026-09-14",
     "passed": true,
-    "freeDiscussionRate": null,
-    "freeDiscussionRuns": 0
-  },
-  "stasser-1992-solve": {
-    "aloneWrongRate": {
-      "detective-1": 1.0,
-      "detective-2": 0.0,
-      "detective-3": 1.0
-    },
-    "pooledRightRate": 1.0,
-    "trials": 10,
-    "date": "2026-09-14T00:04:09.809779+00:00",
-    "passed": false,
-    "freeDiscussionRate": null,
-    "freeDiscussionRuns": 0
-  },
-  "stasser-1992-judge": {
-    "aloneWrongRate": {
-      "detective-1": 0.8,
-      "detective-2": 0.2,
-      "detective-3": 1.0
-    },
-    "pooledRightRate": 1.0,
-    "trials": 10,
-    "date": "2026-09-14T00:04:28.615055+00:00",
-    "passed": false,
-    "freeDiscussionRate": null,
-    "freeDiscussionRuns": 0
-  },
-  "hiddenbench-evacuation-west-city": {
-    "aloneWrongRate": {
-      "p1": 0.0,
-      "p2": 0.0,
-      "p3": 0.0,
-      "p4": 0.0
-    },
-    "pooledRightRate": 0.0,
-    "trials": 10,
-    "date": "2026-09-14T00:04:49.501012+00:00",
-    "passed": false,
-    "freeDiscussionRate": null,
-    "freeDiscussionRuns": 0
-  },
-  "hiddenbench-toma-butera-2009": {
-    "aloneWrongRate": {
-      "p1": 0.0,
-      "p2": 0.0,
-      "p3": 0.0
-    },
-    "pooledRightRate": 1.0,
-    "trials": 10,
-    "date": "2026-09-14T00:05:09.267208+00:00",
-    "passed": false,
-    "freeDiscussionRate": null,
-    "freeDiscussionRuns": 0
-  },
-  "hiddenbench-baker-2010": {
-    "aloneWrongRate": {
-      "p1": 0.0,
-      "p2": 0.0,
-      "p3": 0.0,
-      "p4": 0.0
-    },
-    "pooledRightRate": 0.0,
-    "trials": 10,
-    "date": "2026-09-14T00:05:37.564350+00:00",
-    "passed": false,
-    "freeDiscussionRate": null,
-    "freeDiscussionRuns": 0
-  },
-  "hiddenbench-schulz-hardt-mojzisch-2012": {
-    "aloneWrongRate": {
-      "p1": 0.0,
-      "p2": 0.0,
-      "p3": 0.0
-    },
-    "pooledRightRate": 0.0,
-    "trials": 10,
-    "date": "2026-09-14T00:05:56.243346+00:00",
-    "passed": false,
-    "freeDiscussionRate": null,
-    "freeDiscussionRuns": 0
-  },
-  "hiddenbench-graetz-et-al-1998": {
-    "aloneWrongRate": {
-      "p1": 0.0,
-      "p2": 0.0,
-      "p3": 0.0,
-      "p4": 0.0
-    },
-    "pooledRightRate": 0.0,
-    "trials": 10,
-    "date": "2026-09-14T00:06:23.017690+00:00",
-    "passed": false,
-    "freeDiscussionRate": null,
-    "freeDiscussionRuns": 0
-  },
-  "hiddenbench-stasser-stewart-1992": {
-    "aloneWrongRate": {
-      "p1": 0.0,
-      "p2": 0.0,
-      "p3": 0.0
-    },
-    "pooledRightRate": 0.0,
-    "trials": 10,
-    "date": "2026-09-14T00:06:45.120112+00:00",
-    "passed": false,
-    "freeDiscussionRate": null,
-    "freeDiscussionRuns": 0
-  },
-  "hiddenbench-critical-hospital-transfer": {
-    "aloneWrongRate": {
-      "p1": 0.0,
-      "p2": 1.0,
-      "p3": 0.0,
-      "p4": 0.9
-    },
-    "pooledRightRate": 1.0,
-    "trials": 10,
-    "date": "2026-09-14T00:07:07.964006+00:00",
-    "passed": false,
-    "freeDiscussionRate": null,
-    "freeDiscussionRuns": 0
+    "nullGate": false
   },
   "hiddenbench-laboratory-theft-deduction": {
     "aloneWrongRate": {
-      "p1": 0.0,
+      "p1": 1.0,
       "p2": 1.0,
       "p3": 1.0,
-      "p4": 0.0
+      "p4": 0.8333333333333334
     },
-    "pooledRightRate": 1.0,
-    "trials": 10,
-    "date": "2026-09-14T00:07:33.545713+00:00",
-    "passed": false,
-    "freeDiscussionRate": null,
-    "freeDiscussionRuns": 0
-  },
-  "hiddenbench-the-lead-investor-decision": {
-    "aloneWrongRate": {
-      "p1": 0.0,
-      "p2": 0.0,
-      "p3": 0.0
-    },
-    "pooledRightRate": 1.0,
-    "trials": 10,
-    "date": "2026-09-14T00:07:53.142309+00:00",
-    "passed": false,
-    "freeDiscussionRate": null,
-    "freeDiscussionRuns": 0
+    "pooledRightRate": 0.8333333333333334,
+    "trials": 6,
+    "date": "2026-09-14",
+    "passed": true,
+    "nullGate": false
   },
   "hiddenbench-company-acquisition-decision": {
     "aloneWrongRate": {
-      "p1": 0.0,
-      "p2": 0.0,
-      "p3": 0.0,
-      "p4": 0.0
+      "p1": 1.0,
+      "p2": 1.0,
+      "p3": 1.0,
+      "p4": 1.0
     },
     "pooledRightRate": 1.0,
-    "trials": 10,
-    "date": "2026-09-14T00:08:15.562056+00:00",
-    "passed": false,
-    "freeDiscussionRate": null,
-    "freeDiscussionRuns": 0
+    "trials": 6,
+    "date": "2026-09-14",
+    "passed": true,
+    "nullGate": false
   }
 }

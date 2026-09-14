@@ -7,6 +7,8 @@ from app.engine_version import ENGINE_VERSION
 from app.models import RunConfig
 from app.store import MemoryStore
 
+SID = "stasser-1985-hidden"
+
 
 def test_engine_version_is_12_hex_and_stable() -> None:
     assert len(ENGINE_VERSION) == 12
@@ -29,13 +31,13 @@ def test_demo_snapshot_filters_stale_versions() -> None:
     stale = fresh.model_copy(deep=True, update={"id": "stale-id", "engine_version": "old"})
     store.create_run(fresh)
     store.create_run(stale)
-    snap = store.demo_snapshot("hiring-panel-flat-v2")
+    snap = store.demo_snapshot(SID)
     assert snap is not None
     ids = [s.id for s in snap[1]]
     assert fresh.id in ids and "stale-id" not in ids
 
     assert store.delete_stale_demo_runs(ENGINE_VERSION) == 1
-    snap = store.demo_snapshot("hiring-panel-flat-v2")
+    snap = store.demo_snapshot(SID)
     assert snap is not None
     ids = [s.id for s in snap[1]]
     assert ids == [fresh.id]

@@ -18,8 +18,8 @@ def test_scenario_endpoint() -> None:
     resp = client.get("/api/scenario")
     assert resp.status_code == 200
     body = resp.json()
-    assert len(body["candidates"]) == 2
-    assert body["candidates"][0]["id"] == "john"
+    assert len(body["candidates"]) == 3
+    assert body["candidates"][0]["id"] == "a"
 
 
 def test_paradigms_endpoint() -> None:
@@ -35,7 +35,7 @@ def test_run_lifecycle_sync() -> None:
     run = resp.json()
     assert run["status"] == "done"  # RUN_MODE=sync awaited completion
     assert len(run["turns"]) == 4
-    assert run["metrics"]["correctCandidateId"] == "sally"
+    assert run["metrics"]["correctCandidateId"] == "a"
 
     got = client.get(f"/api/runs/{run['id']}")
     assert got.status_code == 200
