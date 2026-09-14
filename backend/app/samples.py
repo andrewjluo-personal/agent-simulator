@@ -2195,10 +2195,7 @@ VENDOR_SELECTION_V1 = Scenario.model_validate(
 
 
 ALL_SAMPLE_SCENARIOS: list[Scenario] = [
-    HIRING_PANEL_FLAT_V2,
     HIRING_PANEL_FLAT_V3,
-    HIRING_PANEL_FLAT_V3_NULL,
-    HIRING_PANEL_NULL,
     HIRING_PANEL_NULL_V2,
     INCIDENT_REVIEW_V1,
     VENDOR_SELECTION_V1,
@@ -2227,6 +2224,10 @@ SAMPLE_SCENARIOS: list[Scenario] = [
 ]
 SERVED_SCENARIO_IDS: frozenset[str] = frozenset(s.id for s in SAMPLE_SCENARIOS)
 SAMPLES_BY_ID: dict[str, Scenario] = {s.id: s for s in ALL_SAMPLE_SCENARIOS}
+# Retired hiring samples stay addressable for probes/replay but are not served.
+SAMPLES_BY_ID.update(
+    {s.id: s for s in (HIRING_PANEL_FLAT_V2, HIRING_PANEL_NULL, HIRING_PANEL_FLAT_V3_NULL)}
+)
 
 # Sample ids removed from SAMPLE_SCENARIOS; ensure_samples deletes stored rows
 # carrying these ids as samples (runs embed their scenario, so old runs remain
@@ -2239,6 +2240,9 @@ RETIRED_SAMPLE_IDS: list[str] = [
     "hiring-weak-profile-v1",
     "hiring-adversarial-v1",
     "hiring-panel-flat",
+    "hiring-panel-flat-v2",
+    "hiring-panel-null",
+    "hiring-panel-flat-v3-null",
 ]
 
 

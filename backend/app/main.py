@@ -257,9 +257,12 @@ def fork_scenario(payload: ForkIn, request: Request) -> dict[str, Any]:
     else:
         stem = re.sub(r"-v\d+$", "", payload.base_id)
         n = 2
-        while store.get_scenario(f"{stem}-v{n}") is not None:
+        while True:
+            candidate = f"{stem}-v{n}"
+            if store.get_scenario(candidate) is None and candidate not in SAMPLES_BY_ID:
+                break
             n += 1
-        scenario_id = f"{stem}-v{n}"
+        scenario_id = candidate
     source = base.source.model_copy(update={"kind": "custom", "fidelity": "modified"})
     scenario = payload.scenario.model_copy(
         update={

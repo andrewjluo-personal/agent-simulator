@@ -29,9 +29,9 @@ def _run(
 ) -> tuple[MemoryStore, FakeClient, RunState]:
     store = store or MemoryStore()
     client = FakeClient()
-    cfg = cfg or RunConfig(scenario_id="hiring-panel-flat-v2")
+    cfg = cfg or RunConfig(scenario_id="hiring-panel-flat-v3")
     if cfg.scenario_id == "stasser-1985-hidden":
-        cfg = cfg.model_copy(update={"scenario_id": "hiring-panel-flat-v2"})
+        cfg = cfg.model_copy(update={"scenario_id": "hiring-panel-flat-v3"})
     run = orchestrator.new_run(store, cfg, provider="fake")
     store.create_run(run)
     return store, client, run
@@ -48,7 +48,7 @@ def test_run_to_completion() -> None:
         assert len(final.votes) == (run.config.rounds + 1) * n
         assert final.metrics is not None
         assert final.metrics.correct_candidate_id == "sally"
-        assert final.metrics.decisive_total == 19
+        assert final.metrics.decisive_total == 8
         assert len(final.metrics.vote_trajectory) == run.config.rounds + 1
         assert final.metrics.vote_rounds[0] == -1
 
