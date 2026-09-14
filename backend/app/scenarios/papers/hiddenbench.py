@@ -151,7 +151,7 @@ def convert_task(task: dict[str, Any]) -> Scenario:
         notes += " Valence inferred: " + " | ".join(flagged)
     return Scenario(
         id=f"hiddenbench-{_slug(str(task['name']))}",
-        title=f"HiddenBench: {task['name']}",
+        title=f"HiddenBench — {str(task['name']).replace('_', ' ').title()}",
         brief=str(task["description"]),
         is_sample=True,
         candidates=[

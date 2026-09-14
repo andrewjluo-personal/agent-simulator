@@ -418,7 +418,7 @@ def _scenario(
 
 STASSER_1985_HIDDEN = _scenario(
     "stasser-1985-hidden",
-    "Stasser & Titus 1985 — hidden profile (unshared/consensus)",
+    "Stasser & Titus 1985 — hidden profile",
     {
         agent.id: _SHARED_1985
         + [

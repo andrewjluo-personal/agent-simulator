@@ -46,6 +46,13 @@ def test_scenario_engine_version_tracks_scenario_content() -> None:
     assert scenario_engine_version(other) != scenario_engine_version(scenario)
 
 
+def test_scenario_engine_version_ignores_title() -> None:
+    scenario = SAMPLES_BY_ID[SID]
+    retitled = scenario.model_copy(update={"title": "X"})
+    assert retitled.title != scenario.title
+    assert scenario_engine_version(retitled) == scenario_engine_version(scenario)
+
+
 def test_scenario_engine_version_ignores_dict_key_order() -> None:
     scenario = SAMPLES_BY_ID[SID]
     payload = json.loads(scenario.model_dump_json(by_alias=True))

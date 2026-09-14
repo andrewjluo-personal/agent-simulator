@@ -175,9 +175,7 @@ def test_retired_hiring_samples_not_served() -> None:
         assert scenario_id in SAMPLES_BY_ID
 
     store = MemoryStore()
-    store.upsert_scenario(
-        HIRING_PANEL_FLAT_V2.model_copy(update={"is_sample": True})
-    )
+    store.upsert_scenario(HIRING_PANEL_FLAT_V2.model_copy(update={"is_sample": True}))
     ensure_samples(store)
     assert store.get_scenario("hiring-panel-flat-v2") is None
 
