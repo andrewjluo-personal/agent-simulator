@@ -513,9 +513,10 @@ header h1 {
 
 /* results strip */
 .strip {
-  margin-top: 24px;
+  margin-top: 16px;
   background: var(--panel);
   border: 1px solid var(--border);
+  border-left: 3px solid var(--shared);
   border-radius: 12px;
   padding: 12px 14px;
 }
@@ -527,7 +528,7 @@ header h1 {
   margin-bottom: 8px;
 }
 .strip-head h3 {
-  font-size: 14px;
+  font-size: 16px;
 }
 .strip-head .muted {
   font-size: 12px;

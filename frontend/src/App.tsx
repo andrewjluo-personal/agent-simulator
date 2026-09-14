@@ -54,15 +54,11 @@ function App() {
   const pb = usePlayback()
   const highlight = useHighlightState()
 
-  const autoRunAllowed = useRef<boolean | null>(null)
-  const autoRunStarted = useRef(false)
-
   const loadRecent = useCallback(async (scenarioId: string): Promise<boolean> => {
     try {
       const snap = await getDemo(scenarioId)
       setScenario(snap.scenario)
       setRecentRuns(snap.runs)
-      if (scenarioId === DEFAULT_SCENARIO_ID) autoRunAllowed.current = snap.autoRunOnLoad !== false
       setConfig((c) => (c ? { ...c, scenarioId: snap.scenario.id } : defaultConfig(snap.scenario)))
       setApiDown(false)
       return true
@@ -95,17 +91,6 @@ function App() {
         if (!(await demo)) setApiDown(true)
       })
   }, [view, loadRecent])
-
-  // Live-first landing: kick off a real run once the default scenario resolves —
-  // once per page load (ref). The server flag and per-IP rate limit bound cost.
-  useEffect(() => {
-    if (view !== 'bench') return
-    if (!scenario || !config) return
-    if (autoRunStarted.current || autoRunAllowed.current !== true) return
-    autoRunStarted.current = true
-    track('autorun.start', { scenarioId: scenario.id })
-    void pb.startLive({ ...defaultConfig(scenario), seed: Math.floor(Math.random() * 10000) })
-  }, [view, scenario, config, pb])
 
   const openRun = useCallback(
     async (id: string) => {
@@ -265,6 +250,8 @@ function App() {
         apiDown={apiDown}
       />
 
+      <ResultsStrip rows={rows} activeRunId={pb.run?.id ?? null} onPick={pickRun} />
+
       <VerdictBadges scenario={runScenario} />
 
       <section className="stage">
@@ -306,7 +293,7 @@ function App() {
             <div className="transcript">
               <h3>Transcript</h3>
               <p className="muted">
-                A live run starts automatically. Press ▶ Play to replay a recent run, ⚡ Run live to start another, or click an agent or a fact chip to inspect it.
+                Pick a seeded run above — ▶ Play replays one for the selected paradigm, or click a dot — or press ⚡ Run live to start a new run. Click an agent or a fact chip to inspect it.
               </p>
             </div>
           )}
@@ -322,7 +309,6 @@ function App() {
         </section>
       )}
 
-      <ResultsStrip rows={rows} activeRunId={pb.run?.id ?? null} onPick={pickRun} />
     </main>
     </HighlightContext.Provider>
   )
