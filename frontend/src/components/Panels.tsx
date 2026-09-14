@@ -30,40 +30,11 @@ function scenarioBaseId(id: string): string {
   return id.replace(/-(v\d+|\d+)$/, '')
 }
 
-function formatRate(rate: number): string {
-  return `${Math.round(rate * 100)}%`
-}
-
-function validationBadge(scenario: Scenario): { text: string; title: string } | null {
-  const first = Object.entries(scenario.validation ?? {})[0]
-  if (!first) return null
-  const [model, result] = first
-  const aloneRates = Object.entries(result.aloneWrongRate)
-  const rates = aloneRates.map(([, rate]) => rate)
-  const alone =
-    rates.length === 0
-      ? 'n/a'
-      : rates.every((rate) => rate === rates[0])
-        ? formatRate(rates[0])
-        : `${formatRate(Math.min(...rates))}..${formatRate(Math.max(...rates))} (${aloneRates
-            .map(([agentId, rate]) => `${agentId} ${formatRate(rate)}`)
-            .join(', ')})`
-  const pooled = formatRate(result.pooledRightRate)
-  const freeDiscussion =
-    result.freeDiscussionRate == null ? 'n/a' : formatRate(result.freeDiscussionRate)
-  const nullGate = result.nullGate == null ? 'n/a' : result.nullGate ? 'pass' : 'FAIL'
-  return {
-    text: `validated on ${model}${result.nullGate === false ? ' · fails null gate' : ''}`,
-    title: `alone-wrong ${alone}, pooled-right ${pooled}, free-discussion ${freeDiscussion}, null-gate ${nullGate}`,
-  }
-}
-
 export type ControlsProps = {
   config: RunConfig
   onChange: (c: RunConfig) => void
   scenarios: Scenario[]
   onSelectScenario: (id: string) => void
-  onOpenLab: () => void
   onResetScenario: () => void
   paradigms: { id: Paradigm; label: string }[]
   status: 'idle' | 'playing' | 'paused' | 'finished'
@@ -79,7 +50,6 @@ export type ControlsProps = {
 export function Controls(p: ControlsProps) {
   const set = <K extends keyof RunConfig>(k: K, v: RunConfig[K]) => p.onChange({ ...p.config, [k]: v })
   const selected = p.scenarios.find((s) => s.id === p.config.scenarioId)
-  const validation = selected ? validationBadge(selected) : null
   const variants = selected
     ? p.scenarios
         .filter((s) => scenarioBaseId(s.id) === scenarioBaseId(selected.id))
@@ -97,14 +67,6 @@ export function Controls(p: ControlsProps) {
           ))}
         </select>
       </label>
-      <button type="button" onClick={p.onOpenLab}>Scenario Lab</button>
-      {validation ? (
-        <span className="badge validation-badge" title={validation.title}>
-          {validation.text}
-        </span>
-      ) : (
-        <span className="badge validation-badge">unvalidated</span>
-      )}
       {variants.length > 1 && (
         <label>
           Agents
