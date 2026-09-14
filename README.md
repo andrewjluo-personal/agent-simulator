@@ -47,14 +47,17 @@ npm run dev
 
 ### Anthropic auth
 
-The two hosts authenticate to Anthropic differently. On Vercel the app uses a static
-`ANTHROPIC_API_KEY` set in the project env — nothing else is needed. In Devin sessions there
-is no key; instead `ANTHROPIC_AUTH=wif` opts the backend into Anthropic Workload Identity
-Federation, exchanging the session's OIDC token (via `devin-oidc`, falling back to the Devin
-OIDC token exchange endpoint) for a short-lived access token. The
-`ANTHROPIC_FEDERATION_RULE_ID`, `ANTHROPIC_ORGANIZATION_ID`, `ANTHROPIC_SERVICE_ACCOUNT_ID`,
-and optional `ANTHROPIC_WORKSPACE_ID` values come from the blueprint environment and are not
-secrets. `backend/scripts/anthropic_token.sh` mints a short-lived access token on stdout for
+The backend can authenticate to Anthropic via Workload Identity Federation on both hosts —
+set `ANTHROPIC_AUTH=wif` plus `ANTHROPIC_FEDERATION_RULE_ID`, `ANTHROPIC_ORGANIZATION_ID`,
+`ANTHROPIC_SERVICE_ACCOUNT_ID` (and optional `ANTHROPIC_WORKSPACE_ID`), and leave
+`ANTHROPIC_API_KEY` empty. The OIDC identity source is auto-detected: on Vercel (`VERCEL=1`)
+it uses the Vercel OIDC token (per-request `x-vercel-oidc-token` header, or
+`VERCEL_OIDC_TOKEN` locally after `vercel env pull`) with the Vercel federation rule's IDs in
+the project env; elsewhere (Devin sessions) it uses the Devin session OIDC token via
+`devin-oidc` (falling back to the Devin OIDC token exchange endpoint) with the blueprint's
+Devin rule IDs. These ID values are not secrets. A static `ANTHROPIC_API_KEY`, when set,
+still takes precedence on either host.
+`backend/scripts/anthropic_token.sh` mints a short-lived access token on stdout for
 curl experiments (Devin sessions only).
 
 ## Endpoints

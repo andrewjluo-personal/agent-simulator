@@ -2,14 +2,25 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import time
 
 import httpx
 import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
-from app.anthropic_auth import WIFConfig, WIFTokenProvider
-from app.llm import AnthropicClient, get_client, reset_client
+from app import anthropic_auth
+from app.anthropic_auth import (
+    WIFConfig,
+    WIFTokenProvider,
+    identity_token,
+    vercel_identity_token,
+    vercel_oidc_context,
+    vercel_oidc_token,
+)
+from app.llm import AnthropicClient, LLMRequest, get_client, reset_client
 
 REQUIRED_ENV = {
     "ANTHROPIC_FEDERATION_RULE_ID": "fdrl_test",
@@ -139,3 +150,93 @@ def test_get_client_picks_anthropic_on_wif_env(monkeypatch: pytest.MonkeyPatch) 
         assert client.auth_mode == "wif"
     finally:
         reset_client()
+
+
+def test_vercel_identity_token_prefers_contextvar(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("VERCEL_OIDC_TOKEN", "env-tok")
+    token = vercel_oidc_token.set("hdr-tok")
+    try:
+        assert vercel_identity_token() == "hdr-tok"
+    finally:
+        vercel_oidc_token.reset(token)
+    assert vercel_identity_token() == "env-tok"
+    monkeypatch.delenv("VERCEL_OIDC_TOKEN")
+    with pytest.raises(RuntimeError, match="no Vercel OIDC token"):
+        vercel_identity_token()
+
+
+def test_identity_token_dispatches_on_vercel(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("VERCEL", "1")
+    monkeypatch.setenv("VERCEL_OIDC_TOKEN", "vercel-tok")
+    assert identity_token() == "vercel-tok"
+
+    monkeypatch.delenv("VERCEL")
+    monkeypatch.setattr(anthropic_auth, "devin_identity_token", lambda: "devin-tok")
+    assert identity_token() == "devin-tok"
+
+
+def test_middleware_sets_and_resets_contextvar() -> None:
+    app = FastAPI()
+    app.middleware("http")(vercel_oidc_context)
+
+    @app.get("/")
+    def index() -> dict[str, str | None]:
+        return {"tok": vercel_oidc_token.get()}
+
+    client = TestClient(app)
+    assert client.get("/", headers={"x-vercel-oidc-token": "hdr-tok"}).json() == {
+        "tok": "hdr-tok"
+    }
+    assert vercel_oidc_token.get() is None
+    assert client.get("/").json() == {"tok": None}
+
+
+def test_invalidate_forces_reexchange() -> None:
+    provider, bodies = _mock_provider()
+    assert provider.token() == "tok1"
+    provider.invalidate()
+    assert provider.token() == "tok2"
+    assert len(bodies) == 2
+
+
+class _CountingProvider:
+    def __init__(self) -> None:
+        self.invalidated = 0
+
+    def token(self) -> str:
+        return "stub-tok"
+
+    def invalidate(self) -> None:
+        self.invalidated += 1
+
+
+def test_client_retries_once_on_401(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        if len(calls) == 1:
+            return httpx.Response(401, json={"error": {"message": "expired"}})
+        return httpx.Response(
+            200,
+            json={
+                "content": [{"type": "text", "text": "ok"}],
+                "usage": {"input_tokens": 1, "output_tokens": 1},
+            },
+        )
+
+    transport = httpx.MockTransport(handler)
+    real_async_client = httpx.AsyncClient
+    monkeypatch.setattr(
+        httpx, "AsyncClient", lambda **kw: real_async_client(transport=transport, **kw)
+    )
+    provider = _CountingProvider()
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    client = AnthropicClient(token_provider=provider)
+    resp = asyncio.run(
+        client.complete(LLMRequest(system="s", user="u", model="m", max_tokens=5))
+    )
+    assert resp.text == "ok"
+    assert len(calls) == 2
+    assert provider.invalidated == 1
+    assert calls[0].headers["Authorization"] == "Bearer stub-tok"

@@ -90,6 +90,7 @@ class AnthropicClient:
             "temperature": 1.0,
         }
         last_exc: Exception | None = None
+        saw_401 = False
         for attempt in range(3):
             headers = {
                 **await asyncio.to_thread(self._auth_headers),
@@ -138,6 +139,15 @@ class AnthropicClient:
                     exc.response.status_code == 429 or exc.response.status_code >= 500
                 )
                 if not isinstance(exc, httpx.HTTPStatusError):
+                    retryable = True
+                if (
+                    isinstance(exc, httpx.HTTPStatusError)
+                    and exc.response.status_code == 401
+                    and self._token_provider is not None
+                    and not saw_401
+                ):
+                    saw_401 = True
+                    self._token_provider.invalidate()
                     retryable = True
                 if not retryable or attempt == 2:
                     raise

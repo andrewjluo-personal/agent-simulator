@@ -1,5 +1,7 @@
-"""Anthropic Workload Identity Federation: exchange the Devin session OIDC token
-for a short-lived Anthropic access token (no static API keys)."""
+"""Anthropic Workload Identity Federation: exchange an OIDC identity token for a
+short-lived Anthropic access token (no static API keys). The identity token is the
+Vercel OIDC token on Vercel (per-request header or VERCEL_OIDC_TOKEN), and the Devin
+session OIDC token elsewhere."""
 
 from __future__ import annotations
 
@@ -8,10 +10,12 @@ import shutil
 import subprocess
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
+from contextvars import ContextVar
 from dataclasses import dataclass
 
 import httpx
+from fastapi import Request, Response
 
 ANTHROPIC_AUDIENCE = "https://api.anthropic.com"
 DEVIN_OIDC_TOKEN_FILE = "/opt/.devin/oidc_token"
@@ -19,6 +23,9 @@ DEVIN_EXCHANGE_URL = "https://app.devin.ai/api/oidc/token"
 ANTHROPIC_TOKEN_URL = "https://api.anthropic.com/v1/oauth/token"
 REFRESH_MARGIN_S = 30
 WIF_ENABLE_VAR = "ANTHROPIC_AUTH"
+VERCEL_OIDC_HEADER = "x-vercel-oidc-token"
+
+vercel_oidc_token: ContextVar[str | None] = ContextVar("vercel_oidc_token", default=None)
 
 
 @dataclass(frozen=True)
@@ -106,6 +113,35 @@ def devin_identity_token(audience: str = ANTHROPIC_AUDIENCE) -> str:
     return str(token)
 
 
+def vercel_identity_token() -> str:
+    token = vercel_oidc_token.get() or os.getenv("VERCEL_OIDC_TOKEN")
+    if not token:
+        raise RuntimeError(
+            "no Vercel OIDC token: expected x-vercel-oidc-token request header or "
+            "VERCEL_OIDC_TOKEN"
+        )
+    return token
+
+
+def identity_token() -> str:
+    """Pick the OIDC identity source: Vercel's token when running on Vercel
+    (VERCEL=1), else the Devin session token."""
+    if os.getenv("VERCEL") == "1":
+        return vercel_identity_token()
+    return devin_identity_token()
+
+
+async def vercel_oidc_context(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
+    """Expose the per-request `x-vercel-oidc-token` header to vercel_identity_token."""
+    token = vercel_oidc_token.set(request.headers.get(VERCEL_OIDC_HEADER))
+    try:
+        return await call_next(request)
+    finally:
+        vercel_oidc_token.reset(token)
+
+
 class WIFTokenProvider:
     """Caches the Anthropic access token; refreshes REFRESH_MARGIN_S before expiry.
     Thread-safe."""
@@ -113,7 +149,7 @@ class WIFTokenProvider:
     def __init__(
         self,
         config: WIFConfig,
-        identity_token: Callable[[], str] = devin_identity_token,
+        identity_token: Callable[[], str] = identity_token,
         http: httpx.Client | None = None,
     ) -> None:
         self._config = config
@@ -144,3 +180,9 @@ class WIFTokenProvider:
             self._token = str(data["access_token"])
             self._expires_at = time.monotonic() + float(data.get("expires_in", 300))
             return self._token
+
+    def invalidate(self) -> None:
+        """Drop the cached token so the next token() re-exchanges."""
+        with self._lock:
+            self._token = None
+            self._expires_at = 0.0
