@@ -4,6 +4,7 @@ import { createBatch, getBatch, getDemo, getRun, listScenarios, resetScenario } 
 import { Controls, ResultsStrip, Transcript, VerdictBadges, VerdictCard, type StripRow } from './components/Panels'
 import { FlowTimeline } from './components/FlowTimeline'
 import { Table } from './components/Table'
+import { ScenarioLab } from './components/ScenarioLab'
 import { HighlightContext, useHighlightState } from './hooks/useHighlight'
 import { usePlayback } from './hooks/usePlayback'
 import { track } from './telemetry'
@@ -43,6 +44,7 @@ function App() {
   const [batchRuns, setBatchRuns] = useState<Record<string, RunSummary[]>>({})
   const [busy, setBusy] = useState(false)
   const [batchError, setBatchError] = useState<string | null>(null)
+  const [labOpen, setLabOpen] = useState(false)
   const pb = usePlayback()
   const highlight = useHighlightState()
 
@@ -272,6 +274,7 @@ function App() {
         onChange={setConfig}
         scenarios={scenarios}
         onSelectScenario={selectScenario}
+        onOpenLab={() => setLabOpen(true)}
         onResetScenario={() => void resetCurrent()}
         paradigms={PARADIGMS}
         n={n}
@@ -335,6 +338,21 @@ function App() {
           )}
         </aside>
       </section>
+
+      {labOpen && runScenario && (
+        <ScenarioLab
+          scenario={runScenario}
+          onClose={() => setLabOpen(false)}
+          onSaved={(saved) => {
+            setLabOpen(false)
+            setScenarios((prev) => [...prev.filter((item) => item.id !== saved.id), saved])
+            setConfig(defaultConfig(saved))
+            pb.clear()
+            void listScenarios().then(setScenarios)
+            void loadRecent(saved.id)
+          }}
+        />
+      )}
 
       {pb.run && (
         <section className="timeline-section">

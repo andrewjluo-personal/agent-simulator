@@ -1,6 +1,6 @@
 // Wire contract shared with backend/app/models.py (camelCase on the wire).
 
-export type Valence = 'pro' | 'con'
+export type Valence = 'pro' | 'con' | 'neutral'
 export type Paradigm = 'free_discussion' | 'share_first'
 export type TurnOrder = 'clockwise' | 'random'
 export type TieBreak = 'none' | 'runoff' | 'chair'
@@ -20,6 +20,14 @@ export type Fact = {
   keywords?: string[]
 }
 export type AgentPersona = { id: string; name: string; role: string; style: string }
+
+export type ScenarioSource = {
+  kind: 'sample' | 'paper' | 'custom'
+  paper?: string | null
+  doiOrUrl?: string | null
+  fidelity?: 'verbatim' | 'reconstructed' | 'inspired' | 'modified' | null
+  notes?: string | null
+}
 
 export type ValidationResult = {
   aloneWrongRate: Record<string, number>
@@ -42,6 +50,43 @@ export type Scenario = {
   distribution: Record<string, string[]>
   decisionRule?: DecisionRule
   validation?: Record<string, ValidationResult> | null
+  source?: ScenarioSource
+  parentId?: string | null
+  createdAt?: string | null
+}
+
+export type AgentLean = {
+  agentId: string
+  scores: Record<string, number>
+  verdict: string
+}
+
+export type ScenarioAnalysis = {
+  agentLeans: AgentLean[]
+  pooledScores: Record<string, number>
+  pooledVerdict: string
+  sharedOnlyVerdict: string
+  margin: number
+  totalWeight: number
+  decisiveFactIds: string[]
+  hiddenDecisiveFactIds: string[]
+  flipK: number
+  isHiddenProfile: boolean
+  validation: ValidationResult | null
+}
+
+export type ValidationJob = {
+  id: string
+  scenarioId: string
+  model: string
+  status: RunStatus
+  trials: number
+  discussionRuns: number
+  batchId?: string | null
+  result?: ValidationResult | null
+  error?: string | null
+  createdAt: string
+  updatedAt: string
 }
 
 export type RunConfig = {

@@ -21,7 +21,7 @@ export function scores(scenario: Scenario, factIds: Iterable<string>): Record<st
   for (const id of factIds) {
     const f = byId.get(id)
     if (!f) continue
-    out[f.candidateId] += f.valence === 'pro' ? f.weight : -f.weight
+    if (f.valence !== 'neutral') out[f.candidateId] += f.valence === 'pro' ? f.weight : -f.weight
   }
   return out
 }
@@ -66,7 +66,11 @@ export function decisiveFactIds(scenario: Scenario): Set<string> {
   return new Set(
     scenario.facts
       .filter((f) => unique.has(f.id))
-      .filter((f) => (f.valence === 'pro' ? f.candidateId === correct : f.candidateId !== correct))
+      .filter(
+        (f) =>
+          f.valence !== 'neutral' &&
+          (f.valence === 'pro' ? f.candidateId === correct : f.candidateId !== correct),
+      )
       .map((f) => f.id),
   )
 }

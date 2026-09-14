@@ -14,6 +14,13 @@ export function candidateColor(scenario: Scenario, candidateId: string | null): 
 
 /** Colours for a fact chip: grey body with a candidate-tinted edge for shared facts, solid candidate colour for unique ones. */
 export function chipColors(fact: Fact, scenario: Scenario, shared: boolean): CSSProperties {
+  if (fact.valence === 'neutral') {
+    return {
+      background: '#9ca3af',
+      color: '#fff',
+      boxShadow: shared ? 'inset 3px 0 0 #6b7280' : undefined,
+    }
+  }
   const color = candidateColor(scenario, favoredCandidate(fact, scenario))
   return {
     background: shared ? '#e5e7eb' : color,

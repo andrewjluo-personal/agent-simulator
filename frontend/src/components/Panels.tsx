@@ -62,6 +62,7 @@ export type ControlsProps = {
   onChange: (c: RunConfig) => void
   scenarios: Scenario[]
   onSelectScenario: (id: string) => void
+  onOpenLab: () => void
   onResetScenario: () => void
   paradigms: { id: Paradigm; label: string }[]
   n: number
@@ -94,11 +95,12 @@ export function Controls(p: ControlsProps) {
         <select value={p.config.scenarioId} onChange={(e) => p.onSelectScenario(e.target.value)}>
           {p.scenarios.map((s) => (
             <option key={s.id} value={s.id}>
-              {s.title} · {s.agents.length} agents
+              {s.title} · {s.agents.length} agents [{s.source?.kind ?? 'sample'}]
             </option>
           ))}
         </select>
       </label>
+      <button type="button" onClick={p.onOpenLab}>Scenario Lab</button>
       {validation ? (
         <span className="badge validation-badge" title={validation.title}>
           {validation.text}
