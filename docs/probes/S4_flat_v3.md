@@ -4,7 +4,7 @@
 - Scripts: `backend/scripts/gate_pool.py` (hidden-profile gate), `backend/scripts/gate_null.py` (twin-null band check)
 - Samples: n=20 per cell (10 John-first + 10 Sally-first via balanced candidate order)
 - Raw data: `docs/probes/data/s4/v3_gate_{naive,default}.json`, `docs/probes/data/s4/v3_null_{naive,default}.json`
-- Total S4 spend across iterations: ≈ $2.6
+- Total S4 spend across iterations: ≈ $3.4
 
 ## Verdict
 
@@ -116,6 +116,23 @@ Pooled→Sally:
 - **it3** — tom's hidden pro F10→F5 (this cut): PASS on both prompts.
 - **Earlier abandoned design** — hand-written VJ/VS/VU type-balanced bank whose own twin null read pooled 0.70–0.85 Sally (`gate_v3_null_*`, `null_v3_4p`); the first null-v2 cut (20 pairs) had null pooled 0.75/0.65 John and marcus/priya 0.70–0.75 Sally (`v3_nullv2cut_null_*`).
 
-## §6 Cost
+## §6 Full discussion (3 rounds, 4 panelists)
 
-Gate run ≈ $0.15–0.16 per 2-prompt run; null run ≈ $0.17–0.19.
+`scripts/probe_free_discussion.py --scenario hiring-panel-flat-v3 --runs 10 --candidate-order balanced`
+(seeds 0–9, 5 John-first + 5 Sally-first). Raw rows: `docs/probes/data/s4/group/v3_group_{naive,default}.jsonl`.
+
+| prompt | final Sally | Wilson95 | John-first | Sally-first | uniques cited / run | pre-vote Sally mean |
+|---|---|---|---|---|---|---|
+| naive | 6/10 = 0.60 | [0.31, 0.83] | 3/5 | 3/5 | 4.3 of 8 | 0.08 |
+| default | 5/10 = 0.50 | [0.24, 0.76] | 3/5 | 2/5 | 4.4 of 8 | 0.02 |
+
+Per run, the outcome tracks how many of the 8 hidden Sally pros were voiced: runs citing ≥5 went
+Sally 8/9, runs citing ≤3 went John 5/5 (4 cited: 3 Sally / 3 John). Pre-discussion ballots are
+~0 % Sally (matches the alone gate), so the Sally verdicts arise only through pooling — the
+scenario behaves as a hidden profile under discussion, with partial pooling limiting the group
+to ~50–60 % correct. Cost ≈ $0.38 per 10-run cell.
+
+## §7 Cost
+
+Gate run ≈ $0.15–0.16 per 2-prompt run; null run ≈ $0.17–0.19; discussion ≈ $0.38 per 10 runs.
+Session total ≈ $3.4 of the $4 budget.
