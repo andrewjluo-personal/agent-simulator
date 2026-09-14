@@ -125,7 +125,8 @@ def test_consensus_line() -> None:
 
 
 def test_visibility_statement_injected() -> None:
-    sp = prompts.system_prompt(SCENARIO, CFG, DANA, HAND, PARADIGM)
+    cfg = CFG.model_copy(update={"transcript_visibility": "full"})
+    sp = prompts.system_prompt(SCENARIO, cfg, DANA, HAND, PARADIGM)
     assert PARADIGM.visibility_statement() in sp
 
 
@@ -142,7 +143,7 @@ def test_default_cfg_matches_explicit_defaults() -> None:
         seed=7,
         fact_style="memo",
         prompt_style="naive",
-        transcript_visibility="full",
+        transcript_visibility="last_round",
     )
     for a, b in (
         (

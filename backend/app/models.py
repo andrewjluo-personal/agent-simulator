@@ -122,7 +122,7 @@ class RunConfig(Model):
     tie_break: TieBreak = "runoff"
     fact_style: FactStyle = "memo"
     prompt_style: PromptStyle = "naive"
-    transcript_visibility: TranscriptVisibility = "full"
+    transcript_visibility: TranscriptVisibility = "last_round"
     model: str = "claude-haiku-4-5"
     seed: int = 0
 
