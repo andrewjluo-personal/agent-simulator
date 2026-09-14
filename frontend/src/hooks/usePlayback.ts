@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createRun, getRun, stepRun } from '../api'
 import type { RunConfig, RunState, Turn, Vote } from '../types'
+import { track } from '../telemetry'
 
 export const TURN_MS = 2600
 const POLL_MS = 750
@@ -31,6 +32,12 @@ export function usePlayback() {
     runRef.current = run
   }, [run])
   const lastRevealAt = useRef(0)
+  const revealedRef = useRef(0)
+  const playingRef = useRef(false)
+  useEffect(() => {
+    revealedRef.current = revealed
+    playingRef.current = playing
+  }, [revealed, playing])
 
   const loadRun = useCallback((next: RunState, autoplay: boolean) => {
     setRun(next)
@@ -69,16 +76,40 @@ export function usePlayback() {
     const id = run?.id
     if (!id || run?.status === 'done' || run?.status === 'error') return
     let cancelled = false
+    const loopId = Math.random().toString(36).slice(2, 8)
+    const status = run?.status
+    track('run.step_loop_start', { runId: id, loopId, status, turns: run?.turns?.length ?? 0 })
     const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms))
     const loop = async () => {
       while (!cancelled) {
         const current = runRef.current
-        if (!current || current.id !== id) return
-        if (current.status === 'done' || current.status === 'error') return
+        if (!current || current.id !== id) {
+          track('run.step_loop_exit', { runId: id, loopId, reason: current ? 'run_changed' : 'no_run' })
+          return
+        }
+        if (current.status === 'done' || current.status === 'error') {
+          track('run.step_loop_exit', { runId: id, loopId, reason: current.status })
+          return
+        }
         const turns = current.turns ?? []
         const sinceSeq = turns.length ? turns[turns.length - 1].seq : -1
+        const startedAt = Date.now()
         try {
           const delta = await stepRun(id, sinceSeq)
+          const deltaSeqs = (delta.turns ?? []).map((t) => t.seq)
+          track(cancelled ? 'run.step_dropped' : 'run.step_applied', {
+            runId: id,
+            loopId,
+            sinceSeq,
+            durationMs: Date.now() - startedAt,
+            status: delta.status,
+            currentRound: delta.currentRound,
+            deltaTurns: deltaSeqs,
+            deltaVotes: (delta.votes ?? []).length,
+            stateTurns: turns.length,
+            revealed: revealedRef.current,
+            playing: playingRef.current,
+          })
           if (cancelled) return
           setRun((prev) =>
             prev && prev.id === id
@@ -86,10 +117,16 @@ export function usePlayback() {
               : prev,
           )
         } catch (cause) {
+          track(
+            'run.step_failed',
+            { runId: id, loopId, sinceSeq, durationMs: Date.now() - startedAt, reason: String(cause), cancelled },
+            'warning',
+          )
           if (!cancelled) setError(cause instanceof Error ? cause.message : String(cause))
         }
         await sleep(POLL_MS)
       }
+      track('run.step_loop_exit', { runId: id, loopId, reason: 'cancelled' })
     }
     void loop()
     return () => {
@@ -99,12 +136,19 @@ export function usePlayback() {
 
   // Reveal one turn per tick so replays and live runs animate identically.
   useEffect(() => {
-    if (!playing || !run) return
+    if (!run) return
     const turns = run.turns ?? []
+    if (!playing) {
+      if (run.status !== 'done' && run.status !== 'error') {
+        track('run.reveal_paused', { runId: run.id, revealed, turns: turns.length, status: run.status })
+      }
+      return
+    }
     if (revealed >= turns.length) {
       if (run.status === 'done' || run.status === 'error') setPlaying(false)
       return
     }
+    track('run.reveal', { runId: run.id, revealed, turns: turns.length, status: run.status, currentRound: run.currentRound })
     const wait = revealed === 0 ? 300 : Math.max(0, TURN_MS - (Date.now() - lastRevealAt.current))
     const timer = window.setTimeout(() => {
       lastRevealAt.current = Date.now()
