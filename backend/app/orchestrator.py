@@ -274,7 +274,7 @@ async def _vote_once(
     agent = next(a for a in scenario.agents if a.id == agent_id)
     system = prompts.system_prompt(scenario, cfg, agent, hand, spec)
     if round_idx < 0:
-        user = prompts.alone_vote_message(scenario)
+        user = prompts.alone_vote_message(scenario, cfg)
         said_lean = truth.UNDECIDED
     else:
         user = prompts.vote_message(

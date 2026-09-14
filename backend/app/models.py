@@ -16,6 +16,7 @@ class Model(BaseModel):
 Valence = Literal["pro", "con", "neutral"]
 Paradigm = Literal["free_discussion", "share_first"]
 TurnOrder = Literal["clockwise", "random"]
+CandidateOrder = Literal["fixed", "random"]
 TieBreak = Literal["none", "runoff", "chair"]
 FactStyle = Literal["memo", "labelled"]
 PromptStyle = Literal["default", "naive", "naive_no_repeat", "naive_consensus"]
@@ -115,6 +116,7 @@ class RunConfig(Model):
     rounds: int = Field(default=3, ge=1, le=15)
     sentences_per_turn: int = Field(default=2, ge=1, le=5)
     turn_order: TurnOrder = "clockwise"
+    candidate_order: CandidateOrder = "fixed"
     tie_break: TieBreak = "runoff"
     fact_style: FactStyle = "memo"
     prompt_style: PromptStyle = "default"

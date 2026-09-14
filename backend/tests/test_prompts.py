@@ -260,3 +260,23 @@ def test_vote_message_visibility_none() -> None:
     tm = prompts.turn_message(SCENARIO, cfg, 0, heard, PARADIGM, 3)
     assert "hidden in this run" in tm
     assert "I hold a decisive note." not in tm
+
+
+def test_candidate_order_random_varies_by_seed() -> None:
+    orders = set()
+    for s in range(20):
+        cfg = RunConfig(candidate_order="random", seed=s)
+        ids = tuple(c.id for c in prompts.ordered_candidates(SCENARIO, cfg))
+        orders.add(ids)
+        msg = prompts.alone_vote_message(SCENARIO, cfg)
+        assert f'"vote": "{ids[0]}|' in msg
+    assert orders == {("john", "sally"), ("sally", "john")}
+
+
+def test_candidate_order_fixed_is_unchanged() -> None:
+    cfg = RunConfig(seed=7, fact_style="labelled", candidate_order="fixed")
+    base = RunConfig(seed=7, fact_style="labelled")
+    assert prompts.system_prompt(SCENARIO, cfg, DANA, HAND, PARADIGM) == prompts.system_prompt(
+        SCENARIO, base, DANA, HAND, PARADIGM
+    )
+    assert prompts.alone_vote_message(SCENARIO, cfg) == prompts.alone_vote_message(SCENARIO)

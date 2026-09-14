@@ -63,7 +63,7 @@ async def votes(
     samples: int,
 ) -> Counter[str]:
     spec = get_paradigm(cfg.paradigm)
-    user = prompts.alone_vote_message(scenario)
+    user = prompts.alone_vote_message(scenario, cfg)
     ids = {c.id for c in scenario.candidates}
 
     async def one(seed: int) -> str:

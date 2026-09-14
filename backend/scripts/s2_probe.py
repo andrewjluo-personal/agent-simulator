@@ -201,7 +201,7 @@ async def pooled_baseline(
     spec = get_paradigm("free_discussion")
     all_fact_ids = [f.id for f in scenario.facts]
     system = prompts.system_prompt(scenario, cfg, REVIEWER, all_fact_ids, spec)
-    user = prompts.alone_vote_message(scenario)
+    user = prompts.alone_vote_message(scenario, cfg)
     candidate_ids = {c.id for c in scenario.candidates}
     votes = [
         await _one_vote(client, system, user, args.model, candidate_ids)
@@ -231,7 +231,7 @@ async def alone_baseline(
     )
     spec = get_paradigm("free_discussion")
     candidate_ids = {c.id for c in scenario.candidates}
-    user = prompts.alone_vote_message(scenario)
+    user = prompts.alone_vote_message(scenario, cfg)
     votes: dict[str, str] = {}
     for agent in scenario.agents:
         system = prompts.system_prompt(scenario, cfg, agent, scenario.distribution[agent.id], spec)

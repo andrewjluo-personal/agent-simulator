@@ -4,17 +4,24 @@ from __future__ import annotations
 
 from random import Random
 
-from .models import AgentPersona, RunConfig, Scenario, Turn
+from .models import AgentPersona, Candidate, RunConfig, Scenario, Turn
 from .paradigms import ParadigmSpec
 from .truth import UNDECIDED
 
 
-def _candidate_lines(scenario: Scenario) -> str:
-    return "\n".join(f"- {c.id} ({c.name}): {c.blurb}" for c in scenario.candidates)
+def ordered_candidates(scenario: Scenario, cfg: RunConfig | None) -> list[Candidate]:
+    cands = list(scenario.candidates)
+    if cfg is not None and cfg.candidate_order == "random":
+        Random(f"{cfg.seed}:candidate_order").shuffle(cands)
+    return cands
 
 
-def _lean_options(scenario: Scenario) -> str:
-    return "|".join([c.id for c in scenario.candidates] + [UNDECIDED])
+def _candidate_lines(scenario: Scenario, cfg: RunConfig | None) -> str:
+    return "\n".join(f"- {c.id} ({c.name}): {c.blurb}" for c in ordered_candidates(scenario, cfg))
+
+
+def _lean_options(scenario: Scenario, cfg: RunConfig | None) -> str:
+    return "|".join([c.id for c in ordered_candidates(scenario, cfg)] + [UNDECIDED])
 
 
 def _fact_lines(scenario: Scenario, hand_fact_ids: list[str]) -> str:
@@ -33,7 +40,7 @@ def _memo_lines(
     """Human-study style notes: one paragraph per candidate, no ids or labels."""
     held = [scenario.fact(fid) for fid in hand_fact_ids]
     blocks = []
-    for candidate in scenario.candidates:
+    for candidate in ordered_candidates(scenario, cfg):
         group = [f for f in held if f.candidate_id == candidate.id]
         if not group:
             continue
@@ -78,7 +85,7 @@ def _naive_system_prompt(
     notes = _memo_lines(scenario, cfg, agent, hand_fact_ids)
     schema = (
         f'{{"sentences": string[], "current_lean": '
-        f'"{_lean_options(scenario)}", "confidence": 0..1}}'
+        f'"{_lean_options(scenario, cfg)}", "confidence": 0..1}}'
     )
     vis = "" if cfg.transcript_visibility == "full" else f"\n{visibility_statement(cfg, paradigm)}"
     concise = "Keep your response concise, just one or two sentences."
@@ -87,7 +94,7 @@ def _naive_system_prompt(
         concise = f"{concise}\n{extra}"
     return f"""You are {agent.name}, {agent.role} on the panel. Style: {agent.style}.
 The panel has {len(scenario.agents)} interviewers and must recommend exactly one candidate:
-{_candidate_lines(scenario)}
+{_candidate_lines(scenario, cfg)}
 
 {scenario.brief}
 The panel will discuss and then each of you will give a private recommendation.{vis}
@@ -146,11 +153,11 @@ def system_prompt(
     items_field = '"items_referenced": string[], ' if labelled else ""
     schema = (
         f'{{"sentences": string[], {items_field}"current_lean": '
-        f'"{_lean_options(scenario)}", "confidence": 0..1}}'
+        f'"{_lean_options(scenario, cfg)}", "confidence": 0..1}}'
     )
     return f"""You are {agent.name}, {agent.role} on the panel. Style: {agent.style}.
 The panel has {len(scenario.agents)} interviewers and must recommend exactly one candidate:
-{_candidate_lines(scenario)}
+{_candidate_lines(scenario, cfg)}
 
 {scenario.brief}{consensus_line}
 You each attended different parts of the interview loop and took your own notes. The
@@ -257,8 +264,8 @@ Which candidate do you recommend? Give one sentence of reasoning.
 JSON only: {{"vote": candidate id or "undecided", "confidence": 0..1, "reason": string}}"""
 
 
-def alone_vote_message(scenario: Scenario) -> str:
-    options = "|".join(c.id for c in scenario.candidates)
+def alone_vote_message(scenario: Scenario, cfg: RunConfig | None = None) -> str:
+    options = "|".join(c.id for c in ordered_candidates(scenario, cfg))
     return f"""You have not spoken to any other panelist. Based only on your own notes,
 which candidate do you recommend? You must pick one.
 Keep "reason" to one sentence.
