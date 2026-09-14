@@ -56,6 +56,7 @@ class ValidationResult(Model):
     trials: int
     date: str  # ISO date
     passed: bool
+    null_gate: bool | None = None
     free_discussion_rate: float | None = None  # mean(metrics.correct) over free_discussion runs
     free_discussion_runs: int = 0
 
@@ -112,7 +113,7 @@ class Scenario(Model):
 
 
 class RunConfig(Model):
-    scenario_id: str = "hiring-panel-flat-v2"
+    scenario_id: str = "stasser-1985-hidden"
     paradigm: Paradigm = "free_discussion"
     rounds: int = Field(default=3, ge=1, le=15)
     sentences_per_turn: int = Field(default=2, ge=1, le=5)

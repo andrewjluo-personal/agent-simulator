@@ -28,7 +28,7 @@ from .models import (
     summary,
 )
 from .paradigms import PARADIGMS
-from .samples import SAMPLES_BY_ID, ensure_samples
+from .samples import HIDDEN_SAMPLE_IDS, SAMPLES_BY_ID, ensure_samples
 from .scenario import DEFAULT_SCENARIO_ID, load_scenario
 from .store import MemoryStore, Store
 from .telemetry import emit, request_logger, server_timing
@@ -211,7 +211,7 @@ def get_scenario() -> dict[str, Any]:
 @app.get("/api/scenarios")
 def list_scenarios() -> list[dict[str, Any]]:
     scenarios = get_store().list_scenarios()
-    listed = [s for s in scenarios if s.source.kind != "custom"]
+    listed = [s for s in scenarios if s.source.kind != "custom" and s.id not in HIDDEN_SAMPLE_IDS]
     customs = [s for s in scenarios if s.source.kind == "custom"]
     customs.sort(
         key=lambda s: (s.created_at is not None, s.created_at or ""),

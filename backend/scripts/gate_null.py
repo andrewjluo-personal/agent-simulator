@@ -1,11 +1,8 @@
-"""Null gate: on a symmetric pool the pooled reviewer and every agent alone must be
-within [lo,hi] Sally under the run prompt; sweeps seeds so memo order / candidate
-order vary.
+"""G0 null gate for symmetric candidate pools.
 
 Usage:
-  .venv/bin/python scripts/gate_null.py hiring-panel-null [--prompt naive default]
-      [--samples 10] [--seeds 2] [--order random|fixed] [--lo 0.35 --hi 0.65]
-      [--out scripts/probe/out/gate_null]
+  .venv/bin/python scripts/gate_null.py scenario --prompt naive default
+      --samples 8 --seeds 3 [--twin] [--out scripts/probe/out/gate_null]
 """
 
 from __future__ import annotations
@@ -22,7 +19,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent))
 
 from gate_pool import MODEL, POOLED, CountingClient
-from probe_lib import cost_usd, load_scenario_arg, order_for_sample, wilson
+from probe_lib import (
+    cost_usd,
+    load_scenario_arg,
+    rotate_candidates,
+    samples_for,
+    twin_null,
+    wilson,
+)
 
 from app import prompts, truth, validate
 from app.llm import AnthropicClient, LLMClient, LLMRequest
@@ -40,85 +44,104 @@ async def cell_votes(
     agent: AgentPersona,
     hand: list[str],
     cfg: RunConfig,
-    order_mode: str,
     seeds: int,
     samples: int,
-) -> tuple[list[Counter[str]], dict[str, Counter[str]]]:
-    """One Counter per seed plus a per-order tally; each seed holds `samples` ballots."""
+) -> list[dict[str, str]]:
+    """Run seeds × samples ballots with balanced cyclic candidate rotations."""
     spec = get_paradigm(cfg.paradigm)
-    ids = {c.id for c in scenario.candidates}
+    k = len(scenario.candidates)
+    ids = {candidate.id for candidate in scenario.candidates}
 
-    async def one(seed: int, j: int) -> tuple[str, str]:
-        eff = order_for_sample(order_mode, j)
-        cell_cfg = cfg.model_copy(update={"seed": seed, "candidate_order": eff})
-        key = (
-            prompts.ordered_candidates(scenario, cell_cfg, agent)[0].id
-            if order_mode == "random"
-            else eff
-        )
-        system = prompts.system_prompt(scenario, cell_cfg, agent, hand, spec)
-        user = prompts.alone_vote_message(scenario, cell_cfg, agent)
-        resp = await client.complete(
+    async def one(seed: int, sample: int) -> dict[str, str]:
+        rotated = rotate_candidates(scenario, sample % k)
+        cell_cfg = cfg.model_copy(update={"seed": seed, "candidate_order": "fixed"})
+        system = prompts.system_prompt(rotated, cell_cfg, agent, hand, spec)
+        user = prompts.alone_vote_message(rotated, cell_cfg, agent)
+        response = await client.complete(
             LLMRequest(system=system, user=user, model=MODEL, max_tokens=200)
         )
-        raw = validate.parse_json_object(resp.text) or {}
-        v = raw.get("vote")
-        return key, v if isinstance(v, str) and v in ids else truth.UNDECIDED
+        raw = validate.parse_json_object(response.text) or {}
+        vote = raw.get("vote")
+        return {
+            "first_listed": rotated.candidates[0].id,
+            "vote": vote if isinstance(vote, str) and vote in ids else truth.UNDECIDED,
+        }
 
-    pairs = await asyncio.gather(
-        *(one(s * 1000 + j, j) for s in range(seeds) for j in range(samples))
+    return list(
+        await asyncio.gather(
+            *(
+                one(seed * 1000 + sample, sample)
+                for seed in range(seeds)
+                for sample in range(samples)
+            )
+        )
     )
-    per_seed = [Counter(v for _, v in pairs[s * samples : (s + 1) * samples]) for s in range(seeds)]
-    by_order: dict[str, Counter[str]] = {}
-    for eff, v in pairs:
-        by_order.setdefault(eff, Counter())[v] += 1
-    return per_seed, by_order
 
 
 async def gate(
     client: LLMClient,
     scenario: Scenario,
     style: PromptStyle,
-    order: str,
     samples: int,
     seeds: int,
-    lo: float,
-    hi: float,
+    lo: float | None,
+    hi: float | None,
 ) -> dict[str, Any]:
+    k = len(scenario.candidates)
+    derived_lo = max(0.0, 1 / k - 0.15)
+    derived_hi = min(1.0, 1 / k + 0.15)
+    band_lo = derived_lo if lo is None else lo
+    band_hi = derived_hi if hi is None else hi
     cfg = RunConfig(prompt_style=style, candidate_order="fixed", fact_style="memo", seed=0)
-    target = scenario.candidates[1].id
-    cells: dict[str, tuple[AgentPersona, list[str]]] = {
-        "pooled": (POOLED, sorted(truth.pooled_fact_ids(scenario)))
-    }
-    for a in scenario.agents:
-        cells[a.id] = (a, list(scenario.distribution[a.id]))
-
+    cells: list[tuple[str, AgentPersona, list[str]]] = [
+        ("pooled", POOLED, sorted(truth.pooled_fact_ids(scenario)))
+    ]
+    cells.extend(
+        (agent.id, agent, list(scenario.distribution[agent.id]))
+        for agent in scenario.agents
+    )
     result_cells: dict[str, Any] = {}
-    for cell_id, (agent, hand) in cells.items():
-        per_seed, by_order = await cell_votes(
-            client, scenario, agent, hand, cfg, order, seeds, samples
-        )
-        n = seeds * samples
-        k = sum(c[target] for c in per_seed)
-        rate, ci_lo, ci_hi = wilson(k, n)
+
+    for cell_id, agent, hand in cells:
+        ballots = await cell_votes(client, scenario, agent, hand, cfg, seeds, samples)
+        counts = Counter(ballot["vote"] for ballot in ballots)
+        by_first_listed: dict[str, Counter[str]] = {}
+        for ballot in ballots:
+            by_first_listed.setdefault(ballot["first_listed"], Counter())[ballot["vote"]] += 1
+        rates: dict[str, dict[str, Any]] = {}
+        for candidate in scenario.candidates:
+            rate, ci_lo, ci_hi = wilson(counts[candidate.id], len(ballots))
+            rates[candidate.id] = {"rate": rate, "ci": [ci_lo, ci_hi]}
         result_cells[cell_id] = {
-            "n": n,
-            "counts": dict(sum(per_seed, Counter())),
-            "per_seed": [dict(c) for c in per_seed],
-            "by_order": {k: dict(c) for k, c in by_order.items()},
-            "rate": rate,
-            "ci": [ci_lo, ci_hi],
-            "pass": within(rate, lo, hi),
+            "n": len(ballots),
+            "counts": dict(counts),
+            "per_seed": [
+                dict(
+                    Counter(
+                        ballot["vote"]
+                        for ballot in ballots[seed * samples : (seed + 1) * samples]
+                    )
+                )
+                for seed in range(seeds)
+            ],
+            "rates": rates,
+            "by_first_listed": {key: dict(value) for key, value in by_first_listed.items()},
+            "pass": all(
+                within(candidate_rate["rate"], band_lo, band_hi)
+                for candidate_rate in rates.values()
+            ),
         }
+
     return {
         "scenario": scenario.id,
         "prompt": style,
-        "order": order,
-        "target": target,
-        "lo": lo,
-        "hi": hi,
+        "k": k,
+        "samples": samples,
+        "seeds": seeds,
+        "lo": band_lo,
+        "hi": band_hi,
         "cells": result_cells,
-        "pass": all(c["pass"] for c in result_cells.values()),
+        "pass": all(cell["pass"] for cell in result_cells.values()),
     }
 
 
@@ -126,43 +149,50 @@ async def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("scenario")
     parser.add_argument("--prompt", nargs="+", default=["naive", "default"])
-    parser.add_argument("--samples", type=int, default=10)
+    parser.add_argument("--samples", type=int, default=8)
     parser.add_argument("--seeds", type=int, default=2)
-    parser.add_argument(
-        "--order",
-        choices=["balanced", "random", "fixed"],
-        default="balanced",
-        help="candidate order; 'balanced' alternates per sample (--samples must be even)",
-    )
-    parser.add_argument("--lo", type=float, default=0.35)
-    parser.add_argument("--hi", type=float, default=0.65)
+    parser.add_argument("--lo", type=float)
+    parser.add_argument("--hi", type=float)
+    parser.add_argument("--twin", action="store_true")
     parser.add_argument("--out", default="scripts/probe/out/gate_null")
     args = parser.parse_args()
-    if args.order == "balanced" and args.samples % 2:
-        parser.error("--samples must be even for balanced order")
     client = CountingClient(AnthropicClient())
-    scenario = load_scenario_arg(args.scenario)
+    original = load_scenario_arg(args.scenario)
+    scenario = original
+    if args.twin:
+        scenario = twin_null(scenario)
+        changed = sum(
+            scenario.fact(f"{fact.id}~1").text != fact.text for fact in original.facts
+        )
+        print(
+            f"{original.id}: rotation_1_changed_facts={changed}/{len(original.facts)}"
+        )
+    samples = samples_for(len(scenario.candidates), args.samples)
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
     ok = True
+
     for style in args.prompt:
-        res = await gate(
-            client, scenario, style, args.order, args.samples, args.seeds, args.lo, args.hi
+        result = await gate(
+            client, scenario, style, samples, args.seeds, args.lo, args.hi
         )
-        (out_dir / f"{scenario.id}_{style}_{args.order}.json").write_text(json.dumps(res, indent=1))
-        print(f"[{style} order={args.order}] target={res['target']} band=[{args.lo},{args.hi}]")
-        for cell_id, cell in res["cells"].items():
-            seeds_str = " ".join(str(s) for s in cell["per_seed"])
-            orders_str = " ".join(f"{k}={v}" for k, v in cell["by_order"].items())
-            status = "ok" if cell["pass"] else "FAIL"
-            print(
-                f"  {cell_id:<8} n={cell['n']:<3} {res['target']}_rate={cell['rate']:.2f} "
-                f"[{cell['ci'][0]:.2f},{cell['ci'][1]:.2f}] seeds={seeds_str} "
-                f"by_order={orders_str} {status}"
+        path = out_dir / f"{scenario.id}_{style}.json"
+        path.write_text(json.dumps(result, indent=1))
+        print(
+            f"{scenario.id} [{style}] k={result['k']} n={samples * args.seeds} "
+            f"band=[{result['lo']:.2f},{result['hi']:.2f}]"
+        )
+        for cell_id, cell in result["cells"].items():
+            rates = " ".join(
+                f"{candidate}={value['rate']:.2f}[{value['ci'][0]:.2f},{value['ci'][1]:.2f}]"
+                for candidate, value in cell["rates"].items()
             )
-        print(f"  -> {'PASS' if res['pass'] else 'FAIL'}")
-        ok = ok and res["pass"]
-    print(f"~${cost_usd(client.input_tokens, client.output_tokens):.2f}")
+            status = "PASS" if cell["pass"] else "FAIL"
+            print(f"  {cell_id:<8} n={cell['n']:<3} {rates} -> {status}")
+        print(f"  -> {'PASS' if result['pass'] else 'FAIL'}")
+        ok = ok and result["pass"]
+
+    print(f"total ~${cost_usd(client.input_tokens, client.output_tokens):.2f}")
     return 0 if ok else 1
 
 

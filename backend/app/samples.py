@@ -1843,7 +1843,7 @@ VENDOR_SELECTION_V1 = Scenario.model_validate(
 )
 
 
-SAMPLE_SCENARIOS: list[Scenario] = [
+ALL_SAMPLE_SCENARIOS: list[Scenario] = [
     HIRING_PANEL_FLAT_V2,
     HIRING_PANEL_NULL,
     INCIDENT_REVIEW_V1,
@@ -1851,7 +1851,28 @@ SAMPLE_SCENARIOS: list[Scenario] = [
     *PAPER_SCENARIOS,
 ]
 
-SAMPLES_BY_ID: dict[str, Scenario] = {s.id: s for s in SAMPLE_SCENARIOS}
+HIDDEN_SAMPLE_IDS: frozenset[str] = frozenset(
+    {
+        "incident-review-v1",
+        "vendor-selection-v1",
+        "stasser-1985-shared",
+        "stasser-1992-solve",
+        "stasser-1992-judge",
+        "hiddenbench-evacuation-west-city",
+        "hiddenbench-toma-butera-2009",
+        "hiddenbench-baker-2010",
+        "hiddenbench-schulz-hardt-mojzisch-2012",
+        "hiddenbench-graetz-et-al-1998",
+        "hiddenbench-stasser-stewart-1992",
+        "hiddenbench-critical-hospital-transfer",
+        "hiddenbench-the-lead-investor-decision",
+    }
+)
+SAMPLE_SCENARIOS: list[Scenario] = [
+    s for s in ALL_SAMPLE_SCENARIOS if s.id not in HIDDEN_SAMPLE_IDS
+]
+SERVED_SCENARIO_IDS: frozenset[str] = frozenset(s.id for s in SAMPLE_SCENARIOS)
+SAMPLES_BY_ID: dict[str, Scenario] = {s.id: s for s in ALL_SAMPLE_SCENARIOS}
 
 # Sample ids removed from SAMPLE_SCENARIOS; ensure_samples deletes stored rows
 # carrying these ids as samples (runs embed their scenario, so old runs remain
